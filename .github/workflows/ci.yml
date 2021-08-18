@@ -1,0 +1,35 @@
+name: ci
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v2
+
+      - uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.13.1
+
+      - name: Install rust
+        uses: hecrj/setup-rust-action@v1.3.4
+        with:
+          rust-version: 1.56.0-nightly
+
+      - name: Install clippy and rustfmt
+        run: |
+          rustup component add clippy
+          rustup component add rustfmt
+      - name: Build
+        run: cargo build --locked --release
+
+      - name: Build Example
+        run: |
+          cd example
+          deno run -A ../cli.ts
+          deno test --allow-ffi --unstable
+
+          
