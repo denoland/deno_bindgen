@@ -1,7 +1,17 @@
 import { ensureDir } from "https://deno.land/std@0.105.0/fs/ensure_dir.ts";
+import { parse } from "https://deno.land/std@0.105.0/flags/mod.ts";
+
+const flags = parse(Deno.args, { "--": true });
+const release = !!flags.release;
+
+
 
 async function build() {
-  const proc = Deno.run({ cmd: ["cargo", "build", "--example", "add"] });
+  const cmd = ["cargo", "build"];
+  if(release) cmd.push("--release");
+  cmd.push("--crate-type=cdylib");
+  cmd.push(...flags["--"]);
+  const proc = Deno.run({ cmd });
   await proc.status();
 }
 
@@ -29,10 +39,11 @@ let source = null;
 async function generate() {
   try {
     const conf = JSON.parse(await Deno.readTextFile("bindings.json"));
+    const pkgName = conf.name;
     source = "// Auto-generated with deno_bindgen\n";
-    source += `const _lib = Deno.dlopen('target/debug/examples/libadd.so', { ${
+    source += `const _lib = Deno.dlopen('target/debug/examples/lib${}.so', { ${
       conf.bindings.map((e: any) =>
-        `${e.func}: { result: "i32", parameters: [${
+        `${e.func}: { result: "${e.result}", parameters: [${
           e.parameters.map((p: any) => `"${p.type}"`)
         }] }`
       ).join(", ")
@@ -42,7 +53,7 @@ async function generate() {
         bindings.parameters.map((p: any) =>
           `${p.ident}: ${Type[p.type] || invalidType(p.type)}`
         ).join(", ")
-      }) { return _lib.symbols.${bindings.func}(${
+      }): ${Type[bindings.result]} { return _lib.symbols.${bindings.func}(${
         bindings.parameters.map((p: any) => p.ident).join(", ")
       }); }\n`;
     }

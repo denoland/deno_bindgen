@@ -1,3 +1,5 @@
+#![feature(box_patterns)]
+
 extern crate proc_macro;
 extern crate syn;
 use proc_macro::TokenStream;
@@ -13,6 +15,7 @@ use serde::Deserialize;
 
 #[derive(Serialize, Deserialize, Default)]
 struct Bindings {
+  name: String,
   bindings: Vec<serde_json::Value>,
 }
 
@@ -36,6 +39,8 @@ pub fn deno_bindgen(_attr: TokenStream, input: TokenStream) -> TokenStream {
     
     let mut bindings: Bindings = serde_json::from_str(&buf).unwrap_or_default();
     let mut bindings_fn = vec![];
+    let pkg_name = env!("CARGO_PKG_NAME");
+    panic!(env!("CARGO_BIN_EXE_deno-bindgen"));
     for (idx, i) in func_inputs.iter().enumerate() {
         match i {
             syn::FnArg::Typed(ref val) => match &*val.ty {
@@ -53,11 +58,23 @@ pub fn deno_bindgen(_attr: TokenStream, input: TokenStream) -> TokenStream {
             _ => unreachable!(),
         }
     }
+
+    let return_type = match func_output {
+      syn::ReturnType::Default => "void".to_string(),
+      syn::ReturnType::Type(_, box syn::Type::Path(ty)) => {
+        // TODO(@littledivy): Support ::Type path segments
+        ty.path.segments[0].ident.to_string()
+      }
+      _ => panic!("Type not supported"),
+    };
+
     bindings.bindings.push(json!({
         "func": func_name.to_string(),
-        "parameters": bindings_fn
+        "parameters": bindings_fn,
+        "result": return_type,
       }
     ));
+    bindings.name = pkg_name.to_string();
     f.write_all(&serde_json::to_vec(&bindings).unwrap()).unwrap();
     TokenStream::from(quote! {
       #[no_mangle]
