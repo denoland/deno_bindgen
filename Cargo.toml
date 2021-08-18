@@ -1,0 +1,20 @@
+[package]
+name = "deno_bindgen"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+proc-macro = true
+
+[[example]]
+name = "add"
+crate-type = ["cdylib"]
+
+[dependencies]
+proc-macro2 = "1"
+quote = "1"
+syn = { version = "1", features = ["full", "extra-traits"] }
+serde = { version = "1.0.59", features = ["derive"] }
+serde_json = "1.0.59"
