@@ -15,9 +15,9 @@ jobs:
           deno-version: v1.13.1
 
       - name: Install rust
-        uses: hecrj/setup-rust-action@v1.3.4
+        uses: hecrj/setup-rust-action@v1
         with:
-          rust-version: 1.56.0-nightly
+          rust-version: nightly
 
       - name: Install clippy and rustfmt
         run: |
