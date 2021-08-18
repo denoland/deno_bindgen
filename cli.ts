@@ -46,6 +46,7 @@ async function generate() {
     const conf = JSON.parse(await Deno.readTextFile("bindings.json"));
     const pkgName = conf.name;
     source = "// Auto-generated with deno_bindgen\n";
+
     source +=
       `const _lib = Deno.dlopen('target/${profile}/lib${pkgName}${ext}', { ${
         conf.bindings.map((e: any) =>

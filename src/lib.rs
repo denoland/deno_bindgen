@@ -38,7 +38,7 @@ pub fn deno_bindgen(_attr: TokenStream, input: TokenStream) -> TokenStream {
     .unwrap();
 
   let mut parameters = vec![];
-  let pkg_name = env!("CARGO_PKG_NAME");
+  let pkg_name = std::env::var("CARGO_CRATE_NAME").unwrap();
   for (idx, i) in func.sig.inputs.iter().enumerate() {
     match i {
       syn::FnArg::Typed(ref val) => match &*val.ty {
