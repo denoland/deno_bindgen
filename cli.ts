@@ -3,13 +3,13 @@ import { parse } from "https://deno.land/std@0.105.0/flags/mod.ts";
 
 const flags = parse(Deno.args, { "--": true });
 const release = !!flags.release;
-const profile = release ? "release": "debug";
+const profile = release ? "release" : "debug";
 
 async function build() {
   const cmd = ["cargo", "build"];
-  if(release) cmd.push("--release");
+  if (release) cmd.push("--release");
   cmd.push(...flags["--"]);
-  const proc = Deno.run({ cmd, });
+  const proc = Deno.run({ cmd });
   await proc.status();
 }
 
@@ -46,13 +46,14 @@ async function generate() {
     const conf = JSON.parse(await Deno.readTextFile("bindings.json"));
     const pkgName = conf.name;
     source = "// Auto-generated with deno_bindgen\n";
-    source += `const _lib = Deno.dlopen('target/${profile}/lib${pkgName}${ext}', { ${
-      conf.bindings.map((e: any) =>
-        `${e.func}: { result: "${e.result}", parameters: [${
-          e.parameters.map((p: any) => `"${p.type}"`)
-        }] }`
-      ).join(", ")
-    } });\n`;
+    source +=
+      `const _lib = Deno.dlopen('target/${profile}/lib${pkgName}${ext}', { ${
+        conf.bindings.map((e: any) =>
+          `${e.func}: { result: "${e.result}", parameters: [${
+            e.parameters.map((p: any) => `"${p.type}"`)
+          }] }`
+        ).join(", ")
+      } });\n`;
     for (let bindings of conf.bindings) {
       source += `export function ${bindings.func}(${
         bindings.parameters.map((p: any) =>
@@ -60,10 +61,10 @@ async function generate() {
         ).join(", ")
       }): ${Type[bindings.result]} { return _lib.symbols.${bindings.func}(${
         bindings.parameters.map((p: any) => p.ident).join(", ")
-      }); }\n`;
+      }) as ${Type[bindings.result]}; }\n`;
     }
   } catch (_) {
-    // It was a rerun
+    // Nothing to update.
     return;
   }
   await Deno.remove("bindings.json");
