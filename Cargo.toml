@@ -8,10 +8,6 @@ edition = "2018"
 [lib]
 proc-macro = true
 
-[[example]]
-name = "add"
-crate-type = ["cdylib"]
-
 [dependencies]
 proc-macro2 = "1"
 quote = "1"

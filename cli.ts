@@ -3,16 +3,21 @@ import { parse } from "https://deno.land/std@0.105.0/flags/mod.ts";
 
 const flags = parse(Deno.args, { "--": true });
 const release = !!flags.release;
-
-
+const profile = release ? "release": "debug";
 
 async function build() {
   const cmd = ["cargo", "build"];
   if(release) cmd.push("--release");
-  cmd.push("--crate-type=cdylib");
   cmd.push(...flags["--"]);
-  const proc = Deno.run({ cmd });
+  const proc = Deno.run({ cmd, });
   await proc.status();
+}
+
+let ext = ".so";
+if (Deno.build.os == "windows") {
+  ext = ".dll";
+} else if (Deno.build.os == "darwin") {
+  ext = ".dylib";
 }
 
 const Type: Record<string, string> = {
@@ -41,7 +46,7 @@ async function generate() {
     const conf = JSON.parse(await Deno.readTextFile("bindings.json"));
     const pkgName = conf.name;
     source = "// Auto-generated with deno_bindgen\n";
-    source += `const _lib = Deno.dlopen('target/debug/examples/lib${}.so', { ${
+    source += `const _lib = Deno.dlopen('target/${profile}/lib${pkgName}${ext}', { ${
       conf.bindings.map((e: any) =>
         `${e.func}: { result: "${e.result}", parameters: [${
           e.parameters.map((p: any) => `"${p.type}"`)
