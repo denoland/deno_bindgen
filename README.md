@@ -1,6 +1,7 @@
 ## `deno_bindgen`
 
-This tool aims to simplify glue code generation for Deno FFI libraries written in Rust.
+This tool aims to simplify glue code generation for Deno FFI libraries written
+in Rust.
 
 ### Quickstart
 

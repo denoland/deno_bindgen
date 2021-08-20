@@ -1,5 +1,6 @@
 import { ensureDir } from "https://deno.land/std@0.105.0/fs/ensure_dir.ts";
 import { parse } from "https://deno.land/std@0.105.0/flags/mod.ts";
+import { codegen } from "./codegen.ts";
 
 const flags = parse(Deno.args, { "--": true });
 const release = !!flags.release;
@@ -20,26 +21,6 @@ if (Deno.build.os == "windows") {
   ext = ".dylib";
 }
 
-const Type: Record<string, string> = {
-  void: "null",
-  i8: "number",
-  u8: "number",
-  i16: "number",
-  u16: "number",
-  i32: "number",
-  u32: "number",
-  i64: "number",
-  u64: "number",
-  usize: "number",
-  isize: "number",
-  f32: "number",
-  f64: "number",
-};
-
-function invalidType(type: string) {
-  throw new TypeError(`Type not supported: ${type}`);
-}
-
 let source = null;
 async function generate() {
   try {
@@ -47,23 +28,7 @@ async function generate() {
     const pkgName = conf.name;
     source = "// Auto-generated with deno_bindgen\n";
 
-    source +=
-      `const _lib = Deno.dlopen('target/${profile}/lib${pkgName}${ext}', { ${
-        conf.bindings.map((e: any) =>
-          `${e.func}: { result: "${e.result}", parameters: [${
-            e.parameters.map((p: any) => `"${p.type}"`)
-          }] }`
-        ).join(", ")
-      } });\n`;
-    for (let bindings of conf.bindings) {
-      source += `export function ${bindings.func}(${
-        bindings.parameters.map((p: any) =>
-          `${p.ident}: ${Type[p.type] || invalidType(p.type)}`
-        ).join(", ")
-      }): ${Type[bindings.result]} { return _lib.symbols.${bindings.func}(${
-        bindings.parameters.map((p: any) => p.ident).join(", ")
-      }) as ${Type[bindings.result]}; }\n`;
-    }
+    source += codegen(`target/${profile}/lib${pkgName}${ext}`, conf.bindings);
   } catch (_) {
     // Nothing to update.
     return;
