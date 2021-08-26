@@ -23,16 +23,19 @@ if (Deno.build.os == "windows") {
 
 let source = null;
 async function generate() {
+  let conf;
   try {
-    const conf = JSON.parse(await Deno.readTextFile("bindings.json"));
-    const pkgName = conf.name;
-    source = "// Auto-generated with deno_bindgen\n";
-
-    source += codegen(`target/${profile}/lib${pkgName}${ext}`, conf.bindings);
+    conf = JSON.parse(await Deno.readTextFile("bindings.json"));  
   } catch (_) {
     // Nothing to update.
     return;
   }
+  
+  console.log(conf);
+  const pkgName = conf.name;
+
+  source = "// Auto-generated with deno_bindgen\n";
+  source += codegen(`target/${profile}/lib${pkgName}${ext}`, conf.type_defs, conf.bindings);
   await Deno.remove("bindings.json");
 }
 
