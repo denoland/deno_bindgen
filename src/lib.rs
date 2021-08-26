@@ -47,24 +47,49 @@ pub fn deno_bindgen(_attr: TokenStream, input: TokenStream) -> TokenStream {
     //
     Ok(func) => {
       let mut parameters = vec![];
+      let mut foriegn_types = vec![];
 
       let fn_name = &func.sig.ident;
       let fn_inputs = &func.sig.inputs;
       let fn_output = &func.sig.output;
       let fn_block = &func.block;
       let fn_params: Vec<_> = fn_inputs
-        .iter()
+        .iter_mut()
         .enumerate()
         .map(|(idx, i)| match i {
-          syn::FnArg::Typed(ref val) => {
+          syn::FnArg::Typed(ref mut val) => {
             match &*val.ty {
-              syn::Type::Path(ref ty) => {
+              syn::Type::Path(ref mut ty) => {
                 for seg in &ty.path.segments {
                   let ident = format!("a{}", idx);
+                  let ident_str = seg.ident.to_string();
+                  let ty = match ident_str.as_str() {
+                    "void" | "i8" | "u8" | "i16" | "u16" | "i32" | "u32"
+                    | "i64" | "u64" | "usize" | "isize" | "f32" | "f64" => {
+                      ident_str
+                    }
+                    _ => {
+                      // Check if a type definition already exists
+                      bindings
+                        .type_defs
+                        .iter()
+                        .find(|&def| def["ident"] == ident_str)
+                        .expect(&format!(
+                          "Type definition not found for `{}` identifier",
+                          &ident_str
+                        ));
+                      foriegn_types.push((
+                        &val.pat,
+                        quote::format_ident!("{}", ident_str),
+                      ));
+
+                      ident_str
+                    }
+                  };
                   parameters.push(json!(
                     {
                       "ident": ident,
-                      "type": type_identifier(&bindings, &seg.ident.to_string()),
+                      "type": ty,
                     }
                   ));
                 }
@@ -99,11 +124,22 @@ pub fn deno_bindgen(_attr: TokenStream, input: TokenStream) -> TokenStream {
       config
         .write_all(&serde_json::to_vec(&bindings).unwrap())
         .unwrap();
-
+      // panic!("{:#?}", foriegn_types);
+      let overrides = foriegn_types.iter().map(|(ident, ty)| quote! {
+        let mut _struct: #ty = unsafe { ::std::mem::zeroed() };
+        let _size = ::std::mem::size_of::< #ty >();
+        unsafe {
+          let _slice = ::std::slice::from_raw_parts_mut(&mut _struct as *mut _ as *mut u8, _size);
+          #ident.read_exact(_slice).unwrap();
+        }
+        let #ident = _struct;
+      })
+      .fold(quote! {}, |acc, new| quote! { #acc #new });
       TokenStream::from(quote! {
         #[no_mangle]
         pub extern "C" fn #fn_name (#fn_inputs) #fn_output {
           fn __inner_impl (#fn_inputs) #fn_output #fn_block
+          #overrides
           let result = __inner_impl(#(#fn_params,) *);
           result
         }
@@ -150,20 +186,3 @@ pub fn deno_bindgen(_attr: TokenStream, input: TokenStream) -> TokenStream {
     }
   }
 }
-
-fn type_identifier(bindings: &Bindings, ty: &str) -> String {
-  match ty {
-    "void" | "i8" | "u8" | "i16" | "u16" | "i32" | "u32" | "i64" | "u64"
-    | "usize" | "isize" | "f32" | "f64" => ty.to_string(),
-    _ => {
-      // Check if a type definition already exists
-      bindings
-        .type_defs
-        .iter()
-        .find(|&def| def["ident"] == ty)
-        .expect(&format!("Type definition not found for `{}` identifier", ty));
-      ty.to_string()
-    }
-  }
-}
- 
