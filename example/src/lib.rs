@@ -13,5 +13,5 @@ pub struct Input {
 
 #[deno_bindgen]
 fn add2(input: Input) -> i32 {
-    input.a + input.b
+  input.a + input.b
 }

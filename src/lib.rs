@@ -51,16 +51,18 @@ pub fn deno_bindgen(_attr: TokenStream, input: TokenStream) -> TokenStream {
 
       let fn_name = &func.sig.ident;
       let fn_inputs = &func.sig.inputs;
+      let mut inputs = vec![];
       let fn_output = &func.sig.output;
       let fn_block = &func.block;
       let fn_params: Vec<_> = fn_inputs
-        .iter_mut()
+        .iter()
         .enumerate()
         .map(|(idx, i)| match i {
-          syn::FnArg::Typed(ref mut val) => {
-            match &*val.ty {
-              syn::Type::Path(ref mut ty) => {
-                for seg in &ty.path.segments {
+          syn::FnArg::Typed(ref val) => {
+            let mut val = val.clone();
+            match *val.ty {
+              syn::Type::Path(ref ty) => {
+                for seg in ty.path.segments.clone() {
                   let ident = format!("a{}", idx);
                   let ident_str = seg.ident.to_string();
                   let ty = match ident_str.as_str() {
@@ -79,10 +81,10 @@ pub fn deno_bindgen(_attr: TokenStream, input: TokenStream) -> TokenStream {
                           &ident_str
                         ));
                       foriegn_types.push((
-                        &val.pat,
+                        val.pat.clone(),
                         quote::format_ident!("{}", ident_str),
                       ));
-
+                      val.ty = Box::new(syn::Type::Ptr(syn::parse_quote! { *const u8 }));
                       ident_str
                     }
                   };
@@ -97,7 +99,8 @@ pub fn deno_bindgen(_attr: TokenStream, input: TokenStream) -> TokenStream {
               _ => {}
             };
 
-            &val.pat
+            
+            inputs.push(val);
           }
           _ => unimplemented!(),
         })
@@ -124,23 +127,26 @@ pub fn deno_bindgen(_attr: TokenStream, input: TokenStream) -> TokenStream {
       config
         .write_all(&serde_json::to_vec(&bindings).unwrap())
         .unwrap();
-      // panic!("{:#?}", foriegn_types);
+
       let overrides = foriegn_types.iter().map(|(ident, ty)| quote! {
-        let mut _struct: #ty = unsafe { ::std::mem::zeroed() };
-        let _size = ::std::mem::size_of::< #ty >();
-        unsafe {
-          let _slice = ::std::slice::from_raw_parts_mut(&mut _struct as *mut _ as *mut u8, _size);
-          #ident.read_exact(_slice).unwrap();
-        }
-        let #ident = _struct;
+        let _size = std::mem::size_of::<#ty>();
+        let buf = unsafe { std::slice::from_raw_parts(#ident, _size) };
+
+        let #ident: #ty = unsafe { std::ptr::read(buf.as_ptr() as *const _) };
+
+        
+        // println!("{:#?}", buf);
+        // unsafe { std::mem::transmute_copy(&buf.as_ptr()) };
+        println!("{:#?}", #ident.a);
       })
       .fold(quote! {}, |acc, new| quote! { #acc #new });
+      let input_idents: Vec<_> = inputs.iter().map(|i| &i.pat).collect();
       TokenStream::from(quote! {
         #[no_mangle]
-        pub extern "C" fn #fn_name (#fn_inputs) #fn_output {
+        pub extern "C" fn #fn_name (#(#inputs,) *) #fn_output {
           fn __inner_impl (#fn_inputs) #fn_output #fn_block
           #overrides
-          let result = __inner_impl(#(#fn_params,) *);
+          let result = __inner_impl(#(#input_idents,) *);
           result
         }
       })

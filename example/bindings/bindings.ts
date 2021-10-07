@@ -1,11 +1,11 @@
 // Auto-generated with deno_bindgen
-import { Struct, i8, u8, i16, u16, i32, u32, i64, u64, f32, f64 } from "https://deno.land/x/byte_type/mod.ts";
+import { Struct, i8, u8, i16, u16, i32le, u32, i64, u64, f32, f64 } from "https://deno.land/x/byte_type/mod.ts";
 const usize = u64;
 const isize = i64;
 
 const _lib = Deno.dlopen("target/debug/libadd.so", { add: { parameters: [ "i32", "i32" ], result: "i32" }, add2: { parameters: [ "buffer" ], result: "i32" } });
 type Input = { a: number; b: number };
-const _Input = new Struct({ a: i32, b: i32 });
+const _Input = new Struct({ a: i32le, b: i32le });
 export function add(a0: number, a1: number) {
   
   const _result = _lib.symbols.add(a0, a1);
