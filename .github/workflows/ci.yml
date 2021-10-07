@@ -30,6 +30,4 @@ jobs:
         run: |
           cd example
           deno run -A ../cli.ts
-          deno test --allow-ffi --unstable
-
-          
+          deno test --no-check --allow-ffi --unstable
