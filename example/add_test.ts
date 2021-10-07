@@ -13,6 +13,5 @@ Deno.test({
   name: "add2#test",
   fn: () => {
     assertEquals(add2({ a: 1, b: 2 }), 3);
-    
   },
 });

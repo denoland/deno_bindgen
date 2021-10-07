@@ -21,8 +21,14 @@ deno_bindgen = { git = "https://github.com/littledivy/deno_bindgen" }
 use deno_bindgen::deno_bindgen;
 
 #[deno_bindgen]
-fn add(a: i32, b: i32) -> i32 {
-    a + b
+pub struct Input {
+  a: i32,
+  b: i32,
+}
+
+#[deno_bindgen]
+fn add(input: Input) -> i32 {
+  input.a + input.b
 }
 ```
 
@@ -33,5 +39,6 @@ $ deno_bindgen
 ```typescript
 // add.ts
 import { add } from "./bindings/bindings.ts";
-add(1, 2); // 3
+
+add({ a: 1, b: 2 }); // 3
 ```

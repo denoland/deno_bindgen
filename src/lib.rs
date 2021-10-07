@@ -13,9 +13,18 @@ use syn::DataStruct;
 use syn::Fields;
 use syn::ItemFn;
 
+fn is_le() -> bool {
+  #[cfg(target_endian = "little")]
+  return true;
+
+  #[cfg(target_endian = "big")]
+  return false;
+}
+
 #[derive(Serialize, Deserialize, Default)]
 struct Bindings {
   name: String,
+  le: bool,
   bindings: Vec<serde_json::Value>,
   type_defs: Vec<serde_json::Value>,
 }
@@ -23,6 +32,7 @@ struct Bindings {
 #[proc_macro_attribute]
 pub fn deno_bindgen(_attr: TokenStream, input: TokenStream) -> TokenStream {
   let mut buf = String::new();
+
   // Load existing bindings
   match OpenOptions::new().read(true).open("bindings.json") {
     Ok(mut fd) => {
@@ -32,7 +42,9 @@ pub fn deno_bindgen(_attr: TokenStream, input: TokenStream) -> TokenStream {
       // We assume this was the first macro run.
     }
   }
+
   let mut bindings: Bindings = serde_json::from_str(&buf).unwrap_or_default();
+  bindings.le = is_le();
   // TODO(@littledivy): Use Cargo's `out` directory
   // let dir = Path::new(env!("PROC_ARTIFACT_DIR"));
   let mut config = OpenOptions::new()
@@ -84,7 +96,9 @@ pub fn deno_bindgen(_attr: TokenStream, input: TokenStream) -> TokenStream {
                         val.pat.clone(),
                         quote::format_ident!("{}", ident_str),
                       ));
-                      val.ty = Box::new(syn::Type::Ptr(syn::parse_quote! { *const u8 }));
+                      val.ty = Box::new(syn::Type::Ptr(
+                        syn::parse_quote! { *const u8 },
+                      ));
                       ident_str
                     }
                   };
@@ -99,7 +113,6 @@ pub fn deno_bindgen(_attr: TokenStream, input: TokenStream) -> TokenStream {
               _ => {}
             };
 
-            
             inputs.push(val);
           }
           _ => unimplemented!(),
@@ -133,11 +146,6 @@ pub fn deno_bindgen(_attr: TokenStream, input: TokenStream) -> TokenStream {
         let buf = unsafe { std::slice::from_raw_parts(#ident, _size) };
 
         let #ident: #ty = unsafe { std::ptr::read(buf.as_ptr() as *const _) };
-
-        
-        // println!("{:#?}", buf);
-        // unsafe { std::mem::transmute_copy(&buf.as_ptr()) };
-        println!("{:#?}", #ident.a);
       })
       .fold(quote! {}, |acc, new| quote! { #acc #new });
       let input_idents: Vec<_> = inputs.iter().map(|i| &i.pat).collect();

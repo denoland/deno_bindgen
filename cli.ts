@@ -25,17 +25,24 @@ let source = null;
 async function generate() {
   let conf;
   try {
-    conf = JSON.parse(await Deno.readTextFile("bindings.json"));  
+    conf = JSON.parse(await Deno.readTextFile("bindings.json"));
   } catch (_) {
     // Nothing to update.
     return;
   }
-  
+
   console.log(conf);
   const pkgName = conf.name;
 
   source = "// Auto-generated with deno_bindgen\n";
-  source += codegen(`target/${profile}/lib${pkgName}${ext}`, conf.type_defs, conf.bindings);
+  source += codegen(
+    `target/${profile}/lib${pkgName}${ext}`,
+    conf.type_defs,
+    conf.bindings,
+    {
+      le: conf.le,
+    }
+  );
   await Deno.remove("bindings.json");
 }
 
@@ -43,6 +50,7 @@ await build();
 await generate();
 
 if (source != null) {
+ 
   await ensureDir("bindings");
   await Deno.writeTextFile("bindings/bindings.ts", source);
 }

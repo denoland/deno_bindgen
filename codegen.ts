@@ -43,11 +43,46 @@ type Sig = {
   result: string;
 };
 
-export function codegen(target: string, decl: TypeDef[], signature: Sig[]) {
-  return `import { Struct, i8, u8, i16, u16, i32, u32, i64, u64, f32, f64 } from "https://deno.land/x/byte_type/mod.ts";
-const usize = u64;
-const isize = i64;
+type Options = {
+  le?: boolean;
+};
 
+function createByteTypeImport(le?: boolean) {
+  // Endianess dependent types to be imported from the `byte_type` module.
+  let types = [
+    "i16",
+    "u16",
+    "i32",
+    "u32",
+    "i64",
+    "u64",
+    "f32",
+    "f64",
+  ];
+
+  // Finalize type name based on endianness.
+  const typeImports = types.map((ty) => ty + (le ? "le" : "be"));
+
+  // TODO(@littledivy): version imports
+  let code = `import { Struct, i8, u8, ${
+    typeImports.join(", ")
+  } } from "https://deno.land/x/byte_type/mod.ts";\n`;
+
+  code += types.map((ty, idx) => `const ${ty} = ${typeImports[idx]};`).join('\n');
+
+  code += `\nconst usize = u64;\n`;
+  code += `const isize = i64;\n`;
+
+  return code;
+}
+
+export function codegen(
+  target: string,
+  decl: TypeDef[],
+  signature: Sig[],
+  options?: Options,
+) {
+  return `${createByteTypeImport(options?.le)}
 const _lib = Deno.dlopen("${target}", { ${
     signature.map((sig) =>
       `${sig.func}: { parameters: [ ${
