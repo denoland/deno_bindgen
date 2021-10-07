@@ -12,7 +12,7 @@ jobs:
 
       - uses: denoland/setup-deno@v1
         with:
-          deno-version: v1.13.1
+          deno-version: ab2e0a465e4eafe4de2cc6ac7ef61d1655db4c2d
 
       - name: Install rust
         uses: hecrj/setup-rust-action@v1
@@ -30,6 +30,4 @@ jobs:
         run: |
           cd example
           deno run -A ../cli.ts
-          deno test --allow-ffi --unstable
-
-          
+          deno test --no-check --allow-ffi --unstable
