@@ -110,6 +110,18 @@ pub fn deno_bindgen(_attr: TokenStream, input: TokenStream) -> TokenStream {
                   ));
                 }
               }
+              // Handle fixed sized byte arrays `[u8; n]`
+              syn::Type::Array(ref arr) => {
+                if let syn::Type::Path(ty) = &*arr.elem {
+                  let ty = ty.path.segments[0].ident.to_string();
+                  match ty.as_ref() {
+                    "u8" => {},
+                    _ => panic!("Fixed array to type {} are not supported", ty),
+                  }
+                } else {
+                  panic!("Invalid fixed array type");
+                }
+              }
               _ => {}
             };
 

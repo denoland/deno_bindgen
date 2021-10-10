@@ -15,3 +15,8 @@ pub struct Input {
 fn add2(input: Input) -> i32 {
   input.a + input.b
 }
+
+#[deno_bindgen]
+fn print_buf(buf: &[u8; 2]) {
+  println!("{:#?}", &buf);
+}
