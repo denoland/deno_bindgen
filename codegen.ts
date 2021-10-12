@@ -1,5 +1,3 @@
-import { print } from "https://deno.land/x/swc@0.1.4/mod.ts";
-
 const Type: Record<string, string> = {
   void: "null",
   i8: "number",
@@ -90,7 +88,7 @@ const _lib = Deno.dlopen("${target}", { ${
           .join(", ")
       } ], result: "${sig.result}" }`
     ).join(", ")
-  } });
+} });
 ${
     decl.map((def) =>
       `type ${def.ident} = { ${
