@@ -22,7 +22,7 @@ function resolveType(typeDefs: TypeDef, type: any): string {
   if (Object.keys(typeDefs).find((f) => f == t) !== undefined) {
     return t;
   }
-  throw new TypeError(`Type not supported: ${t}`);
+  return "any";
 }
 
 function resolveDlopenParameter(typeDefs: TypeDef, type: any): string {
