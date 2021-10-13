@@ -23,7 +23,7 @@ fn add2(input: Input) -> i32 {
 // Test mixed types
 
 #[deno_bindgen]
-fn test_mixed(a: i32, b: Input) -> i32 {
+fn test_mixed(a: isize, b: Input) -> i32 {
   a as i32 + b.a
 }
 
@@ -40,7 +40,7 @@ struct MyStruct {
 }
 
 #[deno_bindgen]
-fn test_serde(s: MyStruct) -> i32 {
+fn test_serde(s: MyStruct) -> u8 {
     if s.arr.contains(&"WORKS".to_string()) {
         return 1;
     } 

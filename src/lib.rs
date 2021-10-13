@@ -11,6 +11,7 @@ use std::env;
 use std::fs::OpenOptions;
 use std::io::Read;
 use std::io::Write;
+use syn::parse_quote;
 use syn::Data;
 use syn::DataStruct;
 use syn::Fields;
@@ -47,6 +48,26 @@ enum Type {
   // XXX: We need this for
   // transmute "backend".
   // { len: usize }
+}
+
+impl From<Type> for syn::Type {
+  fn from(ty: Type) -> Self {
+    match ty {
+      Type::I8 => parse_quote! { i8 },
+      Type::U8 => parse_quote! { u8 },
+      Type::I16 => parse_quote! { i16 },
+      Type::U16 => parse_quote! { u16 },
+      Type::I32 => parse_quote! { i32 },
+      Type::U32 => parse_quote! { u32 },
+      Type::I64 => parse_quote! { i64 },
+      Type::U64 => parse_quote! { u64 },
+      Type::F32 => parse_quote! { f32 },
+      Type::F64 => parse_quote! { f64 },
+      Type::Usize => parse_quote! { usize },
+      Type::Isize => parse_quote! { isize },
+      _ => panic!("Unreachable"),
+    }
+  }
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -141,7 +162,8 @@ pub fn deno_bindgen(_attr: TokenStream, input: TokenStream) -> TokenStream {
       // TODO
       _ => {
         let ident = format_ident!("arg{}", c_index.to_string());
-        params.push(quote! { #ident: i32 });
+        let ty = syn::Type::from(parameter);
+        params.push(quote! { #ident: #ty });
         input_idents.push(ident);
       }
     };

@@ -31,7 +31,6 @@ async function generate() {
     return;
   }
 
-  console.log(conf);
   const pkgName = conf.name;
 
   source = "// Auto-generated with deno_bindgen\n";

@@ -43,37 +43,6 @@ type Options = {
   le?: boolean;
 };
 
-function createByteTypeImport(le?: boolean) {
-  // Endianess dependent types to be imported from the `byte_type` module.
-  let types = [
-    "i16",
-    "u16",
-    "i32",
-    "u32",
-    "i64",
-    "u64",
-    "f32",
-    "f64",
-  ];
-
-  // Finalize type name based on endianness.
-  const typeImports = types.map((ty) => ty + (le ? "le" : "be"));
-
-  // TODO(@littledivy): version imports
-  let code = `import { Struct, i8, u8, ${
-    typeImports.join(", ")
-  } } from "https://deno.land/x/byte_type/mod.ts";\n`;
-
-  code += types.map((ty, idx) => `const ${ty} = ${typeImports[idx]};`).join(
-    "\n",
-  );
-
-  code += `\nconst usize = u64;\n`;
-  code += `const isize = i64;\n`;
-
-  return code;
-}
-
 export function codegen(
   target: string,
   decl: TypeDef,
@@ -114,16 +83,14 @@ ${
           `a${i}: ${resolveType(decl, p)}`
         ).join(",")
       }) {
-    ${
+  ${
         signature[sig].parameters.map((p, i) =>
-          `${
-            typeof p !== "string"
-              ? `const a${i}_buf = encode(JSON.stringify(a${i}));\n`
-              : ""
-          }`
-        ).join("")
+          typeof p !== "string"
+            ? `const a${i}_buf = encode(JSON.stringify(a${i}));`
+            : null
+        ).filter((c) => c !== null).join("\n")
       }
-    return _lib.symbols.${sig}(${
+  return _lib.symbols.${sig}(${
         signature[sig].parameters.map((p, i) =>
           typeof p !== "string" ? `a${i}_buf, a${i}_buf.byteLength` : `a${i}`
         ).join(", ")
