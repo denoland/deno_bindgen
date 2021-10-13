@@ -1,5 +1,3 @@
-import { print } from "https://deno.land/x/swc@0.1.4/mod.ts";
-
 const Type: Record<string, string> = {
   void: "null",
   i8: "number",
@@ -16,32 +14,30 @@ const Type: Record<string, string> = {
   f64: "number",
 };
 
-type TypeDef = {
-  fields: Record<string, string>;
-  ident: string;
-};
+type TypeDef = Record<string, Record<string, string>>;
 
-function resolveType(typeDefs: TypeDef[], type: string): string {
-  if (Type[type] !== undefined) return Type[type];
-  if (typeDefs.find((f) => f.ident == type) !== undefined) {
-    return type;
+function resolveType(typeDefs: TypeDef, type: any): string {
+  const t = typeof type == "string" ? type : type.struct.ident;
+  if (Type[t] !== undefined) return Type[t];
+  if (Object.keys(typeDefs).find((f) => f == t) !== undefined) {
+    return t;
   }
-  throw new TypeError(`Type not supported: ${type}`);
+  return "any";
 }
 
-function resolveDlopenParameter(typeDefs: TypeDef[], type: string): string {
-  if (Type[type] !== undefined) return type;
-  if (typeDefs.find((f) => f.ident == type) !== undefined) {
+function resolveDlopenParameter(typeDefs: TypeDef, type: any): string {
+  const t = typeof type == "string" ? type : type.struct.ident;
+  if (Type[t] !== undefined) return t;
+  if (Object.keys(typeDefs).find((f) => f == t) !== undefined) {
     return "buffer";
   }
-  throw new TypeError(`Type not supported: ${type}`);
+  throw new TypeError(`Type not supported: ${t}`);
 }
 
-type Sig = {
-  func: string;
-  parameters: { ident: string; type: string }[];
+type Sig = Record<string, {
+  parameters: any[];
   result: string;
-};
+}>;
 
 type Options = {
   le?: boolean;
@@ -68,7 +64,9 @@ function createByteTypeImport(le?: boolean) {
     typeImports.join(", ")
   } } from "https://deno.land/x/byte_type/mod.ts";\n`;
 
-  code += types.map((ty, idx) => `const ${ty} = ${typeImports[idx]};`).join('\n');
+  code += types.map((ty, idx) => `const ${ty} = ${typeImports[idx]};`).join(
+    "\n",
+  );
 
   code += `\nconst usize = u64;\n`;
   code += `const isize = i64;\n`;
@@ -78,56 +76,60 @@ function createByteTypeImport(le?: boolean) {
 
 export function codegen(
   target: string,
-  decl: TypeDef[],
-  signature: Sig[],
+  decl: TypeDef,
+  signature: Sig,
   options?: Options,
 ) {
-  return `${createByteTypeImport(options?.le)}
+  return `
+const encode = (s: string) => new TextEncoder().encode(s);
 const _lib = Deno.dlopen("${target}", { ${
-    signature.map((sig) =>
-      `${sig.func}: { parameters: [ ${
-        sig.parameters.map((p) => `"${resolveDlopenParameter(decl, p.type)}"`)
+    Object.keys(signature).map((sig) =>
+      `${sig}: { parameters: [ ${
+        signature[sig].parameters.map((p) => {
+          const ffiParam = resolveDlopenParameter(decl, p);
+          // FIXME: Dupe logic here.
+          return `"${ffiParam}"${
+            typeof p !== "string"
+              ? `, "usize"`
+              : ""
+          }`;
+        })
           .join(", ")
-      } ], result: "${sig.result}" }`
+      } ], result: "${signature[sig].result}" }`
     ).join(", ")
   } });
 ${
-    decl.map((def) =>
-      `type ${def.ident} = { ${
-        Object.keys(def.fields).map((f) =>
-          `${f}: ${resolveType(decl, def.fields[f])}`
+    Object.keys(decl).map((def) =>
+      `type ${def} = { ${
+        Object.keys(decl[def]).map((f) =>
+          `${f}: ${resolveType(decl, decl[def][f])}`
         ).join("; ")
       } };`
     ).join("\n")
   }
 ${
-    decl.map((def) =>
-      `const _${def.ident} = new Struct({ ${
-        Object.keys(def.fields).map((f) => `${f}: ${def.fields[f]}`).join(", ")
-      } });`
-    ).join("\n")
-  }
-${
-    signature.map((sig) =>
-      `export function ${sig.func}(${
-        sig.parameters.map((p) => `${p.ident}: ${resolveType(decl, p.type)}`)
-          .join(", ")
+    Object.keys(signature).map((sig) =>
+      `export function ${sig}(${
+        signature[sig].parameters.map((p, i) =>
+          `a${i}: ${resolveType(decl, p)}`
+        ).join(",")
       }) {
-  ${
-        sig.parameters.filter((p) => Type[p.type] == undefined).map((p) =>
-          `const _buf_${p.ident} = new Uint8Array(_${p.type}.size);
-  const _view_${p.ident} = new DataView(_buf_${p.ident}.buffer);
-  _${p.type}.write(_view_${p.ident}, 0, ${p.ident});`
-        ).join("\n")
+    ${
+        signature[sig].parameters.map((p, i) =>
+          `${
+            typeof p !== "string"
+              ? `const a${i}_buf = encode(JSON.stringify(a${i}));\n`
+              : ""
+          }`
+        ).join("")
       }
-  const _result = _lib.symbols.${sig.func}(${
-        sig.parameters.map((p) =>
-          Type[p.type] == undefined ? ` _buf_${p.ident}` : p.ident
+    return _lib.symbols.${sig}(${
+        signature[sig].parameters.map((p, i) =>
+          typeof p !== "string" ? `a${i}_buf, a${i}_buf.byteLength` : `a${i}`
         ).join(", ")
-      });
-  return _result as ${resolveType(decl, sig.result)};
+      }) as ${resolveType(decl, signature[sig].result)}
 }`
     ).join("\n")
   }
-  `;
+ `;
 }

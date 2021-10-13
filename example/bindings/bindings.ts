@@ -1,42 +1,43 @@
 // Auto-generated with deno_bindgen
-import {
-  f32le,
-  f64le,
-  i16le,
-  i32le,
-  i64le,
-  i8,
-  Struct,
-  u16le,
-  u32le,
-  u64le,
-  u8,
-} from "https://deno.land/x/byte_type/mod.ts";
-const i16 = i16le;
-const u16 = u16le;
-const i32 = i32le;
-const u32 = u32le;
-const i64 = i64le;
-const u64 = u64le;
-const f32 = f32le;
-const f64 = f64le;
-const usize = u64;
-const isize = i64;
 
+const encode = (s: string) => new TextEncoder().encode(s);
 const _lib = Deno.dlopen("target/debug/libadd.so", {
+  test_serde: { parameters: ["buffer", "usize"], result: "i32" },
+  test_mixed: { parameters: ["i32", "buffer", "usize"], result: "i32" },
+  add2: { parameters: ["buffer", "usize"], result: "i32" },
   add: { parameters: ["i32", "i32"], result: "i32" },
-  add2: { parameters: ["buffer"], result: "i32" },
+  test_mixed_order: {
+    parameters: ["i32", "buffer", "usize", "i32"],
+    result: "i32",
+  },
 });
-type Input = { a: number; b: number };
-const _Input = new Struct({ a: i32, b: i32 });
-export function add(a0: number, a1: number) {
-  const _result = _lib.symbols.add(a0, a1);
-  return _result as number;
+type MyStruct = { arr: any };
+type Input = { b: number; a: number };
+export function test_serde(a0: MyStruct) {
+  const a0_buf = encode(JSON.stringify(a0));
+
+  return _lib.symbols.test_serde(a0_buf, a0_buf.byteLength) as number;
+}
+export function test_mixed(a0: number, a1: Input) {
+  const a1_buf = encode(JSON.stringify(a1));
+
+  return _lib.symbols.test_mixed(a0, a1_buf, a1_buf.byteLength) as number;
 }
 export function add2(a0: Input) {
-  const _buf_a0 = new Uint8Array(_Input.size);
-  const _view_a0 = new DataView(_buf_a0.buffer);
-  _Input.write(_view_a0, 0, a0);
-  const _result = _lib.symbols.add2(_buf_a0);
-  return _result as number;
+  const a0_buf = encode(JSON.stringify(a0));
+
+  return _lib.symbols.add2(a0_buf, a0_buf.byteLength) as number;
+}
+export function add(a0: number, a1: number) {
+  return _lib.symbols.add(a0, a1) as number;
+}
+export function test_mixed_order(a0: number, a1: Input, a2: number) {
+  const a1_buf = encode(JSON.stringify(a1));
+
+  return _lib.symbols.test_mixed_order(
+    a0,
+    a1_buf,
+    a1_buf.byteLength,
+    a2,
+  ) as number;
 }
