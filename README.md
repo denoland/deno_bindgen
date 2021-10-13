@@ -7,13 +7,13 @@ in Rust.
 
 ```shell
 # install CLI
-deno install -Afq -n deno_bindgen https://raw.githubusercontent.com/littledivy/deno_bindgen/main/cli.ts
+deno install -Afq -n deno_bindgen https://deno.land/x/deno_bindgen/cli.ts
 ```
 
 ```toml
 # Cargo.toml
 [dependencies]
-deno_bindgen = { git = "https://github.com/littledivy/deno_bindgen" }
+deno_bindgen = "0.1"
 ```
 
 ```rust
@@ -42,3 +42,8 @@ import { add } from "./bindings/bindings.ts";
 
 add({ a: 1, b: 2 }); // 3
 ```
+
+#### LICENSE
+
+MIT
+
