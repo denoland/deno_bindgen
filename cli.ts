@@ -37,11 +37,11 @@ async function generate() {
   source = "// Auto-generated with deno_bindgen\n";
   source += codegen(
     `target/${profile}/lib${pkgName}${ext}`,
-    conf.type_defs,
-    conf.bindings,
+    conf.typeDefs,
+    conf.symbols,
     {
-      le: conf.le,
-    }
+      le: conf.littleEndian,
+    },
   );
   await Deno.remove("bindings.json");
 }
@@ -50,7 +50,6 @@ await build();
 await generate();
 
 if (source != null) {
- 
   await ensureDir("bindings");
   await Deno.writeTextFile("bindings/bindings.ts", source);
 }

@@ -41,9 +41,12 @@ enum Type {
 
   /// Not-so straightforward types that
   /// `deno_bingen` maps to.
-  Struct, // XXX: We need this for
-          // transmute "backend".
-          // { len: usize }
+  Struct {
+    ident: String,
+  },
+  // XXX: We need this for
+  // transmute "backend".
+  // { len: usize }
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -98,15 +101,17 @@ pub fn deno_bindgen(_attr: TokenStream, input: TokenStream) -> TokenStream {
       (func, symbol)
     }
     Err(_) => {
-       let input = syn::parse_macro_input!(input as syn::DeriveInput);
-       let fields = process_struct(&mut metadata, input.clone()).unwrap();
+      let input = syn::parse_macro_input!(input as syn::DeriveInput);
+      let fields = process_struct(&mut metadata, input.clone()).unwrap();
 
-       metafile.write_all(&serde_json::to_vec(&metadata).unwrap()).unwrap();
-       return TokenStream::from(quote! {
-         #[derive(serde::Deserialize)]
-         #input
-       });
-    },
+      metafile
+        .write_all(&serde_json::to_vec(&metadata).unwrap())
+        .unwrap();
+      return TokenStream::from(quote! {
+        #[derive(serde::Deserialize)]
+        #input
+      });
+    }
   };
 
   let mut params = vec![];
@@ -116,7 +121,7 @@ pub fn deno_bindgen(_attr: TokenStream, input: TokenStream) -> TokenStream {
 
   for parameter in symbol.parameters {
     match parameter {
-      Type::Struct => {
+      Type::Struct { .. } => {
         let ident = format_ident!("arg{}", c_index.to_string());
         params.push(quote! { #ident: *const u8 });
 
@@ -199,7 +204,7 @@ fn process_function(
                   "Type definition not found for `{}` identifier",
                   &ident,
                 ));
-                Type::Struct
+                Type::Struct { ident }
               }
             }
           }
@@ -258,7 +263,11 @@ fn process_struct(
   let mut fmap = HashMap::new();
 
   for field in fields.iter() {
-    let ident = field.ident.as_ref().expect("Field without ident").to_string();
+    let ident = field
+      .ident
+      .as_ref()
+      .expect("Field without ident")
+      .to_string();
     match field.ty {
       syn::Type::Path(ref ty) => {
         let segment = &ty.path.segments.first().unwrap();
@@ -268,7 +277,7 @@ fn process_struct(
       _ => unimplemented!(),
     }
   }
-  
+
   metadata.type_defs.insert(name.to_string(), fmap.clone());
   Ok(fmap)
 }
