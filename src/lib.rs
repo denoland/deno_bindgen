@@ -256,6 +256,8 @@ fn process_function(
         "u64" => Type::U64,
         "usize" => Type::Usize,
         "isize" => Type::Isize,
+        "f32" => Type::F32,
+        "f64" => Type::F64,
         _ => panic!("{} return type not supported by Deno FFI", ident),
       }
     }
