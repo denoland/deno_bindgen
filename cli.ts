@@ -4,6 +4,10 @@ import { codegen } from "./codegen.ts";
 
 const flags = parse(Deno.args, { "--": true });
 const release = !!flags.release;
+
+const fetchPrefix = typeof flags.release == "string"
+  ? flags.release
+  : "target/debug";
 const profile = release ? "release" : "debug";
 
 async function build() {
@@ -12,13 +16,6 @@ async function build() {
   cmd.push(...flags["--"]);
   const proc = Deno.run({ cmd });
   await proc.status();
-}
-
-let ext = ".so";
-if (Deno.build.os == "windows") {
-  ext = ".dll";
-} else if (Deno.build.os == "darwin") {
-  ext = ".dylib";
 }
 
 let source = null;
@@ -35,13 +32,15 @@ async function generate() {
 
   source = "// Auto-generated with deno_bindgen\n";
   source += codegen(
-    `target/${profile}/lib${pkgName}${ext}`,
+    fetchPrefix,
+    pkgName,
     conf.typeDefs,
     conf.symbols,
     {
       le: conf.littleEndian,
     },
   );
+
   await Deno.remove("bindings.json");
 }
 
