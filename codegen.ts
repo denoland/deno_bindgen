@@ -44,24 +44,26 @@ type Options = {
 };
 
 export function codegen(
-  target: string,
+  fetchPrefix: string,
+  name: string,
   decl: TypeDef,
   signature: Sig,
   options?: Options,
 ) {
-  return `
+  return `import { Plug } from "https://deno.land/x/plug@0.4.0/mod.ts";
 const encode = (s: string) => new TextEncoder().encode(s);
-const _lib = Deno.dlopen("${target}", { ${
+const opts = {
+  name: "${name}",
+  url: "${fetchPrefix}"
+};
+const _lib = await Plug.prepare(opts, {
+  ${
     Object.keys(signature).map((sig) =>
       `${sig}: { parameters: [ ${
         signature[sig].parameters.map((p) => {
           const ffiParam = resolveDlopenParameter(decl, p);
           // FIXME: Dupe logic here.
-          return `"${ffiParam}"${
-            typeof p !== "string"
-              ? `, "usize"`
-              : ""
-          }`;
+          return `"${ffiParam}"${typeof p !== "string" ? `, "usize"` : ""}`;
         })
           .join(", ")
       } ], result: "${signature[sig].result}" }`
