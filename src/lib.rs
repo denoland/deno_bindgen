@@ -296,6 +296,7 @@ fn process_struct(
       .as_ref()
       .expect("Field without ident")
       .to_string();
+
     match field.ty {
       syn::Type::Path(ref ty) => {
         let segment = &ty.path.segments.first().unwrap();
@@ -305,14 +306,48 @@ fn process_struct(
       _ => unimplemented!(),
     };
 
-    typescript.push(format!("  {}: {};", ident, types_to_ts(&field.ty)));
+    let doc_str = get_docs(&field.attrs);
+    typescript.push(format!(
+      "{}  {}: {};",
+      doc_str,
+      ident,
+      types_to_ts(&field.ty)
+    ));
   }
 
   metadata.type_defs.insert(name.to_string(), fmap.clone());
-  metadata
-    .ts_types
-    .insert(name.to_string(), typescript.join("\n").to_string());
+
+  let doc_str = get_docs(&input.attrs);
+  let typescript = format!(
+    "{}export type {} = {{\n  {}\n}};",
+    doc_str,
+    name,
+    typescript.join("\n")
+  );
+  metadata.ts_types.insert(name.to_string(), typescript);
   Ok(fmap)
+}
+
+fn get_docs(attrs: &Vec<syn::Attribute>) -> String {
+  let mut doc: Vec<String> = vec![];
+  for attr in attrs {
+    if let Ok(syn::Meta::NameValue(meta)) = attr.parse_meta() {
+      if !meta.path.is_ident("doc") {
+        continue;
+      }
+      if let syn::Lit::Str(lit) = meta.lit {
+        doc.push(lit.value());
+      }
+    }
+  }
+
+  let doc_str = if doc.len() > 0 {
+    format!("/**\n  *{}\n  **/\n", doc.join("\n  *"))
+  } else {
+    String::new()
+  };
+
+  doc_str
 }
 
 fn types_to_ts(ty: &syn::Type) -> String {

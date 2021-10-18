@@ -74,11 +74,7 @@ const _lib = await Plug.prepare(opts, {
     ).join(", ")
   } });
 ${
-    Object.keys(decl).map((def) =>
-      `export type ${def} = {
-${typescript[def]}
-}`
-    ).join("\n")
+    Object.keys(decl).map((def) => typescript[def]).join("\n")
   }
 ${
     Object.keys(signature).map((sig) =>
