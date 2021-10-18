@@ -58,3 +58,10 @@ fn test_serde(s: MyStruct) -> u8 {
 struct OptionStruct {
   maybe: Option<String>,
 }
+
+// Test non_blocking
+#[deno_bindgen(non_blocking)]
+fn sleep(ms: u64) {
+  std::thread::sleep(std::time::Duration::from_millis(ms));
+}
+

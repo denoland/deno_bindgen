@@ -2,11 +2,12 @@ import {
   add,
   add2,
   OptionStruct,
+  sleep,
   test_mixed,
   test_mixed_order,
   test_serde,
 } from "./bindings/bindings.ts";
-import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
+import { assert, assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
 Deno.test({
   name: "add#test",
@@ -45,10 +46,21 @@ Deno.test({
 });
 
 Deno.test({
-  name: "test_options",
+  name: "test_options#test",
   fn: () => {
     let opts: OptionStruct = { maybe: " " };
     opts.maybe = null;
     opts.maybe = undefined;
+  },
+});
+
+Deno.test({
+  name: "sleep#test",
+  fn: async () => {
+    const ms = 100;
+    const start = performance.now();
+    const promise = sleep(ms).then(() => assert(start >= ms));
+    assert(performance.now() - start < ms);
+    await promise;
   },
 });
