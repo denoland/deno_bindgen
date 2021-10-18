@@ -27,6 +27,7 @@ async function generate() {
     // Nothing to update.
     return;
   }
+  console.log(conf);
 
   const pkgName = conf.name;
 
@@ -35,6 +36,7 @@ async function generate() {
     fetchPrefix,
     pkgName,
     conf.typeDefs,
+    conf.tsTypes,
     conf.symbols,
     {
       le: conf.littleEndian,
