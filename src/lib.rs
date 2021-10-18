@@ -83,6 +83,7 @@ struct Glue {
   little_endian: bool,
   symbols: HashMap<String, Symbol>,
   type_defs: HashMap<String, HashMap<String, String>>,
+  ts_types: HashMap<String, String>,
 }
 
 const METAFILE: &str = "bindings.json";
@@ -128,6 +129,8 @@ pub fn deno_bindgen(_attr: TokenStream, input: TokenStream) -> TokenStream {
       metafile
         .write_all(&serde_json::to_vec(&metadata).unwrap())
         .unwrap();
+      let name = &input.ident;
+
       return TokenStream::from(quote! {
         #[derive(serde::Deserialize)]
         #input
@@ -285,6 +288,7 @@ fn process_struct(
 
   let name = &input.ident;
   let mut fmap = HashMap::new();
+  let mut typescript: Vec<String> = vec![];
 
   for field in fields.iter() {
     let ident = field
@@ -296,12 +300,85 @@ fn process_struct(
       syn::Type::Path(ref ty) => {
         let segment = &ty.path.segments.first().unwrap();
         let ty = segment.ident.to_string();
-        fmap.insert(ident, ty);
+        fmap.insert(ident.clone(), ty);
       }
       _ => unimplemented!(),
-    }
+    };
+
+    typescript.push(format!("  {}: {};", ident, types_to_ts(&field.ty)));
   }
 
   metadata.type_defs.insert(name.to_string(), fmap.clone());
+  metadata
+    .ts_types
+    .insert(name.to_string(), typescript.join("\n").to_string());
   Ok(fmap)
+}
+
+fn types_to_ts(ty: &syn::Type) -> String {
+  match ty {
+    syn::Type::Array(_) => String::from("any"),
+    syn::Type::Ptr(_) => String::from("any"),
+    syn::Type::Path(ref ty) => {
+      // std::Alloc::Vec => Vec
+      let segment = &ty.path.segments.last().unwrap();
+      let ty = segment.ident.to_string();
+      let mut generics: Vec<String> = vec![];
+      let generic_params = &segment.arguments;
+      match generic_params {
+        &syn::PathArguments::AngleBracketed(ref args) => {
+          for p in &args.args {
+            let ty = match p {
+              syn::GenericArgument::Type(ty) => types_to_ts(ty),
+              _ => unimplemented!(),
+            };
+            generics.push(ty);
+          }
+        }
+        &syn::PathArguments::None => {}
+        _ => unimplemented!(),
+      };
+
+      match ty.as_ref() {
+        "Option" => rs_to_ts(generics.first().unwrap().as_ref()).to_string(),
+        _ => {
+          if generics.len() > 0 {
+            let root_ty = rs_to_ts(&ty);
+            let generic_str = generics
+              .iter()
+              .map(|g| rs_to_ts(g))
+              .collect::<Vec<&str>>()
+              .join(", ");
+            format!("{}<{}>", root_ty, generic_str)
+          } else {
+            rs_to_ts(&ty).to_string()
+          }
+        }
+      }
+    }
+    _ => unimplemented!(),
+  }
+}
+
+fn rs_to_ts(ty: &str) -> &str {
+  match ty {
+    "i8" => "number",
+    "i16" => "number",
+    "i32" => "number",
+    "i64" => "number",
+    "u8" => "number",
+    "u16" => "number",
+    "u32" => "number",
+    "u64" => "number",
+    "usize" => "number",
+    "bool" => "boolean",
+    "String" => "string",
+    "f32" => "number",
+    "f64" => "number",
+    "HashMap" => "Map",
+    "Vec" => "Array",
+    "HashSet" => "Array",
+    "Value" => "any",
+    a @ _ => a,
+  }
 }

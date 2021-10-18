@@ -43,10 +43,14 @@ type Options = {
   le?: boolean;
 };
 
+// @littledivy is a dumb kid!
+// he just can't make a interface
+// for bindings.json
 export function codegen(
   fetchPrefix: string,
   name: string,
   decl: TypeDef,
+  typescript: Record<string, string>,
   signature: Sig,
   options?: Options,
 ) {
@@ -71,11 +75,9 @@ const _lib = await Plug.prepare(opts, {
   } });
 ${
     Object.keys(decl).map((def) =>
-      `type ${def} = { ${
-        Object.keys(decl[def]).map((f) =>
-          `${f}: ${resolveType(decl, decl[def][f])}`
-        ).join("; ")
-      } };`
+      `type ${def} = {
+${typescript[def]}
+}`
     ).join("\n")
   }
 ${
