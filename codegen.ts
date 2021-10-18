@@ -37,6 +37,7 @@ function resolveDlopenParameter(typeDefs: TypeDef, type: any): string {
 type Sig = Record<string, {
   parameters: any[];
   result: string;
+  nonBlocking?: boolean;
 }>;
 
 type Options = {
@@ -70,12 +71,12 @@ const _lib = await Plug.prepare(opts, {
           return `"${ffiParam}"${typeof p !== "string" ? `, "usize"` : ""}`;
         })
           .join(", ")
-      } ], result: "${signature[sig].result}" }`
+      } ], result: "${signature[sig].result}", nonblocking: ${
+        String(!!signature[sig].nonBlocking)
+      } }`
     ).join(", ")
   } });
-${
-    Object.keys(decl).map((def) => typescript[def]).join("\n")
-  }
+${Object.keys(decl).map((def) => typescript[def]).join("\n")}
 ${
     Object.keys(signature).map((sig) =>
       `export function ${sig}(${
@@ -94,7 +95,11 @@ ${
         signature[sig].parameters.map((p, i) =>
           typeof p !== "string" ? `a${i}_buf, a${i}_buf.byteLength` : `a${i}`
         ).join(", ")
-      }) as ${resolveType(decl, signature[sig].result)}
+      }) as ${
+        signature[sig].nonBlocking
+          ? `Promise<${resolveType(decl, signature[sig].result)}>`
+          : resolveType(decl, signature[sig].result)
+      }
 }`
     ).join("\n")
   }

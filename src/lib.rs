@@ -11,11 +11,14 @@ use std::env;
 use std::fs::OpenOptions;
 use std::io::Read;
 use std::io::Write;
+use syn::parse_macro_input;
 use syn::parse_quote;
 use syn::Data;
 use syn::DataStruct;
 use syn::Fields;
 use syn::ItemFn;
+use syn::Meta;
+use syn::NestedMeta;
 
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "lowercase")]
@@ -71,9 +74,11 @@ impl From<Type> for syn::Type {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 struct Symbol {
   parameters: Vec<Type>,
   result: Type,
+  non_blocking: bool,
 }
 
 #[derive(Serialize, Deserialize, Default)]
@@ -95,7 +100,7 @@ const ENDIANNESS: bool = true;
 const ENDIANNESS: bool = false;
 
 #[proc_macro_attribute]
-pub fn deno_bindgen(_attr: TokenStream, input: TokenStream) -> TokenStream {
+pub fn deno_bindgen(attr: TokenStream, input: TokenStream) -> TokenStream {
   let mut metadata: Glue = match OpenOptions::new().read(true).open(METAFILE) {
     Ok(mut fd) => {
       let mut meta = String::new();
@@ -119,7 +124,8 @@ pub fn deno_bindgen(_attr: TokenStream, input: TokenStream) -> TokenStream {
 
   let (func, symbol) = match syn::parse::<ItemFn>(input.clone()) {
     Ok(func) => {
-      let symbol = process_function(func.clone(), &mut metadata).unwrap();
+      let attr = parse_macro_input!(attr as syn::AttributeArgs);
+      let symbol = process_function(func.clone(), attr, &mut metadata).unwrap();
       (func, symbol)
     }
     Err(_) => {
@@ -199,6 +205,7 @@ pub fn deno_bindgen(_attr: TokenStream, input: TokenStream) -> TokenStream {
 
 fn process_function(
   function: ItemFn,
+  attr: syn::AttributeArgs,
   metadata: &mut Glue,
 ) -> Result<Symbol, String> {
   let params = &function.sig.inputs;
@@ -268,7 +275,18 @@ fn process_function(
   };
 
   let symbol_name = function.sig.ident.to_string();
-  let symbol = Symbol { parameters, result };
+  let non_blocking = match attr.get(0).as_ref() {
+    Some(NestedMeta::Meta(Meta::Path(ref attr_ident))) => {
+      attr_ident.is_ident("non_blocking")
+    }
+    _ => false,
+  };
+
+  let symbol = Symbol {
+    parameters,
+    result,
+    non_blocking,
+  };
   metadata.symbols.insert(symbol_name, symbol.clone());
 
   Ok(symbol)
