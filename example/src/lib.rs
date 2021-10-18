@@ -10,7 +10,12 @@ fn add(a: i32, b: i32) -> i32 {
 // Test Structs
 
 #[deno_bindgen]
+/// Doc comment for `Input` struct.
+/// ...testing multiline
 pub struct Input {
+  /// Doc comments get
+  /// transformed to JS doc
+  /// comments.
   a: i32,
   b: i32,
 }
