@@ -37,7 +37,6 @@ fn test_mixed_order(a: i32, b: Input, c: i32) -> i32 {
 #[deno_bindgen]
 struct MyStruct {
   arr: Vec<String>,
-  b: Vec<Vec<String>>,
 }
 
 #[deno_bindgen]
@@ -46,4 +45,11 @@ fn test_serde(s: MyStruct) -> u8 {
     return 1;
   }
   0
+}
+
+// Typescript codegen tests
+
+#[deno_bindgen]
+struct OptionStruct {
+  maybe: Option<String>,
 }

@@ -1,6 +1,7 @@
 import {
   add,
   add2,
+  OptionStruct,
   test_mixed,
   test_mixed_order,
   test_serde,
@@ -40,5 +41,14 @@ Deno.test({
   name: "test_mixed_order#test",
   fn: () => {
     assertEquals(test_mixed_order(10, { a: 10, b: 0 }, 10), 30);
+  },
+});
+
+Deno.test({
+  name: "test_options",
+  fn: () => {
+    let opts: OptionStruct = { maybe: " " };
+    opts.maybe = null;
+    opts.maybe = undefined;
   },
 });

@@ -340,7 +340,10 @@ fn types_to_ts(ty: &syn::Type) -> String {
       };
 
       match ty.as_ref() {
-        "Option" => rs_to_ts(generics.first().unwrap().as_ref()).to_string(),
+        "Option" => format!(
+          "{} | undefined | null",
+          rs_to_ts(generics.first().unwrap().as_ref())
+        ),
         _ => {
           if generics.len() > 0 {
             let root_ty = rs_to_ts(&ty);
