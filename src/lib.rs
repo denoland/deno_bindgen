@@ -42,6 +42,7 @@ enum Type {
   /// Types that pave way for
   /// serializers. buffers <3
   Buffer,
+  Str,
 
   /// Not-so straightforward types that
   /// `deno_bingen` maps to.
@@ -168,6 +169,23 @@ pub fn deno_bindgen(attr: TokenStream, input: TokenStream) -> TokenStream {
 
         input_idents.push(ident);
       }
+      Type::Str => {
+        let ident = format_ident!("arg{}", c_index.to_string());
+        params.push(quote! { #ident: *const u8 });
+
+        c_index += 1;
+        let len_ident = format_ident!("arg{}", c_index.to_string());
+        params.push(quote! { #len_ident: usize });
+
+        overrides.push(quote! {
+          let #ident = unsafe {
+            let buf = ::std::slice::from_raw_parts(#ident, #len_ident);
+            ::std::str::from_utf8(buf).unwrap()
+          };
+        });
+
+        input_idents.push(ident);
+      }
       // TODO
       _ => {
         let ident = format_ident!("arg{}", c_index.to_string());
@@ -240,6 +258,18 @@ fn process_function(
               }
             }
           }
+          syn::Type::Reference(ref ty) => match *ty.elem {
+            syn::Type::Path(ref ty) => {
+              let segment = ty.path.segments.first().unwrap();
+              let ident = segment.ident.to_string();
+
+              match ident.as_str() {
+                "str" => Type::Str,
+                _ => unimplemented!(),
+              }
+            }
+            _ => unimplemented!(),
+          },
           _ => unimplemented!(),
         };
 

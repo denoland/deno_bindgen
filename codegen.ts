@@ -14,11 +14,25 @@ const Type: Record<string, string> = {
   f64: "number",
 };
 
+const BufferTypes: Record<string, string> = {
+  str: "string",
+};
+
+enum Encoder {
+  JsonStringify = "JSON.stringify",
+  None = "",
+}
+
+const BufferTypeEncoders: Record<keyof typeof BufferTypes, Encoder> = {
+  str: Encoder.None,
+};
+
 type TypeDef = Record<string, Record<string, string>>;
 
 function resolveType(typeDefs: TypeDef, type: any): string {
   const t = typeof type == "string" ? type : type.struct.ident;
   if (Type[t] !== undefined) return Type[t];
+  if (BufferTypes[t] !== undefined) return BufferTypes[t];
   if (Object.keys(typeDefs).find((f) => f == t) !== undefined) {
     return t;
   }
@@ -28,7 +42,10 @@ function resolveType(typeDefs: TypeDef, type: any): string {
 function resolveDlopenParameter(typeDefs: TypeDef, type: any): string {
   const t = typeof type == "string" ? type : type.struct.ident;
   if (Type[t] !== undefined) return t;
-  if (Object.keys(typeDefs).find((f) => f == t) !== undefined) {
+  if (
+    BufferTypes[t] !== undefined ||
+    Object.keys(typeDefs).find((f) => f == t) !== undefined
+  ) {
     return "buffer";
   }
   throw new TypeError(`Type not supported: ${t}`);
@@ -43,6 +60,10 @@ type Sig = Record<string, {
 type Options = {
   le?: boolean;
 };
+
+function isBufferType(p: any) {
+  return typeof p !== "string" || BufferTypes[p] !== undefined;
+}
 
 // @littledivy is a dumb kid!
 // he just can't make a interface
@@ -68,7 +89,7 @@ const _lib = await Plug.prepare(opts, {
         signature[sig].parameters.map((p) => {
           const ffiParam = resolveDlopenParameter(decl, p);
           // FIXME: Dupe logic here.
-          return `"${ffiParam}"${typeof p !== "string" ? `, "usize"` : ""}`;
+          return `"${ffiParam}"${isBufferType(p) ? `, "usize"` : ""}`;
         })
           .join(", ")
       } ], result: "${signature[sig].result}", nonblocking: ${
@@ -86,14 +107,16 @@ ${
       }) {
   ${
         signature[sig].parameters.map((p, i) =>
-          typeof p !== "string"
-            ? `const a${i}_buf = encode(JSON.stringify(a${i}));`
+          isBufferType(p)
+            ? `const a${i}_buf = encode(${
+              BufferTypeEncoders[p] ?? Encoder.JsonStringify
+            }(a${i}));`
             : null
         ).filter((c) => c !== null).join("\n")
       }
   return _lib.symbols.${sig}(${
         signature[sig].parameters.map((p, i) =>
-          typeof p !== "string" ? `a${i}_buf, a${i}_buf.byteLength` : `a${i}`
+          isBufferType(p) ? `a${i}_buf, a${i}_buf.byteLength` : `a${i}`
         ).join(", ")
       }) as ${
         signature[sig].nonBlocking

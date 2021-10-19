@@ -6,6 +6,7 @@ import {
   test_mixed,
   test_mixed_order,
   test_serde,
+  test_str,
 } from "./bindings/bindings.ts";
 import { assert, assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
@@ -51,6 +52,14 @@ Deno.test({
     let opts: OptionStruct = { maybe: " " };
     opts.maybe = null;
     opts.maybe = undefined;
+  },
+});
+
+Deno.test({
+  name: "test_str#test",
+  fn: () => {
+    let str = "Hello, World!";
+    test_str(str);
   },
 });
 
