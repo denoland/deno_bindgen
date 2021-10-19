@@ -75,7 +75,7 @@ fn test_buf(b: &[u8]) -> u8 {
 #[deno_bindgen]
 #[serde(rename_all = "lowercase")]
 enum PlainEnum {
-    A { a: String },
-    B,
-    C,
+  A { a: String },
+  B,
+  C,
 }
