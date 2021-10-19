@@ -3,6 +3,7 @@ import {
   add2,
   OptionStruct,
   sleep,
+  test_buf,
   test_mixed,
   test_mixed_order,
   test_serde,
@@ -60,6 +61,14 @@ Deno.test({
   fn: () => {
     let str = "Hello, World!";
     test_str(str);
+  },
+});
+
+Deno.test({
+  name: "test_buf#test",
+  fn: () => {
+    let buf = new Uint8Array([1, 0, 1]);
+    assertEquals(test_buf(buf), 1);
   },
 });
 
