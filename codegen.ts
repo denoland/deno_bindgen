@@ -1,3 +1,27 @@
+import {
+  createFromBuffer,
+  GlobalConfiguration,
+} from "https://deno.land/x/dprint/mod.ts";
+import * as Cache from "https://deno.land/x/cache@0.2.13/mod.ts";
+
+Cache.configure({ directory: Cache.options.directory });
+const cache = Cache.namespace("deno_bindgen_cli");
+
+const globalConfig: GlobalConfiguration = {
+  indentWidth: 2,
+  lineWidth: 80,
+};
+
+const file = await cache.cache(
+  "https://plugins.dprint.dev/typescript-0.57.0.wasm",
+);
+
+const tsFormatter = createFromBuffer(await Deno.readFile(file.path));
+
+tsFormatter.setConfig(globalConfig, {
+  semiColons: "asi",
+});
+
 const Type: Record<string, string> = {
   void: "null",
   i8: "number",
@@ -78,7 +102,9 @@ export function codegen(
   signature: Sig,
   options?: Options,
 ) {
-  return `import { Plug } from "https://deno.land/x/plug@0.4.0/mod.ts";
+  return tsFormatter.formatText(
+    "bindings.ts",
+    `import { Plug } from "https://deno.land/x/plug@0.4.0/mod.ts";
 function encode(v: string | Uint8Array): Uint8Array {
   if (typeof v !== "string") return v;
   return new TextEncoder().encode(v);
@@ -89,47 +115,52 @@ const opts = {
 };
 const _lib = await Plug.prepare(opts, {
   ${
-    Object.keys(signature).map((sig) =>
-      `${sig}: { parameters: [ ${
-        signature[sig].parameters.map((p) => {
-          const ffiParam = resolveDlopenParameter(decl, p);
-          // FIXME: Dupe logic here.
-          return `"${ffiParam}"${isBufferType(p) ? `, "usize"` : ""}`;
-        })
-          .join(", ")
-      } ], result: "${signature[sig].result}", nonblocking: ${
-        String(!!signature[sig].nonBlocking)
-      } }`
-    ).join(", ")
-  } });
+      Object.keys(signature).map((sig) =>
+        `${sig}: { parameters: [ ${
+          signature[sig].parameters.map((p) => {
+            const ffiParam = resolveDlopenParameter(decl, p);
+            // FIXME: Dupe logic here.
+            return `"${ffiParam}"${
+              isBufferType(p)
+                ? `, "usize"`
+                : ""
+            }`;
+          })
+            .join(", ")
+        } ], result: "${signature[sig].result}", nonblocking: ${
+          String(!!signature[sig].nonBlocking)
+        } }`
+      ).join(", ")
+    } });
 ${Object.keys(decl).map((def) => typescript[def]).join("\n")}
 ${
-    Object.keys(signature).map((sig) =>
-      `export function ${sig}(${
-        signature[sig].parameters.map((p, i) =>
-          `a${i}: ${resolveType(decl, p)}`
-        ).join(",")
-      }) {
+      Object.keys(signature).map((sig) =>
+        `export function ${sig}(${
+          signature[sig].parameters.map((p, i) =>
+            `a${i}: ${resolveType(decl, p)}`
+          ).join(",")
+        }) {
   ${
-        signature[sig].parameters.map((p, i) =>
-          isBufferType(p)
-            ? `const a${i}_buf = encode(${
-              BufferTypeEncoders[p] ?? Encoder.JsonStringify
-            }(a${i}));`
-            : null
-        ).filter((c) => c !== null).join("\n")
-      }
+          signature[sig].parameters.map((p, i) =>
+            isBufferType(p)
+              ? `const a${i}_buf = encode(${
+                BufferTypeEncoders[p] ?? Encoder.JsonStringify
+              }(a${i}));`
+              : null
+          ).filter((c) => c !== null).join("\n")
+        }
   return _lib.symbols.${sig}(${
-        signature[sig].parameters.map((p, i) =>
-          isBufferType(p) ? `a${i}_buf, a${i}_buf.byteLength` : `a${i}`
-        ).join(", ")
-      }) as ${
-        signature[sig].nonBlocking
-          ? `Promise<${resolveType(decl, signature[sig].result)}>`
-          : resolveType(decl, signature[sig].result)
-      }
+          signature[sig].parameters.map((p, i) =>
+            isBufferType(p) ? `a${i}_buf, a${i}_buf.byteLength` : `a${i}`
+          ).join(", ")
+        }) as ${
+          signature[sig].nonBlocking
+            ? `Promise<${resolveType(decl, signature[sig].result)}>`
+            : resolveType(decl, signature[sig].result)
+        }
 }`
-    ).join("\n")
-  }
- `;
+      ).join("\n")
+    }
+ `,
+  );
 }
