@@ -9,15 +9,20 @@ const opts = {
   url: "target/debug",
 };
 const _lib = await Plug.prepare(opts, {
+  sleep: { parameters: ["u64"], result: "void", nonblocking: true },
   test_mixed_order: {
     parameters: ["i32", "buffer", "usize", "i32"],
     result: "i32",
     nonblocking: false,
   },
-  sleep: { parameters: ["u64"], result: "void", nonblocking: true },
   test_str: {
     parameters: ["buffer", "usize"],
     result: "void",
+    nonblocking: false,
+  },
+  test_mixed: {
+    parameters: ["isize", "buffer", "usize"],
+    result: "i32",
     nonblocking: false,
   },
   add2: { parameters: ["buffer", "usize"], result: "i32", nonblocking: false },
@@ -26,20 +31,15 @@ const _lib = await Plug.prepare(opts, {
     result: "u8",
     nonblocking: false,
   },
-  test_mixed: {
-    parameters: ["isize", "buffer", "usize"],
-    result: "i32",
-    nonblocking: false,
-  },
+  add: { parameters: ["i32", "i32"], result: "i32", nonblocking: false },
   test_buf: {
     parameters: ["buffer", "usize"],
     result: "u8",
     nonblocking: false,
   },
-  add: { parameters: ["i32", "i32"], result: "i32", nonblocking: false },
 });
-export type MyStruct = {
-  arr: Array<string>;
+export type OptionStruct = {
+  maybe: string | undefined | null;
 };
 /**
  * Doc comment for `Input` struct.
@@ -54,9 +54,20 @@ export type Input = {
   a: number;
   b: number;
 };
-export type OptionStruct = {
-  maybe: string | undefined | null;
+export type PlainEnum =
+  | {
+    A: {
+      a: string;
+    };
+  }
+  | "B"
+  | "C";
+export type MyStruct = {
+  arr: Array<string>;
 };
+export function sleep(a0: number) {
+  return _lib.symbols.sleep(a0) as Promise<null>;
+}
 export function test_mixed_order(a0: number, a1: Input, a2: number) {
   const a1_buf = encode(JSON.stringify(a1));
   return _lib.symbols.test_mixed_order(
@@ -66,12 +77,13 @@ export function test_mixed_order(a0: number, a1: Input, a2: number) {
     a2,
   ) as number;
 }
-export function sleep(a0: number) {
-  return _lib.symbols.sleep(a0) as Promise<null>;
-}
 export function test_str(a0: string) {
   const a0_buf = encode(a0);
   return _lib.symbols.test_str(a0_buf, a0_buf.byteLength) as null;
+}
+export function test_mixed(a0: number, a1: Input) {
+  const a1_buf = encode(JSON.stringify(a1));
+  return _lib.symbols.test_mixed(a0, a1_buf, a1_buf.byteLength) as number;
 }
 export function add2(a0: Input) {
   const a0_buf = encode(JSON.stringify(a0));
@@ -81,14 +93,10 @@ export function test_serde(a0: MyStruct) {
   const a0_buf = encode(JSON.stringify(a0));
   return _lib.symbols.test_serde(a0_buf, a0_buf.byteLength) as number;
 }
-export function test_mixed(a0: number, a1: Input) {
-  const a1_buf = encode(JSON.stringify(a1));
-  return _lib.symbols.test_mixed(a0, a1_buf, a1_buf.byteLength) as number;
+export function add(a0: number, a1: number) {
+  return _lib.symbols.add(a0, a1) as number;
 }
 export function test_buf(a0: Uint8Array) {
   const a0_buf = encode(a0);
   return _lib.symbols.test_buf(a0_buf, a0_buf.byteLength) as number;
-}
-export function add(a0: number, a1: number) {
-  return _lib.symbols.add(a0, a1) as number;
 }
