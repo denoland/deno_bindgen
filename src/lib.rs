@@ -1,5 +1,6 @@
 #![feature(box_patterns)]
 
+use inflector::Inflector;
 use proc_macro::TokenStream;
 use quote::format_ident;
 use quote::quote;
@@ -356,8 +357,10 @@ fn process_struct(
       let mut fmap = HashMap::new();
       let mut typescript: Vec<String> = vec![];
 
+      let serde_attrs = get_serde_attrs(&input.attrs);
+
       for field in fields.iter() {
-        let ident = field
+        let mut ident = field
           .ident
           .as_ref()
           .expect("Field without ident")
@@ -371,6 +374,10 @@ fn process_struct(
           }
           _ => unimplemented!(),
         };
+
+        for attr in &serde_attrs {
+          ident = attr.transform(&ident);
+        }
 
         let doc_str = get_docs(&field.attrs);
         typescript.push(format!(
@@ -400,12 +407,18 @@ fn process_struct(
       for variant in variants {
         let mut variant_fields: Vec<String> = vec![];
         let fields = &variant.fields;
+
+        let serde_attrs = get_serde_attrs(&input.attrs);
         for field in fields {
-          let ident = field
+          let mut ident = field
             .ident
             .as_ref()
             .expect("Field without ident")
             .to_string();
+
+          for attr in &serde_attrs {
+            ident = attr.transform(&ident);
+          }
 
           let doc_str = get_docs(&field.attrs);
           variant_fields.push(format!(
@@ -416,16 +429,22 @@ fn process_struct(
           ));
         }
 
+        let mut ident = variant.ident.to_string();
+
+        for attr in &serde_attrs {
+          ident = attr.transform(&ident);
+        }
+
         let doc_str = get_docs(&variant.attrs);
         let variant_str = if variant_fields.len() > 0 {
           format!(
             "{} {{ {}: {{\n {}\n}} }}",
             doc_str,
-            &variant.ident,
+            &ident,
             variant_fields.join("\n")
           )
         } else {
-          format!("{}  \"{}\"", doc_str, &variant.ident)
+          format!("{}  \"{}\"", doc_str, &ident)
         };
 
         typescript.push(variant_str);
@@ -468,6 +487,50 @@ fn get_docs(attrs: &Vec<syn::Attribute>) -> String {
   };
 
   doc_str
+}
+
+#[derive(Debug)]
+enum SerdeAttr {
+  RenameAll(String),
+}
+
+impl SerdeAttr {
+  pub fn transform(&self, s: &str) -> String {
+    match self {
+      SerdeAttr::RenameAll(t) => match t.as_ref() {
+        "lowercase" => s.to_lowercase(),
+        "UPPERCASE" => s.to_uppercase(),
+        "camelCase" => s.to_camel_case(),
+        "snake_case" => s.to_snake_case(),
+        "PascalCase" => s.to_pascal_case(),
+        "SCREAMING_SNAKE_CASE" => s.to_screaming_snake_case(),
+        _ => panic!("Invalid attribute value: {}", s),
+      },
+    }
+  }
+}
+
+fn get_serde_attrs(attrs: &Vec<syn::Attribute>) -> Vec<SerdeAttr> {
+  attrs
+    .iter()
+    .filter(|i| i.path.is_ident("serde"))
+    .flat_map(|attr| match attr.parse_meta() {
+      Ok(syn::Meta::List(l)) => l.nested.iter().find_map(|meta| match meta {
+        syn::NestedMeta::Meta(syn::Meta::NameValue(v)) => {
+          if v.path.is_ident("rename_all") {
+            match &v.lit {
+              syn::Lit::Str(s) => Some(SerdeAttr::RenameAll(s.value())),
+              _ => None,
+            }
+          } else {
+            None
+          }
+        }
+        _ => None,
+      }),
+      _ => None,
+    })
+    .collect::<Vec<_>>()
 }
 
 fn types_to_ts(ty: &syn::Type) -> String {
