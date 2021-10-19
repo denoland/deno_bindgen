@@ -62,6 +62,12 @@ fn sleep(ms: u64) {
   std::thread::sleep(std::time::Duration::from_millis(ms));
 }
 
-// Test String
+// Test other buffer dependent
+// types.
 #[deno_bindgen]
 fn test_str(s: &str) {}
+
+#[deno_bindgen]
+fn test_buf(b: &[u8]) -> u8 {
+  b[0]
+}

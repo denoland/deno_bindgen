@@ -169,7 +169,7 @@ pub fn deno_bindgen(attr: TokenStream, input: TokenStream) -> TokenStream {
 
         input_idents.push(ident);
       }
-      Type::Str => {
+      Type::Str | Type::Buffer => {
         let ident = format_ident!("arg{}", c_index.to_string());
         params.push(quote! { #ident: *const u8 });
 
@@ -177,10 +177,16 @@ pub fn deno_bindgen(attr: TokenStream, input: TokenStream) -> TokenStream {
         let len_ident = format_ident!("arg{}", c_index.to_string());
         params.push(quote! { #len_ident: usize });
 
+        let return_type = match parameter {
+          Type::Str => quote! { ::std::str::from_utf8(buf).unwrap() },
+          Type::Buffer => quote! { buf },
+          _ => unreachable!(),
+        };
+
         overrides.push(quote! {
           let #ident = unsafe {
             let buf = ::std::slice::from_raw_parts(#ident, #len_ident);
-            ::std::str::from_utf8(buf).unwrap()
+            #return_type
           };
         });
 
@@ -268,6 +274,18 @@ fn process_function(
                 _ => unimplemented!(),
               }
             }
+            syn::Type::Slice(ref ty) => match *ty.elem {
+              syn::Type::Path(ref ty) => {
+                let segment = ty.path.segments.first().unwrap();
+                let ident = segment.ident.to_string();
+
+                match ident.as_str() {
+                  "u8" => Type::Buffer,
+                  _ => unimplemented!(),
+                }
+              }
+              _ => unimplemented!(),
+            },
             _ => unimplemented!(),
           },
           _ => unimplemented!(),

@@ -16,6 +16,7 @@ const Type: Record<string, string> = {
 
 const BufferTypes: Record<string, string> = {
   str: "string",
+  buffer: "Uint8Array",
 };
 
 enum Encoder {
@@ -25,6 +26,7 @@ enum Encoder {
 
 const BufferTypeEncoders: Record<keyof typeof BufferTypes, Encoder> = {
   str: Encoder.None,
+  buffer: Encoder.None,
 };
 
 type TypeDef = Record<string, Record<string, string>>;
@@ -77,7 +79,10 @@ export function codegen(
   options?: Options,
 ) {
   return `import { Plug } from "https://deno.land/x/plug@0.4.0/mod.ts";
-const encode = (s: string) => new TextEncoder().encode(s);
+function encode(v: string | Uint8Array): Uint8Array {
+  if (typeof v !== "string") return v;
+  return new TextEncoder().encode(v);
+}
 const opts = {
   name: "${name}",
   url: "${fetchPrefix}"
