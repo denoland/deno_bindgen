@@ -32,7 +32,7 @@ const BufferTypeEncoders: Record<keyof typeof BufferTypes, Encoder> = {
 type TypeDef = Record<string, Record<string, string>>;
 
 function resolveType(typeDefs: TypeDef, type: any): string {
-  const t = typeof type == "string" ? type : type.struct.ident;
+  const t = typeof type == "string" ? type : type.structenum.ident;
   if (Type[t] !== undefined) return Type[t];
   if (BufferTypes[t] !== undefined) return BufferTypes[t];
   if (Object.keys(typeDefs).find((f) => f == t) !== undefined) {
@@ -42,7 +42,7 @@ function resolveType(typeDefs: TypeDef, type: any): string {
 }
 
 function resolveDlopenParameter(typeDefs: TypeDef, type: any): string {
-  const t = typeof type == "string" ? type : type.struct.ident;
+  const t = typeof type == "string" ? type : type.structenum.ident;
   if (Type[t] !== undefined) return t;
   if (
     BufferTypes[t] !== undefined ||

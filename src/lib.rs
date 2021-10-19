@@ -46,7 +46,7 @@ enum Type {
 
   /// Not-so straightforward types that
   /// `deno_bingen` maps to.
-  Struct {
+  StructEnum {
     ident: String,
   },
   // XXX: We need this for
@@ -131,7 +131,7 @@ pub fn deno_bindgen(attr: TokenStream, input: TokenStream) -> TokenStream {
     }
     Err(_) => {
       let input = syn::parse_macro_input!(input as syn::DeriveInput);
-      let fields = process_struct(&mut metadata, input.clone()).unwrap();
+      process_struct(&mut metadata, input.clone()).unwrap();
 
       metafile
         .write_all(&serde_json::to_vec(&metadata).unwrap())
@@ -152,7 +152,7 @@ pub fn deno_bindgen(attr: TokenStream, input: TokenStream) -> TokenStream {
 
   for parameter in symbol.parameters {
     match parameter {
-      Type::Struct { .. } => {
+      Type::StructEnum { .. } => {
         let ident = format_ident!("arg{}", c_index.to_string());
         params.push(quote! { #ident: *const u8 });
 
@@ -260,7 +260,8 @@ fn process_function(
                   "Type definition not found for `{}` identifier",
                   &ident,
                 ));
-                Type::Struct { ident }
+
+                Type::StructEnum { ident }
               }
             }
           }
@@ -343,55 +344,108 @@ fn process_function(
 fn process_struct(
   metadata: &mut Glue,
   input: syn::DeriveInput,
-) -> Result<HashMap<String, String>, String> {
-  let fields = match &input.data {
+) -> Result<(), String> {
+  match &input.data {
     Data::Struct(DataStruct {
       fields: Fields::Named(fields),
       ..
-    }) => &fields.named,
-    _ => panic!("Expected a struct with named fields"),
-  };
+    }) => {
+      let fields = &fields.named;
 
-  let name = &input.ident;
-  let mut fmap = HashMap::new();
-  let mut typescript: Vec<String> = vec![];
+      let name = &input.ident;
+      let mut fmap = HashMap::new();
+      let mut typescript: Vec<String> = vec![];
 
-  for field in fields.iter() {
-    let ident = field
-      .ident
-      .as_ref()
-      .expect("Field without ident")
-      .to_string();
+      for field in fields.iter() {
+        let ident = field
+          .ident
+          .as_ref()
+          .expect("Field without ident")
+          .to_string();
 
-    match field.ty {
-      syn::Type::Path(ref ty) => {
-        let segment = &ty.path.segments.first().unwrap();
-        let ty = segment.ident.to_string();
-        fmap.insert(ident.clone(), ty);
+        match field.ty {
+          syn::Type::Path(ref ty) => {
+            let segment = &ty.path.segments.first().unwrap();
+            let ty = segment.ident.to_string();
+            fmap.insert(ident.clone(), ty);
+          }
+          _ => unimplemented!(),
+        };
+
+        let doc_str = get_docs(&field.attrs);
+        typescript.push(format!(
+          "{}  {}: {};",
+          doc_str,
+          ident,
+          types_to_ts(&field.ty)
+        ));
       }
-      _ => unimplemented!(),
-    };
 
-    let doc_str = get_docs(&field.attrs);
-    typescript.push(format!(
-      "{}  {}: {};",
-      doc_str,
-      ident,
-      types_to_ts(&field.ty)
-    ));
+      metadata.type_defs.insert(name.to_string(), fmap.clone());
+
+      let doc_str = get_docs(&input.attrs);
+      let typescript = format!(
+        "{}export type {} = {{\n  {}\n}};",
+        doc_str,
+        name,
+        typescript.join("\n")
+      );
+      metadata.ts_types.insert(name.to_string(), typescript);
+      Ok(())
+    }
+    Data::Enum(syn::DataEnum { variants, .. }) => {
+      let name = &input.ident;
+      let mut typescript: Vec<String> = vec![];
+
+      for variant in variants {
+        let mut variant_fields: Vec<String> = vec![];
+        let fields = &variant.fields;
+        for field in fields {
+          let ident = field
+            .ident
+            .as_ref()
+            .expect("Field without ident")
+            .to_string();
+
+          let doc_str = get_docs(&field.attrs);
+          variant_fields.push(format!(
+            "{}  {}: {};",
+            doc_str,
+            ident,
+            types_to_ts(&field.ty)
+          ));
+        }
+
+        let doc_str = get_docs(&variant.attrs);
+        let variant_str = if variant_fields.len() > 0 {
+          format!(
+            "{} {{ {}: {{\n {}\n}} }}",
+            doc_str,
+            &variant.ident,
+            variant_fields.join("\n")
+          )
+        } else {
+          format!("{}  \"{}\"", doc_str, &variant.ident)
+        };
+
+        typescript.push(variant_str);
+      }
+
+      // TODO: `type_defs` in favor of `ts_types`
+      metadata.type_defs.insert(name.to_string(), HashMap::new());
+
+      let doc_str = get_docs(&input.attrs);
+      let typescript = format!(
+        "{}export type {} = {};",
+        doc_str,
+        name,
+        typescript.join("  |\n")
+      );
+      metadata.ts_types.insert(name.to_string(), typescript);
+      Ok(())
+    }
+    _ => unimplemented!(),
   }
-
-  metadata.type_defs.insert(name.to_string(), fmap.clone());
-
-  let doc_str = get_docs(&input.attrs);
-  let typescript = format!(
-    "{}export type {} = {{\n  {}\n}};",
-    doc_str,
-    name,
-    typescript.join("\n")
-  );
-  metadata.ts_types.insert(name.to_string(), typescript);
-  Ok(fmap)
 }
 
 fn get_docs(attrs: &Vec<syn::Attribute>) -> String {

@@ -71,3 +71,11 @@ fn test_str(s: &str) {}
 fn test_buf(b: &[u8]) -> u8 {
   b[0]
 }
+
+#[deno_bindgen]
+enum PlainEnum {
+    A { a: String },
+    B,
+    C,
+}
+
