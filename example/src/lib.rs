@@ -78,4 +78,3 @@ enum PlainEnum {
     B,
     C,
 }
-
