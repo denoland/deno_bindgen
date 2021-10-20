@@ -3,10 +3,9 @@
 This tool aims to simplify glue code generation for Deno FFI libraries written
 in Rust.
 
-### Quickstart
+### QuickStart
 
 ```shell
-# install CLI
 deno install -Afq -n deno_bindgen https://deno.land/x/deno_bindgen/cli.ts
 ```
 
@@ -18,7 +17,7 @@ deno_bindgen = "0.1"
 
 ```rust
 // add.rs
-use deno_bindgen::deno_bindgen;
+use deno_bindgen::*;
 
 #[deno_bindgen]
 pub struct Input {

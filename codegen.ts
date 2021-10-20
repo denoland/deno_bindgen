@@ -120,11 +120,7 @@ const _lib = await Plug.prepare(opts, {
           signature[sig].parameters.map((p) => {
             const ffiParam = resolveDlopenParameter(decl, p);
             // FIXME: Dupe logic here.
-            return `"${ffiParam}"${
-              isBufferType(p)
-                ? `, "usize"`
-                : ""
-            }`;
+            return `"${ffiParam}"${isBufferType(p) ? `, "usize"` : ""}`;
           })
             .join(", ")
         } ], result: "${signature[sig].result}", nonblocking: ${
