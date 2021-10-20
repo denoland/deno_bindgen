@@ -79,3 +79,9 @@ enum PlainEnum {
   B,
   C,
 }
+
+// Test mut buffer
+#[deno_bindgen]
+fn test_mut_buf(buf: &mut [u8]) {
+    buf[0] = 69;
+}

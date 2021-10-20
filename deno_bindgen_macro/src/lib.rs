@@ -42,6 +42,7 @@ enum Type {
   /// Types that pave way for
   /// serializers. buffers <3
   Buffer,
+  BufferMut,
   Str,
 
   /// Not-so straightforward types that
@@ -168,9 +169,13 @@ pub fn deno_bindgen(attr: TokenStream, input: TokenStream) -> TokenStream {
 
         input_idents.push(ident);
       }
-      Type::Str | Type::Buffer => {
+      Type::Str | Type::Buffer | Type::BufferMut => {
         let ident = format_ident!("arg{}", c_index.to_string());
-        params.push(quote! { #ident: *const u8 });
+        match parameter {
+          Type::Str | Type::Buffer => params.push(quote! { #ident: *const u8 }),
+          Type::BufferMut => params.push(quote! { #ident: *mut u8 }),
+          _ => unreachable!(),
+        };
 
         c_index += 1;
         let len_ident = format_ident!("arg{}", c_index.to_string());
@@ -178,13 +183,24 @@ pub fn deno_bindgen(attr: TokenStream, input: TokenStream) -> TokenStream {
 
         let return_type = match parameter {
           Type::Str => quote! { ::std::str::from_utf8(buf).unwrap() },
-          Type::Buffer => quote! { buf },
+          Type::Buffer | Type::BufferMut => quote! { buf },
+          _ => unreachable!(),
+        };
+
+        let buf_expr = match parameter {
+          Type::Str | Type::Buffer => {
+            quote! { let buf = ::std::slice::from_raw_parts(#ident, #len_ident); }
+          }
+          Type::BufferMut => {
+            quote! { let mut buf = ::std::slice::from_raw_parts_mut(#ident, #len_ident);
+            }
+          }
           _ => unreachable!(),
         };
 
         overrides.push(quote! {
           let #ident = unsafe {
-            let buf = ::std::slice::from_raw_parts(#ident, #len_ident);
+            #buf_expr
             #return_type
           };
         });
@@ -274,13 +290,19 @@ fn process_function(
                 _ => unimplemented!(),
               }
             }
-            syn::Type::Slice(ref ty) => match *ty.elem {
-              syn::Type::Path(ref ty) => {
-                let segment = ty.path.segments.first().unwrap();
+            syn::Type::Slice(ref slice) => match *slice.elem {
+              syn::Type::Path(ref path) => {
+                let segment = path.path.segments.first().unwrap();
                 let ident = segment.ident.to_string();
 
                 match ident.as_str() {
-                  "u8" => Type::Buffer,
+                  "u8" => {
+                    if ty.mutability.is_some() {
+                      Type::BufferMut
+                    } else {
+                      Type::Buffer
+                    }
+                  }
                   _ => unimplemented!(),
                 }
               }
