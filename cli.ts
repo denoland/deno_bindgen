@@ -27,7 +27,6 @@ async function generate() {
     // Nothing to update.
     return;
   }
-  console.log(conf);
 
   const pkgName = conf.name;
 
