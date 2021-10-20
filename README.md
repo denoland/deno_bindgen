@@ -12,12 +12,13 @@ deno install -Afq -n deno_bindgen https://deno.land/x/deno_bindgen/cli.ts
 ```toml
 # Cargo.toml
 [dependencies]
-deno_bindgen = "0.1"
+deno_bindgen = "0.2"
+serde = { version = "1", features = ["derive"] }
 ```
 
 ```rust
 // add.rs
-use deno_bindgen::*;
+use deno_bindgen::deno_bindgen;
 
 #[deno_bindgen]
 pub struct Input {
