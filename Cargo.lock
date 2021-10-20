@@ -23,6 +23,15 @@ dependencies = [
 
 [[package]]
 name = "deno_bindgen"
+version = "0.2.0"
+dependencies = [
+ "deno_bindgen_macro",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "deno_bindgen_macro"
 version = "0.1.1"
 dependencies = [
  "Inflector",
