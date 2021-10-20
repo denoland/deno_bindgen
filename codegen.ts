@@ -41,6 +41,7 @@ const Type: Record<string, string> = {
 const BufferTypes: Record<string, string> = {
   str: "string",
   buffer: "Uint8Array",
+  buffermut: "Uint8Array",
 };
 
 enum Encoder {
@@ -51,6 +52,7 @@ enum Encoder {
 const BufferTypeEncoders: Record<keyof typeof BufferTypes, Encoder> = {
   str: Encoder.None,
   buffer: Encoder.None,
+  buffermut: Encoder.None,
 };
 
 type TypeDef = Record<string, Record<string, string>>;

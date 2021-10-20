@@ -6,6 +6,7 @@ import {
   test_buf,
   test_mixed,
   test_mixed_order,
+  test_mut_buf,
   test_serde,
   test_str,
 } from "./bindings/bindings.ts";
@@ -80,5 +81,16 @@ Deno.test({
     const promise = sleep(ms).then(() => assert(start >= ms));
     assert(performance.now() - start < ms);
     await promise;
+  },
+});
+
+Deno.test({
+  name: "test_mut_buf#test",
+  fn: () => {
+    let u8 = new Uint8Array([0, 1, 2]);
+    assertEquals(u8[0], 0);
+
+    test_mut_buf(u8);
+    assertEquals(u8[0], 69);
   },
 });
