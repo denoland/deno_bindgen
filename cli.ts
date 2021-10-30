@@ -7,8 +7,7 @@ const release = !!flags.release;
 
 const fetchPrefix = typeof flags.release == "string"
   ? flags.release
-  : "target/debug";
-const profile = release ? "release" : "debug";
+  : "../target/" + (release ? "release" : "debug");
 
 async function build() {
   const cmd = ["cargo", "build"];

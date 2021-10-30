@@ -113,7 +113,7 @@ function encode(v: string | Uint8Array): Uint8Array {
 }
 const opts = {
   name: "${name}",
-  url: "${fetchPrefix}"
+  url: (new URL("${fetchPrefix}", import.meta.url)).toString(),
 };
 const _lib = await Plug.prepare(opts, {
   ${

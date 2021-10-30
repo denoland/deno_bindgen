@@ -50,7 +50,6 @@ fn test_serde(s: MyStruct) -> u8 {
 }
 
 // Typescript codegen tests
-
 #[deno_bindgen]
 struct OptionStruct {
   maybe: Option<String>,
