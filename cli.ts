@@ -44,6 +44,11 @@ async function generate() {
   await Deno.remove("bindings.json");
 }
 
+try { 
+  await Deno.remove("bindings.json");
+} catch {
+  // no op
+}
 await build();
 await generate();
 
