@@ -44,6 +44,7 @@ async function generate() {
   await Deno.remove("bindings.json");
 }
 
+await Deno.remove("bindings.json");
 await build();
 await generate();
 
