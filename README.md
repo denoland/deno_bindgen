@@ -55,6 +55,14 @@ deno_bindgen = "0.2"
 serde = { version = "1", features = ["derive"] }
 ```
 
+Change your `crate-type` to `cdylib` and set your package name as well.
+
+```toml
+[lib]
+name = "___"
+crate-type = ["cdylib"]
+```
+
 ### Bindings
 
 Put `#[deno_bindgen]` on top of a "serde-deriavable" struct, enum or fn.
