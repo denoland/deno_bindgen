@@ -37,6 +37,18 @@ pub fn process_struct(
             let ty = segment.ident.to_string();
             fmap.insert(ident.clone(), ty);
           }
+          syn::Type::Reference(ref ty) => {
+            assert!(!ty.mutability.is_some());
+            assert!(ty.lifetime.is_some());
+            match *ty.elem {
+              syn::Type::Path(ref ty) => {
+                let segment = &ty.path.segments.first().unwrap();
+                let ty = segment.ident.to_string();
+                fmap.insert(ident.clone(), ty);
+              },
+              _ => unimplemented!(),
+            }
+          }
           _ => unimplemented!(),
         };
 
@@ -136,8 +148,16 @@ fn types_to_ts(ty: &syn::Type) -> String {
   match ty {
     syn::Type::Array(_) => String::from("any"),
     syn::Type::Ptr(_) => String::from("any"),
+    syn::Type::Reference(ref ty) => match *ty.elem {
+       syn::Type::Path(ref ty) => {
+         let segment = ty.path.segments.first().unwrap();
+         let ident = segment.ident.to_string();
+         rs_to_ts(&ident).to_string()
+       },
+       _ => unimplemented!(),
+    }
     syn::Type::Path(ref ty) => {
-      // std::Alloc::Vec => Vec
+      // std::alloc::Vec => Vec
       let segment = &ty.path.segments.last().unwrap();
       let ty = segment.ident.to_string();
       let mut generics: Vec<String> = vec![];
@@ -193,6 +213,7 @@ fn rs_to_ts(ty: &str) -> &str {
     "usize" => "number",
     "bool" => "boolean",
     "String" => "string",
+    "str" => "string",
     "f32" => "number",
     "f64" => "number",
     "HashMap" => "Map",

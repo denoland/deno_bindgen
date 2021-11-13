@@ -38,18 +38,20 @@ async function generate() {
     conf.symbols,
     {
       le: conf.littleEndian,
+      release,
     },
   );
 
   await Deno.remove("bindings.json");
 }
 
-try { 
+try {
   await Deno.remove("bindings.json");
-} catch {
+} catch (e) {
   // no op
 }
-await build();
+
+await build().catch((_) => Deno.removeSync("bindings.json"));
 await generate();
 
 if (source != null) {

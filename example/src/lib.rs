@@ -84,3 +84,19 @@ enum PlainEnum {
 fn test_mut_buf(buf: &mut [u8]) {
     buf[0] = 69;
 }
+
+// Test mut buffer musn't outlive symbol call
+// #[deno_bindgen]
+// fn test_mut_buf_outlive(_: &'static mut [u8]) {
+//  
+// }
+
+#[deno_bindgen]
+struct TestLifetimes<'l> {
+  text: &'l str,
+}
+
+#[deno_bindgen]
+fn test_lifetime<'l>(s: TestLifetimes<'l>) -> usize {
+  s.text.len()
+}

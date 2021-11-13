@@ -87,6 +87,7 @@ type Sig = Record<string, {
 
 type Options = {
   le?: boolean;
+  release?: boolean;
 };
 
 function isBufferType(p: any) {
@@ -106,7 +107,7 @@ export function codegen(
 ) {
   return tsFormatter.formatText(
     "bindings.ts",
-    `import { Plug } from "https://deno.land/x/plug@0.4.0/mod.ts";
+    `import { CachePolicy, prepare } from "https://deno.land/x/plug@0.4.1/plug.ts";
 function encode(v: string | Uint8Array): Uint8Array {
   if (typeof v !== "string") return v;
   return new TextEncoder().encode(v);
@@ -114,8 +115,9 @@ function encode(v: string | Uint8Array): Uint8Array {
 const opts = {
   name: "${name}",
   url: (new URL("${fetchPrefix}", import.meta.url)).toString(),
+  policy: ${!!options?.release ? "undefined" : "CachePolicy.NONE" },
 };
-const _lib = await Plug.prepare(opts, {
+const _lib = await prepare(opts, {
   ${
       Object.keys(signature).map((sig) =>
         `${sig}: { parameters: [ ${

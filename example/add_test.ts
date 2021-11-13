@@ -9,6 +9,7 @@ import {
   test_mut_buf,
   test_serde,
   test_str,
+  test_lifetime,
 } from "./bindings/bindings.ts";
 import { assert, assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
@@ -94,3 +95,11 @@ Deno.test({
     assertEquals(u8[0], 69);
   },
 });
+
+Deno.test({
+  name: "test_lifetime_struct#test",
+  fn: () => {
+    const TEXT = "Hello, World!";
+    assertEquals(test_lifetime({ text: TEXT }), TEXT.length);
+  }
+})

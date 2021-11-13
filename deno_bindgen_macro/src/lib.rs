@@ -107,7 +107,9 @@ pub fn deno_bindgen(attr: TokenStream, input: TokenStream) -> TokenStream {
                 quote! { let buf = ::std::slice::from_raw_parts(#ident, #len_ident); }
               }
               Type::BufferMut => {
-                quote! { let mut buf = ::std::slice::from_raw_parts_mut(#ident, #len_ident);
+                // https://github.com/littledivy/deno_bindgen/issues/26
+                // *mut u8 should never outlive the symbol call. This can lead to UB.
+                quote! { let mut buf: &'sym mut [u8] = ::std::slice::from_raw_parts_mut(#ident, #len_ident);
                 }
               }
               _ => unreachable!(),
@@ -137,6 +139,7 @@ pub fn deno_bindgen(attr: TokenStream, input: TokenStream) -> TokenStream {
       let name = &func.sig.ident;
       let fn_inputs = &func.sig.inputs;
       let fn_output = &func.sig.output;
+      let fn_generics = &func.sig.generics;
       let fn_block = &func.block;
 
       let overrides = overrides
@@ -149,8 +152,8 @@ pub fn deno_bindgen(attr: TokenStream, input: TokenStream) -> TokenStream {
 
       TokenStream::from(quote! {
         #[no_mangle]
-        pub extern "C" fn #name (#(#params,) *) #fn_output {
-          fn __inner_impl (#fn_inputs) #fn_output #fn_block
+        pub extern "C" fn #name <'sym> (#(#params,) *) #fn_output {
+          fn __inner_impl #fn_generics (#fn_inputs) #fn_output #fn_block
           #overrides
           __inner_impl(#(#input_idents, ) *)
         }
