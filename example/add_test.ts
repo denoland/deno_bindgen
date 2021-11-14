@@ -4,12 +4,12 @@ import {
   OptionStruct,
   sleep,
   test_buf,
+  test_lifetime,
   test_mixed,
   test_mixed_order,
   test_mut_buf,
   test_serde,
   test_str,
-  test_lifetime,
 } from "./bindings/bindings.ts";
 import { assert, assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
@@ -101,5 +101,5 @@ Deno.test({
   fn: () => {
     const TEXT = "Hello, World!";
     assertEquals(test_lifetime({ text: TEXT }), TEXT.length);
-  }
-})
+  },
+});

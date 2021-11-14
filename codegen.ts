@@ -115,7 +115,7 @@ function encode(v: string | Uint8Array): Uint8Array {
 const opts = {
   name: "${name}",
   url: (new URL("${fetchPrefix}", import.meta.url)).toString(),
-  policy: ${!!options?.release ? "undefined" : "CachePolicy.NONE" },
+  policy: ${!!options?.release ? "undefined" : "CachePolicy.NONE"},
 };
 const _lib = await prepare(opts, {
   ${

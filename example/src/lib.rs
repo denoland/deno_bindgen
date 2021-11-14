@@ -97,6 +97,17 @@ struct TestLifetimes<'l> {
 }
 
 #[deno_bindgen]
+enum TestLifetimeEnums<'a> {
+  Text { text: &'a str }
+}
+
+#[deno_bindgen]
+struct TestLifetimeWrap<'a> {
+  #[serde(borrow)]
+  a: TestLifetimeEnums<'a>
+}
+
+#[deno_bindgen]
 fn test_lifetime<'l>(s: TestLifetimes<'l>) -> usize {
   s.text.len()
 }

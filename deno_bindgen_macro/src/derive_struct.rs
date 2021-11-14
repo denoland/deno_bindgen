@@ -45,7 +45,7 @@ pub fn process_struct(
                 let segment = &ty.path.segments.first().unwrap();
                 let ty = segment.ident.to_string();
                 fmap.insert(ident.clone(), ty);
-              },
+              }
               _ => unimplemented!(),
             }
           }
@@ -148,14 +148,7 @@ fn types_to_ts(ty: &syn::Type) -> String {
   match ty {
     syn::Type::Array(_) => String::from("any"),
     syn::Type::Ptr(_) => String::from("any"),
-    syn::Type::Reference(ref ty) => match *ty.elem {
-       syn::Type::Path(ref ty) => {
-         let segment = ty.path.segments.first().unwrap();
-         let ident = segment.ident.to_string();
-         rs_to_ts(&ident).to_string()
-       },
-       _ => unimplemented!(),
-    }
+    syn::Type::Reference(ref ty) => types_to_ts(&ty.elem),
     syn::Type::Path(ref ty) => {
       // std::alloc::Vec => Vec
       let segment = &ty.path.segments.last().unwrap();
@@ -167,6 +160,7 @@ fn types_to_ts(ty: &syn::Type) -> String {
           for p in &args.args {
             let ty = match p {
               syn::GenericArgument::Type(ty) => types_to_ts(ty),
+              syn::GenericArgument::Lifetime(_) => continue,
               _ => unimplemented!(),
             };
             generics.push(ty);
