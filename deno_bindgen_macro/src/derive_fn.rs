@@ -87,27 +87,29 @@ pub fn process_function(
 
   let result = match &function.sig.output {
     ReturnType::Default => Type::Void,
-    ReturnType::Type(_, box syn::Type::Path(ty)) => {
-      let segment = ty.path.segments.first().unwrap();
-      let ident = segment.ident.to_string();
+    ReturnType::Type(_, ty) => match ty.as_ref() {
+      syn::Type::Path(ty) => {
+        let segment = ty.path.segments.first().unwrap();
+        let ident = segment.ident.to_string();
 
-      match ident.as_str() {
-        "i8" => Type::I8,
-        "u8" => Type::U8,
-        "i16" => Type::I16,
-        "u16" => Type::U16,
-        "i32" => Type::I32,
-        "u32" => Type::U32,
-        "i64" => Type::I64,
-        "u64" => Type::U64,
-        "usize" => Type::Usize,
-        "isize" => Type::Isize,
-        "f32" => Type::F32,
-        "f64" => Type::F64,
-        _ => panic!("{} return type not supported by Deno FFI", ident),
+        match ident.as_str() {
+          "i8" => Type::I8,
+          "u8" => Type::U8,
+          "i16" => Type::I16,
+          "u16" => Type::U16,
+          "i32" => Type::I32,
+          "u32" => Type::U32,
+          "i64" => Type::I64,
+          "u64" => Type::U64,
+          "usize" => Type::Usize,
+          "isize" => Type::Isize,
+          "f32" => Type::F32,
+          "f64" => Type::F64,
+          _ => panic!("{} return type not supported by Deno FFI", ident),
+        }
       }
-    }
-    _ => unimplemented!(),
+      _ => unimplemented!(),
+    },
   };
 
   let symbol_name = function.sig.ident.to_string();

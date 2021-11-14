@@ -1,5 +1,3 @@
-#![feature(box_patterns)]
-
 use proc_macro::TokenStream;
 use quote::format_ident;
 use quote::quote;
