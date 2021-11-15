@@ -10,6 +10,7 @@ import {
   test_mut_buf,
   test_serde,
   test_str,
+  test_tag_and_content,
 } from "./bindings/bindings.ts";
 import { assert, assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
@@ -101,5 +102,15 @@ Deno.test({
   fn: () => {
     const TEXT = "Hello, World!";
     assertEquals(test_lifetime({ text: TEXT }), TEXT.length);
+  },
+});
+
+Deno.test({
+  name: "test_tag_and_content#test",
+  fn: () => {
+    assertEquals(test_tag_and_content({ key: "A", value: { b: 10 } }), 10);
+
+    // test_tag_and_content returns -1 when enum variant isn't TagAndContent::A
+    assertEquals(test_tag_and_content({ key: "C", value: { d: 10 } }), -1);
   },
 });

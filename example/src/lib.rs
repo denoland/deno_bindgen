@@ -52,6 +52,7 @@ fn test_serde(s: MyStruct) -> u8 {
 // Typescript codegen tests
 #[deno_bindgen]
 struct OptionStruct {
+  #[allow(dead_code)]
   maybe: Option<String>,
 }
 
@@ -64,7 +65,7 @@ fn sleep(ms: u64) {
 // Test other buffer dependent
 // types.
 #[deno_bindgen]
-fn test_str(s: &str) {}
+fn test_str(_s: &str) {}
 
 #[deno_bindgen]
 fn test_buf(b: &[u8]) -> u8 {
@@ -74,7 +75,7 @@ fn test_buf(b: &[u8]) -> u8 {
 #[deno_bindgen]
 #[serde(rename_all = "lowercase")]
 enum PlainEnum {
-  A { a: String },
+  A { _a: String },
   B,
   C,
 }
@@ -98,16 +99,33 @@ struct TestLifetimes<'l> {
 
 #[deno_bindgen]
 enum TestLifetimeEnums<'a> {
-  Text { text: &'a str }
+  Text { _text: &'a str }
 }
 
 #[deno_bindgen]
 struct TestLifetimeWrap<'a> {
   #[serde(borrow)]
-  a: TestLifetimeEnums<'a>
+  _a: TestLifetimeEnums<'a>
 }
 
 #[deno_bindgen]
 fn test_lifetime<'l>(s: TestLifetimes<'l>) -> usize {
   s.text.len()
+}
+
+#[deno_bindgen]
+#[serde(tag = "key", content = "value")]
+pub enum TagAndContent {
+  A { b: i32 },
+  C { d: i32 }
+}
+
+
+#[deno_bindgen]
+fn test_tag_and_content(arg: TagAndContent) -> i32 {
+  if let TagAndContent::A { b } = arg {
+    b
+  } else {
+    -1
+  }
 }

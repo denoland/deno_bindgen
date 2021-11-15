@@ -1,11 +1,27 @@
 use crate::attrs::get_serde_attrs;
+use crate::attrs::SerdeAttr;
 use crate::docs::get_docs;
 use crate::meta::Glue;
+
 use std::collections::HashMap;
 use syn::Data;
 use syn::DataStruct;
 use syn::DeriveInput;
 use syn::Fields;
+
+macro_rules! variant_instance {
+  ( $variant:path, $iterator:expr ) => {
+    $iterator
+      .filter_map(|val| {
+        if let $variant(ref f1, ref f2) = *val {
+          Some((f1, f2))
+        } else {
+          None
+        }
+      })
+      .next()
+  };
+}
 
 pub fn process_struct(
   metadata: &mut Glue,
@@ -53,7 +69,9 @@ pub fn process_struct(
         };
 
         for attr in &serde_attrs {
-          ident = attr.transform(&ident);
+          if let Some(i) = attr.transform(&ident) {
+            ident = i;
+          }
         }
 
         let doc_str = get_docs(&field.attrs);
@@ -94,7 +112,9 @@ pub fn process_struct(
             .to_string();
 
           for attr in &serde_attrs {
-            ident = attr.transform(&ident);
+            if let Some(i) = attr.transform(&ident) {
+              ident = i;
+            }
           }
 
           let doc_str = get_docs(&field.attrs);
@@ -108,18 +128,46 @@ pub fn process_struct(
 
         let mut ident = variant.ident.to_string();
 
+        // Perform #[serde] attribute transformers.
+        // This excludes `tag` and `content` attributes.
+        // They require special treatment during codegen.
         for attr in &serde_attrs {
-          ident = attr.transform(&ident);
+          if let Some(i) = attr.transform(&ident) {
+            ident = i;
+          }
         }
 
         let doc_str = get_docs(&variant.attrs);
+
         let variant_str = if variant_fields.len() > 0 {
-          format!(
-            "{} {{ {}: {{\n {}\n}} }}",
-            doc_str,
-            &ident,
-            variant_fields.join("\n")
-          )
+          let tag_content =
+            variant_instance!(SerdeAttr::TagAndContent, serde_attrs.iter());
+
+          match tag_content {
+            None => {
+              format!(
+                "{} {{ {}: {{\n {}\n}} }}",
+                doc_str,
+                &ident,
+                variant_fields.join("\n")
+              )
+            }
+            Some((tag, content)) => {
+              // // $jsdoc
+              // {
+              //   $tag: $ident,
+              //   $content: { ...$fields }
+              // }
+              format!(
+                "{} {{ {}: \"{}\", {}: {{ {} }} }}",
+                doc_str,
+                &tag,
+                &ident,
+                &content,
+                variant_fields.join("\n")
+              )
+            }
+          }
         } else {
           format!("{}  \"{}\"", doc_str, &ident)
         };
