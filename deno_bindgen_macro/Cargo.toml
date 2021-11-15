@@ -1,7 +1,13 @@
 [package]
 name = "deno_bindgen_macro"
-version = "0.2.0"
+version = "0.3.0"
 description = "This tool aims to simplify glue code generation for Deno FFI libraries written in Rust."
+documentation = "https://docs.rs/deno_bindgen_macro"
+homepage = "https://github.com/littledivy/deno_bindgen"
+repository = "https://github.com/littledivy/deno_bindgen"
+keywords = ["deno", "ffi", "bindgen", "bindings", "macro"]
+categories = ["development-tools::ffi", "development-tools"]
+readme = "../README.md"
 license = "MIT"
 edition = "2018"
 
