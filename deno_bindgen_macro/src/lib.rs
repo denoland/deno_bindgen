@@ -36,7 +36,7 @@ pub fn deno_bindgen(attr: TokenStream, input: TokenStream) -> TokenStream {
       fd.read_to_string(&mut meta)
         .expect("Error reading meta file");
 
-      serde_json::from_str(&meta).unwrap()
+      serde_json::from_str(&meta).unwrap_or_default()
     }
     Err(_) => Glue {
       little_endian: ENDIANNESS,
