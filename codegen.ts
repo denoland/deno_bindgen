@@ -74,7 +74,7 @@ function resolveDlopenParameter(typeDefs: TypeDef, type: any): string {
     BufferTypes[t] !== undefined ||
     Object.keys(typeDefs).find((f) => f == t) !== undefined
   ) {
-    return "buffer";
+    return "pointer";
   }
   throw new TypeError(`Type not supported: ${t}`);
 }
