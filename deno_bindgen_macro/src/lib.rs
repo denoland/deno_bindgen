@@ -142,7 +142,6 @@ pub fn deno_bindgen(attr: TokenStream, input: TokenStream) -> TokenStream {
             let mut v = length.to_vec();
             v.extend_from_slice(result);
 
-            println!("{:?}", v);
             ::std::mem::forget(result);
             let result = v.as_ptr();
             // Leak the result to JS land.
