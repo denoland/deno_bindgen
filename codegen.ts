@@ -113,12 +113,13 @@ function encode(v: string | Uint8Array): Uint8Array {
   return new TextEncoder().encode(v);
 }
 function decode(v: any): Uint8Array {
-  const ptr = new Deno.UnsafePointerView(v as Deno.UnsafePointer);
-  const length = ptr.getUint32(0);
-
-  const buf = new Uint8Array(length);
-  ptr.copyInto(buf, 4);
-  return buf;
+  const ptr = new Deno.UnsafePointerView(v as Deno.UnsafePointer)
+  const lengthBe = new Uint8Array(4);
+  const view = new DataView(lengthBe.buffer);
+  ptr.copyInto(lengthBe, 0);
+  const buf = new Uint8Array(view.getUint32(0));
+  ptr.copyInto(buf, 4)
+  return buf
 }
 const opts = {
   name: "${name}",
