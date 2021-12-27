@@ -33,9 +33,6 @@ pub enum Type {
   StructEnum {
     ident: String,
   },
-  // XXX: We need this for
-  // transmute "backend".
-  // { len: usize }
 }
 
 impl From<Type> for syn::Type {
@@ -53,7 +50,8 @@ impl From<Type> for syn::Type {
       Type::F64 => parse_quote! { f64 },
       Type::Usize => parse_quote! { usize },
       Type::Isize => parse_quote! { isize },
-      _ => panic!("Unreachable"),
+      Type::Void => parse_quote! { () },
+      _ => unreachable!(),
     }
   }
 }

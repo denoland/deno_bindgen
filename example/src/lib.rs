@@ -129,3 +129,8 @@ fn test_tag_and_content(arg: TagAndContent) -> i32 {
     -1
   }
 }
+
+#[deno_bindgen]
+fn test_buffer_return(buf: &[u8]) -> &[u8] {
+  buf
+}
