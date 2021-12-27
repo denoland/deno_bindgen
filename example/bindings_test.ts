@@ -11,6 +11,7 @@ import {
   test_serde,
   test_str,
   test_tag_and_content,
+  test_buffer_return,
 } from "./bindings/bindings.ts";
 import { assert, assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
@@ -114,3 +115,17 @@ Deno.test({
     assertEquals(test_tag_and_content({ key: "C", value: { d: 10 } }), -1);
   },
 });
+
+Deno.test({
+  name: "test_buffer_return#test",
+  fn: () => {
+    const buf = test_buffer_return(
+      new Uint8Array([1, 2, 3]),
+    );
+    
+    assertEquals(buf.byteLength, 3);
+    assertEquals(buf[0], 1);
+    assertEquals(buf[1], 2);
+    assertEquals(buf[2], 3);
+  }
+})

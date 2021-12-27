@@ -87,8 +87,8 @@ pub fn process_function(
 
   let result = match &function.sig.output {
     ReturnType::Default => Type::Void,
-    ReturnType::Type(_, ty) => match ty.as_ref() {
-      syn::Type::Path(ty) => {
+    ReturnType::Type(_, ref ty) => match ty.as_ref() {
+      syn::Type::Path(ref ty) => {
         let segment = ty.path.segments.first().unwrap();
         let ident = segment.ident.to_string();
 
@@ -108,6 +108,27 @@ pub fn process_function(
           _ => panic!("{} return type not supported by Deno FFI", ident),
         }
       }
+      syn::Type::Reference(ref ty) => match *ty.elem {
+        syn::Type::Slice(ref slice) => match *slice.elem {
+          syn::Type::Path(ref path) => {
+            let segment = path.path.segments.first().unwrap();
+            let ident = segment.ident.to_string();
+
+            match ident.as_str() {
+              "u8" => {
+                if ty.mutability.is_some() {
+                  Type::BufferMut
+                } else {
+                  Type::Buffer
+                }
+              }
+              _ => unimplemented!(),
+            }
+          }
+          _ => unimplemented!(),
+        },
+        _ => unimplemented!(),
+      },
       _ => unimplemented!(),
     },
   };

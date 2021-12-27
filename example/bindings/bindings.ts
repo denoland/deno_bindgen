@@ -4,26 +4,25 @@ function encode(v: string | Uint8Array): Uint8Array {
   if (typeof v !== "string") return v
   return new TextEncoder().encode(v)
 }
+function decode(v: any): Uint8Array {
+  const ptr = new Deno.UnsafePointerView(v as Deno.UnsafePointer)
+  const lengthBe = new Uint8Array(4);
+  const view = new DataView(lengthBe.buffer);
+  ptr.copyInto(lengthBe, 0);
+
+  const buf = new Uint8Array(view.getUint32(0));
+  ptr.copyInto(buf, 4)
+  return buf
+}
 const opts = {
   name: "deno_bindgen_test",
-  url: (new URL("../target/debug", import.meta.url)).toString(),
-  policy: CachePolicy.NONE,
+  url: (new URL("../target/release", import.meta.url)).toString(),
+  policy: undefined,
 }
 const _lib = await prepare(opts, {
-  sleep: { parameters: ["u64"], result: "void", nonblocking: true },
-  test_buf: {
-    parameters: ["pointer", "usize"],
-    result: "u8",
-    nonblocking: false,
-  },
   test_str: {
     parameters: ["pointer", "usize"],
     result: "void",
-    nonblocking: false,
-  },
-  test_serde: {
-    parameters: ["pointer", "usize"],
-    result: "u8",
     nonblocking: false,
   },
   test_mut_buf: {
@@ -31,15 +30,32 @@ const _lib = await prepare(opts, {
     result: "void",
     nonblocking: false,
   },
-  add2: { parameters: ["pointer", "usize"], result: "i32", nonblocking: false },
-  test_mixed: {
-    parameters: ["isize", "pointer", "usize"],
+  test_tag_and_content: {
+    parameters: ["pointer", "usize"],
     result: "i32",
     nonblocking: false,
   },
+  sleep: { parameters: ["u64"], result: "void", nonblocking: true },
+  add2: { parameters: ["pointer", "usize"], result: "i32", nonblocking: false },
   test_mixed_order: {
     parameters: ["i32", "pointer", "usize", "i32"],
     result: "i32",
+    nonblocking: false,
+  },
+  test_buffer_return: {
+    parameters: ["pointer", "usize"],
+    result: "pointer",
+    nonblocking: false,
+  },
+  add: { parameters: ["i32", "i32"], result: "i32", nonblocking: false },
+  test_buf: {
+    parameters: ["pointer", "usize"],
+    result: "u8",
+    nonblocking: false,
+  },
+  test_serde: {
+    parameters: ["pointer", "usize"],
+    result: "u8",
     nonblocking: false,
   },
   test_lifetime: {
@@ -47,35 +63,27 @@ const _lib = await prepare(opts, {
     result: "usize",
     nonblocking: false,
   },
-  add: { parameters: ["i32", "i32"], result: "i32", nonblocking: false },
-  test_tag_and_content: {
-    parameters: ["pointer", "usize"],
+  test_mixed: {
+    parameters: ["isize", "pointer", "usize"],
     result: "i32",
     nonblocking: false,
   },
 })
-export type OptionStruct = {
-  maybe: string | undefined | null
+export type MyStruct = {
+  arr: Array<string>
+}
+export type TagAndContent =
+  | { key: "A"; value: { b: number } }
+  | { key: "C"; value: { d: number } }
+export type TestLifetimes = {
+  text: string
 }
 export type TestLifetimeWrap = {
   _a: TestLifetimeEnums
 }
-export type TestLifetimeEnums = {
-  Text: {
-    _text: string
-  }
+export type OptionStruct = {
+  maybe: string | undefined | null
 }
-export type MyStruct = {
-  arr: Array<string>
-}
-export type PlainEnum =
-  | {
-    a: {
-      _a: string
-    }
-  }
-  | "b"
-  | "c"
 /**
  * Doc comment for `Input` struct.
  * ...testing multiline
@@ -89,56 +97,97 @@ export type Input = {
   a: number
   b: number
 }
-export type TestLifetimes = {
-  text: string
-}
-export type TagAndContent =
-  | { key: "A"; value: { b: number } }
-  | { key: "C"; value: { d: number } }
-export function sleep(a0: number) {
-  return _lib.symbols.sleep(a0) as Promise<null>
-}
-export function test_buf(a0: Uint8Array) {
-  const a0_buf = encode(a0)
-  return _lib.symbols.test_buf(a0_buf, a0_buf.byteLength) as number
+export type PlainEnum =
+  | {
+    a: {
+      _a: string
+    }
+  }
+  | "b"
+  | "c"
+export type TestLifetimeEnums = {
+  Text: {
+    _text: string
+  }
 }
 export function test_str(a0: string) {
   const a0_buf = encode(a0)
-  return _lib.symbols.test_str(a0_buf, a0_buf.byteLength) as null
-}
-export function test_serde(a0: MyStruct) {
-  const a0_buf = encode(JSON.stringify(a0))
-  return _lib.symbols.test_serde(a0_buf, a0_buf.byteLength) as number
+  let result = _lib.symbols.test_str(a0_buf, a0_buf.byteLength) as null
+
+  return result
 }
 export function test_mut_buf(a0: Uint8Array) {
   const a0_buf = encode(a0)
-  return _lib.symbols.test_mut_buf(a0_buf, a0_buf.byteLength) as null
+  let result = _lib.symbols.test_mut_buf(a0_buf, a0_buf.byteLength) as null
+
+  return result
+}
+export function test_tag_and_content(a0: TagAndContent) {
+  const a0_buf = encode(JSON.stringify(a0))
+  let result = _lib.symbols.test_tag_and_content(
+    a0_buf,
+    a0_buf.byteLength,
+  ) as number
+
+  return result
+}
+export function sleep(a0: number) {
+  let result = _lib.symbols.sleep(a0) as Promise<null>
+
+  return result
 }
 export function add2(a0: Input) {
   const a0_buf = encode(JSON.stringify(a0))
-  return _lib.symbols.add2(a0_buf, a0_buf.byteLength) as number
-}
-export function test_mixed(a0: number, a1: Input) {
-  const a1_buf = encode(JSON.stringify(a1))
-  return _lib.symbols.test_mixed(a0, a1_buf, a1_buf.byteLength) as number
+  let result = _lib.symbols.add2(a0_buf, a0_buf.byteLength) as number
+
+  return result
 }
 export function test_mixed_order(a0: number, a1: Input, a2: number) {
   const a1_buf = encode(JSON.stringify(a1))
-  return _lib.symbols.test_mixed_order(
+  let result = _lib.symbols.test_mixed_order(
     a0,
     a1_buf,
     a1_buf.byteLength,
     a2,
   ) as number
+
+  return result
+}
+export function test_buffer_return(a0: Uint8Array) {
+  const a0_buf = encode(a0)
+  let result = _lib.symbols.test_buffer_return(
+    a0_buf,
+    a0_buf.byteLength,
+  ) as Uint8Array
+  result = decode(result)
+  return result
+}
+export function add(a0: number, a1: number) {
+  let result = _lib.symbols.add(a0, a1) as number
+
+  return result
+}
+export function test_buf(a0: Uint8Array) {
+  const a0_buf = encode(a0)
+  let result = _lib.symbols.test_buf(a0_buf, a0_buf.byteLength) as number
+
+  return result
+}
+export function test_serde(a0: MyStruct) {
+  const a0_buf = encode(JSON.stringify(a0))
+  let result = _lib.symbols.test_serde(a0_buf, a0_buf.byteLength) as number
+
+  return result
 }
 export function test_lifetime(a0: TestLifetimes) {
   const a0_buf = encode(JSON.stringify(a0))
-  return _lib.symbols.test_lifetime(a0_buf, a0_buf.byteLength) as number
+  let result = _lib.symbols.test_lifetime(a0_buf, a0_buf.byteLength) as number
+
+  return result
 }
-export function add(a0: number, a1: number) {
-  return _lib.symbols.add(a0, a1) as number
-}
-export function test_tag_and_content(a0: TagAndContent) {
-  const a0_buf = encode(JSON.stringify(a0))
-  return _lib.symbols.test_tag_and_content(a0_buf, a0_buf.byteLength) as number
+export function test_mixed(a0: number, a1: Input) {
+  const a1_buf = encode(JSON.stringify(a1))
+  let result = _lib.symbols.test_mixed(a0, a1_buf, a1_buf.byteLength) as number
+
+  return result
 }

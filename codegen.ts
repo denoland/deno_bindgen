@@ -112,6 +112,15 @@ function encode(v: string | Uint8Array): Uint8Array {
   if (typeof v !== "string") return v;
   return new TextEncoder().encode(v);
 }
+function decode(v: any): Uint8Array {
+  const ptr = new Deno.UnsafePointerView(v as Deno.UnsafePointer)
+  const lengthBe = new Uint8Array(4);
+  const view = new DataView(lengthBe.buffer);
+  ptr.copyInto(lengthBe, 0);
+  const buf = new Uint8Array(view.getUint32(0));
+  ptr.copyInto(buf, 4)
+  return buf
+}
 const opts = {
   name: "${name}",
   url: (new URL("${fetchPrefix}", import.meta.url)).toString(),
@@ -127,7 +136,7 @@ const _lib = await prepare(opts, {
             return `"${ffiParam}"${isBufferType(p) ? `, "usize"` : ""}`;
           })
             .join(", ")
-        } ], result: "${signature[sig].result}", nonblocking: ${
+        } ], result: "${resolveDlopenParameter(decl, signature[sig].result)}", nonblocking: ${
           String(!!signature[sig].nonBlocking)
         } }`
       ).join(", ")
@@ -149,15 +158,17 @@ ${
               : null
           ).filter((c) => c !== null).join("\n")
         }
-  return _lib.symbols.${sig}(${
-          signature[sig].parameters.map((p, i) =>
-            isBufferType(p) ? `a${i}_buf, a${i}_buf.byteLength` : `a${i}`
-          ).join(", ")
-        }) as ${
-          signature[sig].nonBlocking
-            ? `Promise<${resolveType(decl, signature[sig].result)}>`
-            : resolveType(decl, signature[sig].result)
-        }
+  let result = _lib.symbols.${sig}(${
+    signature[sig].parameters.map((p, i) =>
+      isBufferType(p) ? `a${i}_buf, a${i}_buf.byteLength` : `a${i}`
+    ).join(", ")
+  }) as ${
+    signature[sig].nonBlocking
+      ? `Promise<${resolveType(decl, signature[sig].result)}>`
+      : resolveType(decl, signature[sig].result)
+  }
+  ${isBufferType(signature[sig].result) ? `result = decode(result);` : ""}
+  return result;
 }`
       ).join("\n")
     }

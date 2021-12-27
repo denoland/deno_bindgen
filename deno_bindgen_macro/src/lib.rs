@@ -6,7 +6,7 @@ use std::fs::OpenOptions;
 use std::io::Read;
 use std::io::Write;
 use syn::parse_macro_input;
-
+use syn::parse_quote;
 use syn::ItemFn;
 
 mod attrs;
@@ -134,6 +134,26 @@ pub fn deno_bindgen(attr: TokenStream, input: TokenStream) -> TokenStream {
         c_index += 1;
       }
 
+      let (result, transformer) = match symbol.result {
+        Type::Buffer => {
+          let ty = parse_quote! { *const u8 };
+          let transformer = quote! {
+            let length = (result.len() as u32).to_be_bytes();
+            let mut v = length.to_vec();
+            v.extend_from_slice(result);
+
+            println!("{:?}", v);
+            ::std::mem::forget(result);
+            let result = v.as_ptr();
+            // Leak the result to JS land.
+            ::std::mem::forget(v);
+          };
+
+          (ty, transformer)
+        }
+        _ => (syn::Type::from(symbol.result), quote! {}),
+      };
+
       let name = &func.sig.ident;
       let fn_inputs = &func.sig.inputs;
       let fn_output = &func.sig.output;
@@ -150,10 +170,12 @@ pub fn deno_bindgen(attr: TokenStream, input: TokenStream) -> TokenStream {
 
       TokenStream::from(quote! {
         #[no_mangle]
-        pub extern "C" fn #name <'sym> (#(#params,) *) #fn_output {
+        pub extern "C" fn #name <'sym> (#(#params,) *) -> #result {
           fn __inner_impl #fn_generics (#fn_inputs) #fn_output #fn_block
           #overrides
-          __inner_impl(#(#input_idents, ) *)
+          let result = __inner_impl(#(#input_idents, ) *);
+          #transformer
+          result
         }
       })
     }
