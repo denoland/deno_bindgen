@@ -68,16 +68,30 @@ const _lib = await prepare(opts, {
     nonblocking: false,
   },
 })
-export type TestLifetimeWrap = {
-  _a: TestLifetimeEnums
+export type TestLifetimes = {
+  text: string
 }
 export type TestLifetimeEnums = {
   Text: {
     _text: string
   }
 }
-export type TestLifetimes = {
-  text: string
+export type OptionStruct = {
+  maybe: string | undefined | null
+}
+export type MyStruct = {
+  arr: Array<string>
+}
+export type PlainEnum =
+  | {
+    a: {
+      _a: string
+    }
+  }
+  | "b"
+  | "c"
+export type TestLifetimeWrap = {
+  _a: TestLifetimeEnums
 }
 /**
  * Doc comment for `Input` struct.
@@ -92,23 +106,9 @@ export type Input = {
   a: number
   b: number
 }
-export type PlainEnum =
-  | {
-    a: {
-      _a: string
-    }
-  }
-  | "b"
-  | "c"
-export type OptionStruct = {
-  maybe: string | undefined | null
-}
 export type TagAndContent =
   | { key: "A"; value: { b: number } }
   | { key: "C"; value: { d: number } }
-export type MyStruct = {
-  arr: Array<string>
-}
 export function add(a0: number, a1: number) {
   let result = _lib.symbols.add(a0, a1) as number
 

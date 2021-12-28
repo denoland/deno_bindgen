@@ -95,7 +95,7 @@ function isBufferType(p: any) {
 }
 
 // @littledivy is a dumb kid!
-// he just can't make a interface
+// he just can't make an interface
 // for bindings.json
 export function codegen(
   fetchPrefix: string,
