@@ -95,7 +95,7 @@ function isBufferType(p: any) {
 }
 
 // @littledivy is a dumb kid!
-// he just can't make a interface
+// he just can't make an interface
 // for bindings.json
 export function codegen(
   fetchPrefix: string,
@@ -105,6 +105,19 @@ export function codegen(
   signature: Sig,
   options?: Options,
 ) {
+  signature = Object.keys(signature)
+    .sort()
+    .reduce((acc, key) => ({
+      ...acc,
+      [key]: signature[key],
+    }), {});
+  typescript = Object.keys(typescript)
+    .sort()
+    .reduce((acc, key) => ({
+      ...acc,
+      [key]: typescript[key],
+    }), {});
+
   return tsFormatter.formatText(
     "bindings.ts",
     `import { CachePolicy, prepare } from "https://deno.land/x/plug@0.4.1/plug.ts";
@@ -136,9 +149,9 @@ const _lib = await prepare(opts, {
             return `"${ffiParam}"${isBufferType(p) ? `, "usize"` : ""}`;
           })
             .join(", ")
-        } ], result: "${resolveDlopenParameter(decl, signature[sig].result)}", nonblocking: ${
-          String(!!signature[sig].nonBlocking)
-        } }`
+        } ], result: "${
+          resolveDlopenParameter(decl, signature[sig].result)
+        }", nonblocking: ${String(!!signature[sig].nonBlocking)} }`
       ).join(", ")
     } });
 ${Object.keys(decl).map((def) => typescript[def]).join("\n")}
@@ -159,14 +172,14 @@ ${
           ).filter((c) => c !== null).join("\n")
         }
   let result = _lib.symbols.${sig}(${
-    signature[sig].parameters.map((p, i) =>
-      isBufferType(p) ? `a${i}_buf, a${i}_buf.byteLength` : `a${i}`
-    ).join(", ")
-  }) as ${
-    signature[sig].nonBlocking
-      ? `Promise<${resolveType(decl, signature[sig].result)}>`
-      : resolveType(decl, signature[sig].result)
-  }
+          signature[sig].parameters.map((p, i) =>
+            isBufferType(p) ? `a${i}_buf, a${i}_buf.byteLength` : `a${i}`
+          ).join(", ")
+        }) as ${
+          signature[sig].nonBlocking
+            ? `Promise<${resolveType(decl, signature[sig].result)}>`
+            : resolveType(decl, signature[sig].result)
+        }
   ${isBufferType(signature[sig].result) ? `result = decode(result);` : ""}
   return result;
 }`
