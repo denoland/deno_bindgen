@@ -1,6 +1,6 @@
 [package]
 name = "deno_bindgen"
-version = "0.3.2"
+version = "0.4.0"
 description = "This tool aims to simplify glue code generation for Deno FFI libraries written in Rust."
 documentation = "https://docs.rs/deno_bindgen"
 homepage = "https://github.com/littledivy/deno_bindgen"
