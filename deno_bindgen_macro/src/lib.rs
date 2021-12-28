@@ -158,7 +158,7 @@ pub fn deno_bindgen(attr: TokenStream, input: TokenStream) -> TokenStream {
       let fn_output = &func.sig.output;
       let fn_generics = &func.sig.generics;
       let fn_block = &func.block;
-
+ 
       let overrides = overrides
         .iter()
         .fold(quote! {}, |acc, new| quote! { #acc #new });
