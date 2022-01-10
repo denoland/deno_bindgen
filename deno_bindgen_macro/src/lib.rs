@@ -154,8 +154,8 @@ pub fn deno_bindgen(attr: TokenStream, input: TokenStream) -> TokenStream {
         Type::StructEnum { .. } => {
           let ty = parse_quote! { *const u8 };
           let transformer = quote! {
-            let json = deno_bindgen::serde_json::to_string(&result);
-            let encoded = json.unwrap().into_bytes();
+            let json = deno_bindgen::serde_json::to_string(&result).expect("Failed to serialize as JSON");
+            let encoded = json.into_bytes();
             let length = (encoded.len() as u32).to_be_bytes();
             let mut v = length.to_vec();
             v.extend(encoded.clone());
