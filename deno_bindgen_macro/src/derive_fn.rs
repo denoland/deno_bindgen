@@ -88,6 +88,7 @@ pub fn process_function(
   let result = match &function.sig.output {
     ReturnType::Default => Type::Void,
     ReturnType::Type(_, ref ty) => match ty.as_ref() {
+      syn::Type::Ptr(_) => Type::Ptr,
       syn::Type::Path(ref ty) => {
         let segment = ty.path.segments.first().unwrap();
         let ident = segment.ident.to_string();
@@ -105,7 +106,12 @@ pub fn process_function(
           "isize" => Type::Isize,
           "f32" => Type::F32,
           "f64" => Type::F64,
-          _ => panic!("{} return type not supported by Deno FFI", ident),
+          _ => {
+            match metadata.type_defs.get(&ident) {
+              Some(_) => Type::StructEnum { ident },
+              None => panic!("{} return type not supported by Deno FFI", ident)
+            } 
+          }
         }
       }
       syn::Type::Reference(ref ty) => match *ty.elem {

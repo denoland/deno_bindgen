@@ -146,11 +146,30 @@ pub fn deno_bindgen(attr: TokenStream, input: TokenStream) -> TokenStream {
             let result = v.as_ptr();
             // Leak the result to JS land.
             ::std::mem::forget(v);
+            result
           };
 
           (ty, transformer)
         }
-        _ => (syn::Type::from(symbol.result), quote! {}),
+        Type::StructEnum { .. } => {
+          let ty = parse_quote! { *const u8 };
+          let transformer = quote! {
+            let json = deno_bindgen::serde_json::to_string(&result);
+            let encoded = json.unwrap().into_bytes();
+            let length = (encoded.len() as u32).to_be_bytes();
+            let mut v = length.to_vec();
+            v.extend(encoded.clone());
+
+            let ret = v.as_ptr();
+            // Leak the result to JS land.
+            ::std::mem::forget(v);
+            ret
+          };
+
+          (ty, transformer)
+        }, 
+        Type::Ptr => (parse_quote! { *const u8 }, quote! { result }),
+        _ => (syn::Type::from(symbol.result), quote! { result }),
       };
 
       let name = &func.sig.ident;
@@ -174,7 +193,6 @@ pub fn deno_bindgen(attr: TokenStream, input: TokenStream) -> TokenStream {
           #overrides
           let result = __inner_impl(#(#input_idents, ) *);
           #transformer
-          result
         }
       })
     }
@@ -187,7 +205,7 @@ pub fn deno_bindgen(attr: TokenStream, input: TokenStream) -> TokenStream {
         .unwrap();
 
       TokenStream::from(quote! {
-        #[derive(::serde::Deserialize)]
+        #[derive(::serde::Deserialize,::serde::Serialize)]
         #input
       })
     }

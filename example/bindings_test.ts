@@ -4,14 +4,19 @@ import {
   OptionStruct,
   sleep,
   test_buf,
+  test_buffer_return,
+  test_buffer_return_async,
   test_lifetime,
+  test_manual_ptr,
+  test_manual_ptr_async,
   test_mixed,
   test_mixed_order,
   test_mut_buf,
+  test_output,
+  test_output_async,
   test_serde,
   test_str,
   test_tag_and_content,
-  test_buffer_return,
 } from "./bindings/bindings.ts";
 import { assert, assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
@@ -111,10 +116,64 @@ Deno.test({
     const buf = test_buffer_return(
       new Uint8Array([1, 2, 3]),
     );
-    
+
     assertEquals(buf.byteLength, 3);
     assertEquals(buf[0], 1);
     assertEquals(buf[1], 2);
     assertEquals(buf[2], 3);
-  }
-})
+  },
+});
+
+Deno.test({
+  name: "test_buffer_return_async#test",
+  fn: async () => {
+    const buf = await test_buffer_return_async(
+      new Uint8Array([1, 2, 3]),
+    );
+
+    assertEquals(buf.byteLength, 3);
+    assertEquals(buf[0], 1);
+    assertEquals(buf[1], 2);
+    assertEquals(buf[2], 3);
+  },
+});
+
+Deno.test({
+  name: "test_manual_ptr#test",
+  fn: () => {
+    const buf = test_manual_ptr();
+    const val = new TextDecoder().decode(buf);
+
+    assertEquals(val, "test");
+  },
+});
+
+Deno.test({
+  name: "test_manual_ptr_async#test",
+  fn: async () => {
+    const buf = await test_manual_ptr_async();
+    const val = new TextDecoder().decode(buf);
+
+    assertEquals(val, "test");
+  },
+});
+
+Deno.test({
+  name: "test_output#test",
+  fn: () => {
+    const obj = test_output();
+
+    assertEquals(obj.a, 1);
+    assertEquals(obj.b, 2);
+  },
+});
+
+Deno.test({
+  name: "test_output_async#test",
+  fn: async () => {
+    const obj = await test_output_async();
+
+    assertEquals(obj.a, 3);
+    assertEquals(obj.b, 4);
+  },
+});

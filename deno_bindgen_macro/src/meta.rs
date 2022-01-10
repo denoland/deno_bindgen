@@ -27,6 +27,7 @@ pub enum Type {
   Buffer,
   BufferMut,
   Str,
+  Ptr,
 
   /// Not-so straightforward types that
   /// `deno_bingen` maps to.

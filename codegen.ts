@@ -42,6 +42,7 @@ const BufferTypes: Record<string, string> = {
   str: "string",
   buffer: "Uint8Array",
   buffermut: "Uint8Array",
+  ptr: "Uint8Array",
 };
 
 enum Encoder {
@@ -53,6 +54,7 @@ const BufferTypeEncoders: Record<keyof typeof BufferTypes, Encoder> = {
   str: Encoder.None,
   buffer: Encoder.None,
   buffermut: Encoder.None,
+  ptr: Encoder.None,
 };
 
 type TypeDef = Record<string, Record<string, string>>;
@@ -90,8 +92,12 @@ type Options = {
   release?: boolean;
 };
 
+function isTypeDef(p: any) {
+  return typeof p !== "string";
+}
+
 function isBufferType(p: any) {
-  return typeof p !== "string" || BufferTypes[p] !== undefined;
+  return isTypeDef(p) || BufferTypes[p] !== undefined;
 }
 
 // @littledivy is a dumb kid!
@@ -125,7 +131,10 @@ function encode(v: string | Uint8Array): Uint8Array {
   if (typeof v !== "string") return v;
   return new TextEncoder().encode(v);
 }
-function decode(v: any): Uint8Array {
+function decode(v: Uint8Array): string {
+  return new TextDecoder().decode(v);
+}
+function read_pointer(v: any): Uint8Array {
   const ptr = new Deno.UnsafePointerView(v as Deno.UnsafePointer)
   const lengthBe = new Uint8Array(4);
   const view = new DataView(lengthBe.buffer);
@@ -156,14 +165,14 @@ const _lib = await prepare(opts, {
     } });
 ${Object.keys(decl).map((def) => typescript[def]).join("\n")}
 ${
-      Object.keys(signature).map((sig) =>
-        `export function ${sig}(${
-          signature[sig].parameters.map((p, i) =>
-            `a${i}: ${resolveType(decl, p)}`
-          ).join(",")
+      Object.keys(signature).map((sig) => {
+        const { parameters, result, nonBlocking } = signature[sig];
+
+        return `export function ${sig}(${
+          parameters.map((p, i) => `a${i}: ${resolveType(decl, p)}`).join(",")
         }) {
   ${
-          signature[sig].parameters.map((p, i) =>
+          parameters.map((p, i) =>
             isBufferType(p)
               ? `const a${i}_buf = encode(${
                 BufferTypeEncoders[p] ?? Encoder.JsonStringify
@@ -172,18 +181,40 @@ ${
           ).filter((c) => c !== null).join("\n")
         }
   let result = _lib.symbols.${sig}(${
-          signature[sig].parameters.map((p, i) =>
+          parameters.map((p, i) =>
             isBufferType(p) ? `a${i}_buf, a${i}_buf.byteLength` : `a${i}`
           ).join(", ")
         }) as ${
-          signature[sig].nonBlocking
-            ? `Promise<${resolveType(decl, signature[sig].result)}>`
-            : resolveType(decl, signature[sig].result)
+          nonBlocking
+            ? `Promise<${
+              isTypeDef(result)
+                ? "Uint8Array"
+                : resolveType(decl, result)
+            }>`
+            : isTypeDef(result)
+            ? "Uint8Array"
+            : resolveType(decl, result)
         }
-  ${isBufferType(signature[sig].result) ? `result = decode(result);` : ""}
-  return result;
-}`
-      ).join("\n")
+  ${
+          isBufferType(result)
+            ? nonBlocking
+              ? `result = result.then(read_pointer)`
+              : `result = read_pointer(result)`
+            : ""
+        };
+  ${
+          isTypeDef(result)
+            ? nonBlocking
+              ? `return result.then(r => JSON.parse(decode(r))) as Promise<${
+                resolveType(decl, result)
+              }>`
+              : `return JSON.parse(decode(result)) as ${
+                resolveType(decl, result)
+              }`
+            : "return result"
+        };
+}`;
+      }).join("\n")
     }
  `,
   );
