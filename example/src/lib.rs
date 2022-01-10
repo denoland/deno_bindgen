@@ -134,3 +134,50 @@ fn test_tag_and_content(arg: TagAndContent) -> i32 {
 fn test_buffer_return(buf: &[u8]) -> &[u8] {
   buf
 }
+
+#[deno_bindgen(non_blocking)]
+fn test_buffer_return_async(buf: &[u8]) -> &[u8] {
+  buf
+}
+
+#[deno_bindgen]
+fn test_manual_ptr() -> *const u8 {
+  let result = String::from("test").into_bytes();
+  let length = (result.len() as u32).to_be_bytes();
+  let mut v = length.to_vec();
+  v.extend(result.clone());
+
+  let ret = v.as_ptr();
+  // Leak the result to JS land.
+  ::std::mem::forget(v);
+  ret
+}
+
+#[deno_bindgen(non_blocking)]
+fn test_manual_ptr_async() -> *const u8 {
+  let result = String::from("test").into_bytes();
+  let length = (result.len() as u32).to_be_bytes();
+  let mut v = length.to_vec();
+  v.extend(result.clone());
+
+  let ret = v.as_ptr();
+  // Leak the result to JS land.
+  ::std::mem::forget(v);
+  ret
+}
+
+#[deno_bindgen]
+fn test_output() -> Input {
+  Input {
+    a: 1,
+    b: 2
+  }
+}
+
+#[deno_bindgen(non_blocking)]
+fn test_output_async() -> Input {
+  Input {
+    a: 3,
+    b: 4
+  }
+}
