@@ -1,3 +1,5 @@
+// Copyright 2020-2021 the Deno authors. All rights reserved. MIT license.
+
 import { ensureDir } from "https://deno.land/std@0.105.0/fs/ensure_dir.ts";
 import { parse } from "https://deno.land/std@0.105.0/flags/mod.ts";
 import { codegen } from "./codegen.ts";

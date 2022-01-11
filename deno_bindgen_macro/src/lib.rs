@@ -1,3 +1,5 @@
+// Copyright 2020-2021 the Deno authors. All rights reserved. MIT license.
+
 use proc_macro::TokenStream;
 use quote::format_ident;
 use quote::quote;
@@ -167,7 +169,7 @@ pub fn deno_bindgen(attr: TokenStream, input: TokenStream) -> TokenStream {
           };
 
           (ty, transformer)
-        }, 
+        }
         Type::Ptr => (parse_quote! { *const u8 }, quote! { result }),
         _ => (syn::Type::from(symbol.result), quote! { result }),
       };
