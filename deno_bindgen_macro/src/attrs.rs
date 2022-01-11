@@ -1,3 +1,5 @@
+// Copyright 2020-2021 the Deno authors. All rights reserved. MIT license.
+
 use syn::Attribute;
 use syn::Lit;
 use syn::Meta;

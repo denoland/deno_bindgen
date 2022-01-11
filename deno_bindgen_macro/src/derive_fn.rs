@@ -1,3 +1,5 @@
+// Copyright 2020-2021 the Deno authors. All rights reserved. MIT license.
+
 use crate::meta::Glue;
 use crate::meta::Symbol;
 use crate::meta::Type;
@@ -106,12 +108,10 @@ pub fn process_function(
           "isize" => Type::Isize,
           "f32" => Type::F32,
           "f64" => Type::F64,
-          _ => {
-            match metadata.type_defs.get(&ident) {
-              Some(_) => Type::StructEnum { ident },
-              None => panic!("{} return type not supported by Deno FFI", ident)
-            } 
-          }
+          _ => match metadata.type_defs.get(&ident) {
+            Some(_) => Type::StructEnum { ident },
+            None => panic!("{} return type not supported by Deno FFI", ident),
+          },
         }
       }
       syn::Type::Reference(ref ty) => match *ty.elem {

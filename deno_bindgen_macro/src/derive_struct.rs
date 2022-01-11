@@ -1,3 +1,5 @@
+// Copyright 2020-2021 the Deno authors. All rights reserved. MIT license.
+
 use crate::attrs::get_serde_attrs;
 use crate::attrs::SerdeAttr;
 use crate::docs::get_docs;

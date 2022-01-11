@@ -182,6 +182,3 @@ The `deno_bindgen` CLI tool provides the following flags:
   deno_bindgen -- --features "cool_stuff"
   ```
 
-#### LICENSE
-
-MIT
