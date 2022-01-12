@@ -1,0 +1,9 @@
+[package]
+name = "codegen"
+version = "0.1.0"
+description = "This tool aims to simplify glue code generation for Deno FFI libraries"
+license = "MIT"
+edition = "2018"
+
+[dependencies]
+anyhow = "1.0.52"
