@@ -27,7 +27,7 @@ impl Library {
   }
 
   pub fn lookup_type(&self, name: &str) -> Result<&TypeDescriptor, AnyError> {
-    self.types.get(name).ok_or(unknown_type(name))
+    self.types.get(name).ok_or_else(|| unknown_type(name))
   }
 
   pub fn prepend(&mut self, element: Box<dyn LibraryElement>) {
@@ -53,7 +53,7 @@ impl Library {
 
     self.loader.generate(self, &mut source)?;
 
-    for (_, descriptor) in &self.types {
+    for descriptor in self.types.values() {
       if let Some(global) = &descriptor.converters.into.global {
         global.generate(self, &mut source)?;
       }

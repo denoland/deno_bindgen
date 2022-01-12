@@ -15,6 +15,12 @@ impl Source {
   }
 }
 
+impl Default for Source {
+  fn default() -> Self {
+    Self::new()
+  }
+}
+
 impl Write for Source {
   fn write_str(&mut self, s: &str) -> Result {
     Write::write_str(&mut self.0, s)

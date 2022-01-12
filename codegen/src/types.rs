@@ -49,11 +49,7 @@ pub struct TypeDescriptor {
 
 impl TypeDescriptor {
   pub fn returns(&self) -> bool {
-    if let NativeType::Void = self.native {
-      false
-    } else {
-      true
-    }
+    !matches!(self.native, NativeType::Void)
   }
 }
 
@@ -268,7 +264,7 @@ impl From<TypeDefinition> for TypeDescriptor {
                 __encoder.encodeInto(cstring, buffer);\
                 return Deno.UnsafePointer.of(buffer);\
               }\n"
-              .to_string(),
+                .to_string(),
             ),
             local: None,
             inline: "__cstring_into({})".to_string(),
