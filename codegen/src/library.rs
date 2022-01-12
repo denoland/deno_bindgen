@@ -97,6 +97,8 @@ mod tests {
   use crate::loader::plug::PlugLoader;
   use crate::loader::plug::PlugLoaderOptions;
   use crate::loader::plug::PlugLoaderSingleOptions;
+  use crate::types::buffer::Buffer;
+  use crate::types::primitive::Primitive;
   use crate::types::BufferType;
   use crate::types::NativeType;
   use crate::types::TypeDefinition;
@@ -118,12 +120,14 @@ mod tests {
       )),
     );
 
-    library
-      .register_type("usize", TypeDefinition::Primitive(NativeType::USize));
+    library.register_type(
+      "usize",
+      TypeDefinition::Primitive(Primitive::new(NativeType::USize)),
+    );
     library.register_type("cstring", TypeDefinition::CString);
     library.register_type(
       "[usize]",
-      TypeDefinition::Buffer(BufferType::USize, None),
+      TypeDefinition::Buffer(Buffer::new(BufferType::USize, None)),
     );
 
     library.append(Box::new(Function::new(

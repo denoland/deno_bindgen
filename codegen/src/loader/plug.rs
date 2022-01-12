@@ -50,7 +50,11 @@ pub struct PlugLoader {
 }
 
 impl PlugLoader {
-  pub fn new(export: bool, import: Option<&str>, options: PlugLoaderOptions) -> Self {
+  pub fn new(
+    export: bool,
+    import: Option<&str>,
+    options: PlugLoaderOptions,
+  ) -> Self {
     Self {
       export,
       import: import
@@ -72,7 +76,7 @@ impl LibraryElement for PlugLoader {
     if self.export {
       write!(source, "export ")?;
     }
-    
+
     writeln!(
       source,
       "const {} = await Plug.prepare({}, {});",

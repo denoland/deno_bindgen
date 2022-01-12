@@ -67,8 +67,7 @@ impl LibraryElement for Function {
       .collect::<Result<Vec<String>, AnyError>>()?
       .join(", ");
 
-    let result =
-      String::from(library.lookup_type(&self.result)?.native);
+    let result = String::from(library.lookup_type(&self.result)?.native);
 
     Ok(Some(format!(
       "{}: {{ parameters: [{}], result: \"{}\", nonblocking: {} }}",
