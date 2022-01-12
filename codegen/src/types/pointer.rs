@@ -40,7 +40,7 @@ impl From<Pointer> for TypeDescriptor {
           },
         }
       } else {
-        let buffer_type: BufferType = native.clone().into();
+        let buffer_type: BufferType = native.into();
         let constructor: String = buffer_type.into();
 
         TypeConverters {
