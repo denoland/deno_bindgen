@@ -77,7 +77,7 @@ pub trait LibraryElement {
     library: &Library,
     source: &mut Source,
   ) -> Result<(), AnyError>;
-  fn symbol(&self, library: &Library) -> Result<Option<String>, AnyError> {
+  fn symbol(&self, _library: &Library) -> Result<Option<String>, AnyError> {
     Ok(None)
   }
 }
@@ -106,6 +106,7 @@ mod tests {
     let mut library = Library::new(
       None,
       Box::new(PlugLoader::new(
+        true,
         None,
         PlugLoaderOptions::Single(PlugLoaderSingleOptions {
           name: "test".to_string(),

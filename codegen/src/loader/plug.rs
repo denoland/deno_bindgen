@@ -44,13 +44,15 @@ pub struct PlugLoaderSingleOptions {
 
 #[derive(Clone)]
 pub struct PlugLoader {
+  export: bool,
   import: String,
   options: PlugLoaderOptions,
 }
 
 impl PlugLoader {
-  pub fn new(import: Option<&str>, options: PlugLoaderOptions) -> Self {
+  pub fn new(export: bool, import: Option<&str>, options: PlugLoaderOptions) -> Self {
     Self {
+      export,
       import: import
         .unwrap_or("https://deno.land/x/plug/mod.ts")
         .to_string(),
@@ -66,6 +68,11 @@ impl LibraryElement for PlugLoader {
     source: &mut Source,
   ) -> Result<(), AnyError> {
     writeln!(source, "import * as Plug from \"{}\";", self.import)?;
+
+    if self.export {
+      write!(source, "export ")?;
+    }
+    
     writeln!(
       source,
       "const {} = await Plug.prepare({}, {});",
@@ -92,7 +99,7 @@ impl From<PlugLoaderSingleOptions> for String {
     let mut properties = Vec::new();
 
     properties.push(format!("name: \"{}\"", options.name,));
-    properties.push(format!("url: \"{}\"", String::from(options.url)));
+    properties.push(format!("url: \"{}\"", options.url));
 
     if let Some(policy) = options.policy {
       properties.push(format!("policy: {}", String::from(policy)));

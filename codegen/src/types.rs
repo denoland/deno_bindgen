@@ -131,7 +131,7 @@ impl From<TypeDefinition> for TypeDescriptor {
                 },
               }
             } else {
-              let buffer_type: BufferType = native.clone().into();
+              let buffer_type: BufferType = (*native).into();
               let constructor: String = buffer_type.into();
 
               TypeConverters {
@@ -262,16 +262,16 @@ impl From<TypeDefinition> for TypeDescriptor {
           into: TypeConverter {
             typescript: "string".to_string(),
             global: Some(
-              "const cstringEncoder = new TextEncoder();
-              function cstringInto(cstring: string): Deno.UnsafePointer {
-                const buffer = new Uint8Array(cstring.length + 1);
-                cstringEncoder.encodeInto(cstring, buffer);
-                return Deno.UnsafePointer.of(buffer);
-              }"
+              "const __encoder = new TextEncoder();\
+              function __cstring_into(cstring: string): Deno.UnsafePointer {\
+                const buffer = new Uint8Array(cstring.length + 1);\
+                __encoder.encodeInto(cstring, buffer);\
+                return Deno.UnsafePointer.of(buffer);\
+              }\n"
               .to_string(),
             ),
             local: None,
-            inline: "cstringInto({})".to_string(),
+            inline: "__cstring_into({})".to_string(),
           },
           from: TypeConverter {
             typescript: "string".to_string(),

@@ -7,11 +7,13 @@ use crate::source::Source;
 
 pub struct DenoLoader {
   pub filename: String,
+  pub export: bool,
 }
 
 impl DenoLoader {
-  pub fn new(filename: &str) -> Self {
+  pub fn new(export: bool, filename: &str) -> Self {
     Self {
+      export,
       filename: filename.to_string(),
     }
   }
@@ -23,6 +25,10 @@ impl LibraryElement for DenoLoader {
     library: &Library,
     source: &mut Source,
   ) -> Result<(), AnyError> {
+    if self.export {
+      write!(source, "export ")?;
+    }
+
     writeln!(
       source,
       "const {} = await Plug.prepare(\"{}\", {});",

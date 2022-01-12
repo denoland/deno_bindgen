@@ -61,14 +61,14 @@ impl LibraryElement for Function {
       .iter()
       .map(|(name, parameter)| -> Result<String, AnyError> {
         let parameter = library.lookup_type(parameter)?;
-        let native = String::from(parameter.native.clone());
+        let native = String::from(parameter.native);
         Ok(format!("{}: \"{}\"", name, native))
       })
       .collect::<Result<Vec<String>, AnyError>>()?
       .join(", ");
 
     let result =
-      String::from(library.lookup_type(&self.result)?.native.clone());
+      String::from(library.lookup_type(&self.result)?.native);
 
     Ok(Some(format!(
       "{}: {{ parameters: [{}], result: \"{}\", nonblocking: {} }}",
