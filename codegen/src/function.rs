@@ -1,24 +1,23 @@
 use std::collections::HashMap;
 use std::fmt::Write;
 
+use crate::error::AnyError;
 use crate::library::Library;
 use crate::library::LibraryElement;
 use crate::source::Source;
-use crate::types::TypeDefiniton;
 use crate::types::TypeDescriptor;
-use crate::AnyError;
 
 pub enum FunctionParameters {
-  Named(HashMap<String, TypeDefiniton>),
-  Unnamed(Vec<TypeDefiniton>),
+  Named(HashMap<String, String>),
+  Unnamed(Vec<String>),
 }
 
 pub struct Function {
   symbol: String,
   name: String,
   docs: Option<String>,
-  parameters: HashMap<String, TypeDescriptor>,
-  result: TypeDescriptor,
+  parameters: HashMap<String, String>,
+  result: String,
   nonblocking: bool,
 }
 
@@ -28,7 +27,7 @@ impl Function {
     name: Option<&str>,
     docs: Option<&str>,
     parameters: FunctionParameters,
-    result: TypeDefiniton,
+    result: &str,
     nonblocking: bool,
   ) -> Self {
     let name = name.unwrap_or(symbol).to_string();
@@ -42,41 +41,39 @@ impl Function {
         }
         map
       }
-    }
-    .into_iter()
-    .map(|(name, parameter)| (name, parameter.into()))
-    .collect();
-    let result = result.into();
+    };
 
     Self {
       symbol,
       name,
       docs: docs.map(String::from),
       parameters,
-      result,
+      result: result.to_string(),
       nonblocking,
     }
   }
 }
 
 impl LibraryElement for Function {
-  fn symbol(&self) -> Option<String> {
-    Some(format!(
+  fn symbol(&self, library: &Library) -> Result<Option<String>, AnyError> {
+    let parameters = self
+      .parameters
+      .iter()
+      .map(|(name, parameter)| -> Result<String, AnyError> {
+        let parameter = library.lookup_type(parameter)?;
+        let native = String::from(parameter.native.clone());
+        Ok(format!("{}: \"{}\"", name, native))
+      })
+      .collect::<Result<Vec<String>, AnyError>>()?
+      .join(", ");
+
+    let result =
+      String::from(library.lookup_type(&self.result)?.native.clone());
+
+    Ok(Some(format!(
       "{}: {{ parameters: [{}], result: \"{}\", nonblocking: {} }}",
-      self.symbol,
-      self
-        .parameters
-        .iter()
-        .map(|(name, parameter)| format!(
-          "{}: \"{}\"",
-          name,
-          String::from(parameter.native.clone())
-        ))
-        .collect::<Vec<String>>()
-        .join(", "),
-      String::from(self.result.native),
-      self.nonblocking
-    ))
+      self.symbol, parameters, result, self.nonblocking
+    )))
   }
 
   fn generate(
@@ -84,6 +81,13 @@ impl LibraryElement for Function {
     library: &Library,
     source: &mut Source,
   ) -> Result<(), AnyError> {
+    let result = library.lookup_type(&self.result)?;
+    let parameters = self
+      .parameters
+      .iter()
+      .map(|(name, parameter)| Ok((name, library.lookup_type(parameter)?)))
+      .collect::<Result<Vec<(&String, &TypeDescriptor)>, AnyError>>()?;
+
     if let Some(docs) = &self.docs {
       writeln!(source, "{}", docs)?;
     }
@@ -99,8 +103,7 @@ impl LibraryElement for Function {
     write!(
       source,
       "{}",
-      self
-        .parameters
+      parameters
         .iter()
         .map(|(name, parameter)| format!(
           "{}: {}",
@@ -114,27 +117,28 @@ impl LibraryElement for Function {
       writeln!(
         source,
         "): Promise<{}> {{",
-        self.result.converters.from.typescript
+        result.converters.from.typescript
       )?;
     } else {
-      writeln!(source, "): {} {{", self.result.converters.from.typescript)?;
+      writeln!(source, "): {} {{", result.converters.from.typescript)?;
     }
 
-    if self.result.returns() {
-      write!(source, "return ")?;
+    for (name, descriptor) in &parameters {
+      if let Some(local) = &descriptor.converters.into.local {
+        local.replace("{}", name).generate(library, source)?;
+      }
     }
 
     writeln!(
       source,
-      "{};",
-      self.result.converters.from.inline.replace(
+      "const __result = {};",
+      result.converters.from.inline.replace(
         "{}",
         &format!(
           "{}.symbols.{}({})",
           library.variable,
           self.symbol,
-          self
-            .parameters
+          parameters
             .iter()
             .map(|(name, parameter)| parameter
               .converters
@@ -147,52 +151,16 @@ impl LibraryElement for Function {
       )
     )?;
 
+    if let Some(local) = &result.converters.from.local {
+      local.replace("{}", "__result").generate(library, source)?;
+    }
+
+    if result.returns() {
+      writeln!(source, "return __result;")?;
+    }
+
     writeln!(source, "}}")?;
 
     Ok(())
-  }
-}
-
-#[cfg(test)]
-mod tests {
-  use crate::library::Library;
-  use crate::loader::plug::PlugLoader;
-  use crate::loader::plug::PlugLoaderOptions;
-  use crate::loader::plug::PlugLoaderSingleOptions;
-  use crate::types::BufferType;
-  use crate::types::TypeDefiniton;
-
-  use super::{Function, FunctionParameters};
-
-  #[test]
-  fn testing() {
-    let mut library = Library::new(
-      None,
-      Box::new(PlugLoader::new(
-        None,
-        PlugLoaderOptions::Single(PlugLoaderSingleOptions {
-          name: "test".to_string(),
-          url: "abcdef".to_string(),
-          policy: None,
-          cache: None,
-          log: None,
-        }),
-      )),
-    );
-
-    library.append(Box::new(Function::new(
-      "test",
-      None,
-      None,
-      FunctionParameters::Unnamed(vec![
-        TypeDefiniton::Buffer(BufferType::USize, None),
-        TypeDefiniton::CString,
-      ]),
-      TypeDefiniton::Buffer(BufferType::USize, None),
-      false,
-    )));
-
-    let source = library.generate().unwrap();
-    println!("{}", source.read());
   }
 }

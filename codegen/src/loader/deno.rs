@@ -1,9 +1,9 @@
 use std::fmt::Write;
 
+use crate::error::AnyError;
 use crate::library::Library;
 use crate::library::LibraryElement;
 use crate::source::Source;
-use crate::AnyError;
 
 pub struct DenoLoader {
   pub filename: String,
@@ -28,7 +28,7 @@ impl LibraryElement for DenoLoader {
       "const {} = await Plug.prepare(\"{}\", {});",
       library.variable,
       self.filename,
-      library.symbols()
+      library.symbols()?
     )?;
 
     Ok(())

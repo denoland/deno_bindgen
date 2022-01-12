@@ -16,7 +16,7 @@ pub enum NativeType {
   Pointer,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub enum BufferType {
   None,
   U8,
@@ -34,14 +34,15 @@ pub enum BufferType {
 }
 
 #[derive(Clone)]
-pub enum TypeDefiniton {
+pub enum TypeDefinition {
   Primitive(NativeType),
-  Pointer(Box<TypeDefiniton>),
+  Pointer(Box<TypeDefinition>),
   Buffer(BufferType, Option<usize>),
   CString,
 }
 
 pub struct TypeDescriptor {
+  pub definition: TypeDefinition,
   pub native: NativeType,
   pub converters: TypeConverters,
 }
@@ -68,10 +69,10 @@ pub struct TypeConverters {
   pub from: TypeConverter,
 }
 
-impl From<TypeDefiniton> for TypeDescriptor {
-  fn from(definition: TypeDefiniton) -> Self {
+impl From<TypeDefinition> for TypeDescriptor {
+  fn from(definition: TypeDefinition) -> Self {
     match definition {
-      TypeDefiniton::Primitive(native) => {
+      TypeDefinition::Primitive(native) => {
         let typescript = match native {
           NativeType::Void => "void",
           NativeType::U8
@@ -103,13 +104,17 @@ impl From<TypeDefiniton> for TypeDescriptor {
           },
         };
 
-        TypeDescriptor { native, converters }
+        TypeDescriptor {
+          definition,
+          native,
+          converters,
+        }
       }
-      TypeDefiniton::Pointer(target) => {
+      TypeDefinition::Pointer(ref target) => {
         let target = target.as_ref();
         let target_descriptor: TypeDescriptor = target.clone().into();
         let converters = match target {
-          TypeDefiniton::Primitive(native) => {
+          TypeDefinition::Primitive(native) => {
             if let NativeType::Void | NativeType::Pointer = native {
               TypeConverters {
                 into: TypeConverter {
@@ -149,9 +154,9 @@ impl From<TypeDefiniton> for TypeDescriptor {
               }
             }
           }
-          TypeDefiniton::Pointer(_)
-          | TypeDefiniton::Buffer(_, _)
-          | TypeDefiniton::CString => TypeConverters {
+          TypeDefinition::Pointer(_)
+          | TypeDefinition::Buffer(_, _)
+          | TypeDefinition::CString => TypeConverters {
             into: TypeConverter {
               typescript: target_descriptor.converters.into.typescript,
               global: target_descriptor.converters.into.global,
@@ -174,11 +179,12 @@ impl From<TypeDefiniton> for TypeDescriptor {
         };
 
         TypeDescriptor {
+          definition,
           native: NativeType::Pointer,
           converters,
         }
       }
-      TypeDefiniton::Buffer(buffer_type, length) => {
+      TypeDefinition::Buffer(buffer_type, length) => {
         if let Some(length) = length {
           let converters = if let BufferType::None = buffer_type {
             TypeConverters {
@@ -220,12 +226,14 @@ impl From<TypeDefiniton> for TypeDescriptor {
           };
 
           TypeDescriptor {
+            definition,
             native: NativeType::Pointer,
             converters,
           }
         } else {
           let constructor: String = buffer_type.into();
           TypeDescriptor {
+            definition,
             native: NativeType::Pointer,
             converters: TypeConverters {
               into: TypeConverter {
@@ -247,7 +255,8 @@ impl From<TypeDefiniton> for TypeDescriptor {
           }
         }
       }
-      TypeDefiniton::CString => TypeDescriptor {
+      TypeDefinition::CString => TypeDescriptor {
+        definition,
         native: NativeType::Pointer,
         converters: TypeConverters {
           into: TypeConverter {

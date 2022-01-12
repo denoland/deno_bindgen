@@ -1,9 +1,9 @@
 use std::fmt::Write;
 
+use crate::error::AnyError;
 use crate::library::Library;
 use crate::library::LibraryElement;
 use crate::source::Source;
-use crate::AnyError;
 
 #[derive(Clone)]
 pub enum PlugLoaderOptions {
@@ -71,7 +71,7 @@ impl LibraryElement for PlugLoader {
       "const {} = await Plug.prepare({}, {});",
       library.variable,
       String::from(self.options.clone()),
-      library.symbols()
+      library.symbols()?
     )?;
 
     Ok(())
