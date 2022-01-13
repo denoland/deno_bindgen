@@ -30,15 +30,13 @@ impl From<Primitive> for TypeDescriptor {
       NativeType::Pointer => "Deno.UnsafePointer",
     };
     let converters = TypeConverters {
+      global: None,
+      typescript: typescript.to_string(),
       into: TypeConverter {
-        typescript: typescript.to_string(),
-        global: None,
         local: None,
         inline: "{}".to_string(),
       },
       from: TypeConverter {
-        typescript: typescript.to_string(),
-        global: None,
         local: None,
         inline: "{}".to_string(),
       },

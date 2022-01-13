@@ -54,11 +54,7 @@ impl Library {
     self.loader.generate(self, &mut source)?;
 
     for descriptor in self.types.values() {
-      if let Some(global) = &descriptor.converters.into.global {
-        global.generate(self, &mut source)?;
-      }
-
-      if let Some(global) = &descriptor.converters.from.global {
+      if let Some(global) = &descriptor.converters.global {
         global.generate(self, &mut source)?;
       }
     }
@@ -126,8 +122,8 @@ mod tests {
     );
     library.register_type("cstring", TypeDefinition::CString);
     library.register_type(
-      "[usize]",
-      TypeDefinition::Buffer(Buffer::new(BufferType::USize, None)),
+      "[usize; 10]",
+      TypeDefinition::Buffer(Buffer::new(BufferType::USize, 10)),
     );
 
     library.append(Box::new(Function::new(
@@ -138,7 +134,7 @@ mod tests {
         "usize".to_string(),
         "cstring".to_string(),
       ]),
-      "[usize]",
+      "[usize; 10]",
       false,
     )));
 

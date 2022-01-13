@@ -106,20 +106,16 @@ impl LibraryElement for Function {
         .iter()
         .map(|(name, parameter)| format!(
           "{}: {}",
-          name, parameter.converters.into.typescript
+          name, parameter.converters.typescript
         ))
         .collect::<Vec<String>>()
         .join(", ")
     )?;
 
     if self.nonblocking {
-      writeln!(
-        source,
-        "): Promise<{}> {{",
-        result.converters.from.typescript
-      )?;
+      writeln!(source, "): Promise<{}> {{", result.converters.typescript)?;
     } else {
-      writeln!(source, "): {} {{", result.converters.from.typescript)?;
+      writeln!(source, "): {} {{", result.converters.typescript)?;
     }
 
     for (name, descriptor) in &parameters {

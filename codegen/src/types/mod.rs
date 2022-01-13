@@ -1,11 +1,13 @@
 use self::{
   buffer::Buffer, cstring::CString, pointer::Pointer, primitive::Primitive,
+  r#struct::Struct,
 };
 
 pub mod buffer;
 pub mod cstring;
 pub mod pointer;
 pub mod primitive;
+pub mod r#struct;
 
 #[derive(Clone, Copy)]
 pub enum NativeType {
@@ -48,7 +50,7 @@ pub enum TypeDefinition {
   Pointer(Pointer),
   Buffer(Buffer),
   CString,
-  //  Struct(Vec<(String, TypeDefinition)>),
+  Struct(Struct),
   //  Tuple(Vec<TypeDefinition>),
   //  Enum(Vec<(String, Option<TypeDefinition>)>),
   //  Array(Vec<TypeDefinition>),
@@ -61,6 +63,7 @@ impl From<TypeDefinition> for TypeDescriptor {
       TypeDefinition::Pointer(pointer) => TypeDescriptor::from(pointer),
       TypeDefinition::Buffer(buffer) => TypeDescriptor::from(buffer),
       TypeDefinition::CString => TypeDescriptor::from(CString),
+      TypeDefinition::Struct(r#struct) => TypeDescriptor::from(r#struct),
     }
   }
 }
@@ -77,13 +80,13 @@ impl TypeDescriptor {
 }
 
 pub struct TypeConverter {
-  pub typescript: String,
-  pub global: Option<String>,
   pub local: Option<String>,
   pub inline: String,
 }
 
 pub struct TypeConverters {
+  pub global: Option<String>,
+  pub typescript: String,
   pub into: TypeConverter,
   pub from: TypeConverter,
 }
