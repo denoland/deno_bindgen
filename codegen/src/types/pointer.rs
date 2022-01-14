@@ -1,8 +1,8 @@
-use super::TypeDescriptor;
-use super::TypeDefinition;
-use super::TypeConverter;
-use super::NativeType;
 use super::BufferType;
+use super::NativeType;
+use super::TypeConverter;
+use super::TypeDefinition;
+use super::TypeDescriptor;
 
 #[derive(Clone)]
 pub struct Pointer {
