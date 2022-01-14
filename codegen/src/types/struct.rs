@@ -1,3 +1,6 @@
+use std::collections::HashSet;
+use std::iter::FromIterator;
+
 use inflector::Inflector;
 
 use super::BufferType;
@@ -6,14 +9,17 @@ use super::TypeConverter;
 use super::TypeDefinition;
 use super::TypeDescriptor;
 
-pub trait Sizeof {
-  fn byte_size(&self) -> usize;
+fn calculate_padding(offset: usize, alignment: usize) -> usize {
+  let misalignment = offset % alignment;
+  if misalignment > 0 {
+    alignment - misalignment
+  } else {
+    0
+  }
 }
 
 #[derive(Clone)]
 pub struct StructLayout {
-  pub size: usize,
-  pub align: usize,
   pub fields: Vec<(String, TypeDefinition)>,
 }
 
@@ -64,16 +70,22 @@ impl Struct {
   }
 
   pub fn generate_into_function(&self) -> String {
-    let mut views_required: Vec<String> = Vec::new();
+    let mut views_required: HashSet<String> = HashSet::new();
+    views_required
+      .insert("const __u8_view = new Uint8Array(__array_buffer);".to_string());
+
     let mut body = Vec::new();
     let mut offset = 0;
-
-    views_required.push(format!(
-      "const __array_buffer = new ArrayBuffer({});",
-      self.layout.size
-    ));
+    let align = self
+      .fields()
+      .iter()
+      .map(|(_, _, descriptor)| descriptor.native.align_of())
+      .max()
+      .unwrap_or(0);
 
     for (property, definition, descriptor) in self.fields() {
+      offset += calculate_padding(offset, descriptor.native.align_of());
+
       match definition {
         TypeDefinition::Primitive(primitive) => {
           if let NativeType::Pointer = primitive.native {
@@ -97,7 +109,7 @@ impl Struct {
               NativeType::F64 => "__f64_view",
             };
 
-            views_required.push(format!(
+            views_required.insert(format!(
               "const {} = new {}(__array_buffer);",
               view_variable, view_constructor
             ));
@@ -119,14 +131,14 @@ impl Struct {
         TypeDefinition::Struct(_) => unimplemented!(),
       }
 
-      offset += descriptor.native.size();
+      offset += descriptor.native.size_of();
     }
 
-    views_required.dedup();
+    let size = offset + calculate_padding(offset, align);
 
     format!(
-      "function {}({}: {}): Deno.UnsafePointer {{\n{}{}\nreturn new Deno.UnsafePointer(new Uint8Array(__array_buffer));\n}}",
-      self.into_function_name(), self.variable_name(), self.type_name(), views_required.join("\n"), body.join("\n")
+      "function {}({}: {}): Deno.UnsafePointer {{\nconst __array_buffer = new ArrayBuffer({});\n{}\n{}\nreturn Deno.UnsafePointer.of(new Uint8Array(__array_buffer));\n}}",
+      self.into_function_name(), self.variable_name(), self.type_name(), size, Vec::from_iter(views_required).join("\n"), body.join("\n")
     )
   }
 
@@ -156,7 +168,7 @@ impl From<Struct> for TypeDescriptor {
       native: NativeType::Pointer,
       converter: TypeConverter {
         global: Some(format!(
-          "{}\n{}\n{}\n",
+          "{}\n{}\n{}",
           typescript_interface,
           r#struct.generate_into_function(),
           r#struct.generate_from_function()

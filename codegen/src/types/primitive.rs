@@ -1,6 +1,6 @@
 use super::NativeType;
-use super::TypeDescriptor;
 use super::TypeConverter;
+use super::TypeDescriptor;
 
 #[derive(Clone)]
 pub struct Primitive {
@@ -23,12 +23,12 @@ impl From<Primitive> for TypeDescriptor {
       | NativeType::I16
       | NativeType::U32
       | NativeType::I32
-      | NativeType::U64
-      | NativeType::I64
-      | NativeType::USize
-      | NativeType::ISize
       | NativeType::F32
       | NativeType::F64 => "number",
+      NativeType::U64
+      | NativeType::I64
+      | NativeType::USize
+      | NativeType::ISize => "bigint",
       NativeType::Pointer => "Deno.UnsafePointer",
     };
     let converter = TypeConverter {

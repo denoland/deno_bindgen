@@ -126,9 +126,20 @@ mod tests {
       TypeDefinition::Struct(Struct::new(
         "ExampleStruct",
         StructLayout {
-          size: 8,
-          align: 2,
-          fields: vec![("test".to_string(), TypeDefinition::Primitive(Primitive::new(NativeType::USize)))],
+          fields: vec![
+            (
+              "a".to_string(),
+              TypeDefinition::Primitive(Primitive::new(NativeType::U8)),
+            ),
+            (
+              "b".to_string(),
+              TypeDefinition::Primitive(Primitive::new(NativeType::U32)),
+            ),
+            (
+              "c".to_string(),
+              TypeDefinition::Primitive(Primitive::new(NativeType::U8)),
+            ),
+          ],
         },
       )),
     );
@@ -143,7 +154,7 @@ mod tests {
       ]),
       "ExampleStruct",
       false,
-      true
+      true,
     )));
 
     let source = library.generate().unwrap();

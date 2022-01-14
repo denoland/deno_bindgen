@@ -29,9 +29,24 @@ pub enum NativeType {
 }
 
 impl NativeType {
-  fn size(&self) -> usize {
+  fn size_of(&self) -> usize {
     match self {
-      NativeType::Void => panic!("Void has no size!"),
+      NativeType::Void => panic!(),
+      NativeType::U8 | NativeType::I8 => 1,
+      NativeType::U16 | NativeType::I16 => 2,
+      NativeType::U32 | NativeType::I32 | NativeType::F32 => 4,
+      NativeType::U64
+      | NativeType::I64
+      | NativeType::USize
+      | NativeType::ISize
+      | NativeType::F64
+      | NativeType::Pointer => 8,
+    }
+  }
+
+  fn align_of(&self) -> usize {
+    match self {
+      NativeType::Void => panic!(),
       NativeType::U8 | NativeType::I8 => 1,
       NativeType::U16 | NativeType::I16 => 2,
       NativeType::U32 | NativeType::I32 | NativeType::F32 => 4,
