@@ -88,44 +88,63 @@ impl Struct {
 
       match definition {
         TypeDefinition::Primitive(primitive) => {
-          if let NativeType::Pointer = primitive.native {
-            unimplemented!()
-          } else {
-            let view_constructor =
-              String::from(BufferType::from(primitive.native));
-            let view_variable = match primitive.native {
-              NativeType::Void | NativeType::Pointer => unreachable!(),
-              NativeType::U8 => "__u8_view",
-              NativeType::I8 => "__i8_view",
-              NativeType::U16 => "__u16_view",
-              NativeType::I16 => "__i16_view",
-              NativeType::U32 => "__u32_view",
-              NativeType::I32 => "__i32_view",
-              NativeType::U64 => "__u64_view",
-              NativeType::I64 => "__i64_view",
-              NativeType::USize => "__u64_view",
-              NativeType::ISize => "__i64_view",
-              NativeType::F32 => "__f32_view",
-              NativeType::F64 => "__f64_view",
-            };
+          let view_constructor =
+            String::from(BufferType::from(primitive.native));
+          let view_variable = match primitive.native {
+            NativeType::U8 => "__u8_view",
+            NativeType::I8 => "__i8_view",
+            NativeType::U16 => "__u16_view",
+            NativeType::I16 => "__i16_view",
+            NativeType::U32 => "__u32_view",
+            NativeType::I32 => "__i32_view",
+            NativeType::Pointer | NativeType::U64 | NativeType::USize => {
+              "__u64_view"
+            }
+            NativeType::I64 | NativeType::ISize => "__i64_view",
+            NativeType::F32 => "__f32_view",
+            NativeType::F64 => "__f64_view",
+            _ => panic!("Unsupported type"),
+          };
 
-            views_required.insert(format!(
-              "const {} = new {}(__array_buffer);",
-              view_variable, view_constructor
-            ));
+          views_required.insert(format!(
+            "const {} = new {}(__array_buffer);",
+            view_variable, view_constructor
+          ));
 
-            body.push(format!(
-              "{}[{}] = {};",
-              view_variable,
-              offset,
-              descriptor.converter.into.replace(
-                "{}",
-                &format!("{}.{}", self.variable_name(), property)
+          body.push(format!(
+            "{}[{}] = {};",
+            view_variable,
+            offset / primitive.native.size_of(),
+            descriptor.converter.into.replace(
+              "{}",
+              &format!(
+                "{}.{}{}",
+                self.variable_name(),
+                property,
+                if let NativeType::Pointer = primitive.native {
+                  ".value"
+                } else {
+                  ""
+                }
               )
-            ));
-          }
+            )
+          ));
         }
-        TypeDefinition::Pointer(_) => unimplemented!(),
+        TypeDefinition::Pointer(target) => {
+          views_required.insert(
+            "const __u64_view = new BigUint64Array(__array_buffer);"
+              .to_string(),
+          );
+
+          body.push(format!(
+            "__u64_view[{}] = {}.value;",
+            offset / NativeType::Pointer.size_of(),
+            descriptor.converter.into.replace(
+              "{}",
+              &format!("{}.{}", self.variable_name(), property,)
+            )
+          ));
+        }
         TypeDefinition::Buffer(_) => unimplemented!(),
         TypeDefinition::CString => unimplemented!(),
         TypeDefinition::Struct(_) => unimplemented!(),

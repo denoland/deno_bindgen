@@ -134,6 +134,7 @@ impl From<NativeType> for BufferType {
       NativeType::ISize => BufferType::ISize,
       NativeType::F32 => BufferType::F32,
       NativeType::F64 => BufferType::F64,
+      NativeType::Pointer => BufferType::U64,
       _ => BufferType::None,
     }
   }

@@ -22,7 +22,7 @@ impl From<Pointer> for TypeDescriptor {
     let converter = if let TypeDefinition::Primitive(primitive) = target {
       let native = primitive.native;
 
-      if let NativeType::Void | NativeType::Pointer = native {
+      if let NativeType::Pointer = native {
         TypeConverter {
           global: target_descriptor.converter.global,
           typescript: target_descriptor.converter.typescript,
@@ -40,7 +40,7 @@ impl From<Pointer> for TypeDescriptor {
           global: target_descriptor.converter.global,
           typescript: target_descriptor.converter.typescript,
           into: format!(
-            "Deno.UnsafePointer.of(new {}([{}.value]))",
+            "Deno.UnsafePointer.of(new {}([{}]))",
             constructor, target_descriptor.converter.into
           ),
           from: "".to_string(),

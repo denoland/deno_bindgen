@@ -93,6 +93,7 @@ mod tests {
   use crate::loader::plug::PlugLoader;
   use crate::loader::plug::PlugLoaderOptions;
   use crate::loader::plug::PlugLoaderSingleOptions;
+  use crate::types::pointer::Pointer;
   use crate::types::primitive::Primitive;
   use crate::types::r#struct::Struct;
   use crate::types::r#struct::StructLayout;
@@ -129,7 +130,9 @@ mod tests {
           fields: vec![
             (
               "a".to_string(),
-              TypeDefinition::Primitive(Primitive::new(NativeType::U8)),
+              TypeDefinition::Pointer(Pointer::new(Box::new(
+                TypeDefinition::Primitive(Primitive::new(NativeType::U8)),
+              ))),
             ),
             (
               "b".to_string(),
@@ -137,7 +140,7 @@ mod tests {
             ),
             (
               "c".to_string(),
-              TypeDefinition::Primitive(Primitive::new(NativeType::U8)),
+              TypeDefinition::Primitive(Primitive::new(NativeType::Pointer)),
             ),
           ],
         },
