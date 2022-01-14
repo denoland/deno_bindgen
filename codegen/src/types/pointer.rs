@@ -1,7 +1,8 @@
-use super::{
-  BufferType, NativeType, TypeConverter, TypeConverters, TypeDefinition,
-  TypeDescriptor,
-};
+use super::TypeDescriptor;
+use super::TypeDefinition;
+use super::TypeConverter;
+use super::NativeType;
+use super::BufferType;
 
 #[derive(Clone)]
 pub struct Pointer {
@@ -18,69 +19,51 @@ impl From<Pointer> for TypeDescriptor {
   fn from(pointer: Pointer) -> Self {
     let target = pointer.target.as_ref();
     let target_descriptor: TypeDescriptor = target.clone().into();
-    let converters = if let TypeDefinition::Primitive(primitive) = target {
+    let converter = if let TypeDefinition::Primitive(primitive) = target {
       let native = primitive.native;
 
       if let NativeType::Void | NativeType::Pointer = native {
-        TypeConverters {
-          global: target_descriptor.converters.global,
-          typescript: target_descriptor.converters.typescript,
-          into: TypeConverter {
-            local: target_descriptor.converters.into.local,
-            inline: format!(
-              "Deno.UnsafePointer.of(new BigUint64Array([{}.value]))",
-              target_descriptor.converters.into.inline
-            ),
-          },
-          from: TypeConverter {
-            local: target_descriptor.converters.from.local,
-            inline: "".to_string(),
-          },
+        TypeConverter {
+          global: target_descriptor.converter.global,
+          typescript: target_descriptor.converter.typescript,
+          into: format!(
+            "Deno.UnsafePointer.of(new BigUint64Array([{}.value]))",
+            target_descriptor.converter.into
+          ),
+          from: "".to_string(),
         }
       } else {
         let buffer_type: BufferType = native.into();
         let constructor: String = buffer_type.into();
 
-        TypeConverters {
-          global: target_descriptor.converters.global,
-          typescript: target_descriptor.converters.typescript,
-          into: TypeConverter {
-            local: target_descriptor.converters.into.local,
-            inline: format!(
-              "Deno.UnsafePointer.of(new {}([{}.value]))",
-              constructor, target_descriptor.converters.into.inline
-            ),
-          },
-          from: TypeConverter {
-            local: None,
-            inline: "".to_string(),
-          },
+        TypeConverter {
+          global: target_descriptor.converter.global,
+          typescript: target_descriptor.converter.typescript,
+          into: format!(
+            "Deno.UnsafePointer.of(new {}([{}.value]))",
+            constructor, target_descriptor.converter.into
+          ),
+          from: "".to_string(),
         }
       }
     } else {
-      TypeConverters {
-        global: target_descriptor.converters.global,
-        typescript: target_descriptor.converters.typescript,
-        into: TypeConverter {
-          local: target_descriptor.converters.into.local,
-          inline: format!(
-            "Deno.UnsafePointer.of(new BigUint64Array([{}.value]))",
-            target_descriptor.converters.into.inline
-          ),
-        },
-        from: TypeConverter {
-          local: target_descriptor.converters.from.local,
-          inline: format!(
-            "new Deno.UnsafePointer(new Deno.UnsafePointerView({}).getBigUint64())",
-            target_descriptor.converters.from.inline
-          ),
-        },
+      TypeConverter {
+        global: target_descriptor.converter.global,
+        typescript: target_descriptor.converter.typescript,
+        into: format!(
+          "Deno.UnsafePointer.of(new BigUint64Array([{}.value]))",
+          target_descriptor.converter.into
+        ),
+        from: format!(
+          "new Deno.UnsafePointer(new Deno.UnsafePointerView({}).getBigUint64())",
+          target_descriptor.converter.from
+        ),
       }
     };
 
     TypeDescriptor {
       native: NativeType::Pointer,
-      converters,
+      converter,
     }
   }
 }

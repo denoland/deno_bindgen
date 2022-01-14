@@ -1,4 +1,6 @@
-use super::{NativeType, TypeConverter, TypeConverters, TypeDescriptor};
+use super::NativeType;
+use super::TypeDescriptor;
+use super::TypeConverter;
 
 #[derive(Clone)]
 pub struct Primitive {
@@ -29,22 +31,16 @@ impl From<Primitive> for TypeDescriptor {
       | NativeType::F64 => "number",
       NativeType::Pointer => "Deno.UnsafePointer",
     };
-    let converters = TypeConverters {
+    let converter = TypeConverter {
       global: None,
       typescript: typescript.to_string(),
-      into: TypeConverter {
-        local: None,
-        inline: "{}".to_string(),
-      },
-      from: TypeConverter {
-        local: None,
-        inline: "{}".to_string(),
-      },
+      into: "{}".to_string(),
+      from: "{}".to_string(),
     };
 
     TypeDescriptor {
       native: primitive.native,
-      converters,
+      converter,
     }
   }
 }

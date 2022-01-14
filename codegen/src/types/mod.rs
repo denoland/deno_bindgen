@@ -1,7 +1,8 @@
-use self::{
-  buffer::Buffer, cstring::CString, pointer::Pointer, primitive::Primitive,
-  r#struct::Struct,
-};
+use self::buffer::Buffer;
+use self::cstring::CString;
+use self::pointer::Pointer;
+use self::primitive::Primitive;
+use self::r#struct::Struct;
 
 pub mod buffer;
 pub mod cstring;
@@ -70,7 +71,7 @@ impl From<TypeDefinition> for TypeDescriptor {
 
 pub struct TypeDescriptor {
   pub native: NativeType,
-  pub converters: TypeConverters,
+  pub converter: TypeConverter,
 }
 
 impl TypeDescriptor {
@@ -80,15 +81,10 @@ impl TypeDescriptor {
 }
 
 pub struct TypeConverter {
-  pub local: Option<String>,
-  pub inline: String,
-}
-
-pub struct TypeConverters {
   pub global: Option<String>,
   pub typescript: String,
-  pub into: TypeConverter,
-  pub from: TypeConverter,
+  pub into: String,
+  pub from: String,
 }
 
 impl From<NativeType> for BufferType {

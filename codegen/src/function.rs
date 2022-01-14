@@ -19,6 +19,7 @@ pub struct Function {
   parameters: HashMap<String, String>,
   result: String,
   nonblocking: bool,
+  export: bool
 }
 
 impl Function {
@@ -29,6 +30,7 @@ impl Function {
     parameters: FunctionParameters,
     result: &str,
     nonblocking: bool,
+    export: bool
   ) -> Self {
     let name = name.unwrap_or(symbol).to_string();
     let symbol = symbol.to_string();
@@ -50,6 +52,7 @@ impl Function {
       parameters,
       result: result.to_string(),
       nonblocking,
+      export
     }
   }
 }
@@ -59,10 +62,10 @@ impl LibraryElement for Function {
     let parameters = self
       .parameters
       .iter()
-      .map(|(name, parameter)| -> Result<String, AnyError> {
+      .map(|(_, parameter)| -> Result<String, AnyError> {
         let parameter = library.lookup_type(parameter)?;
         let native = String::from(parameter.native);
-        Ok(format!("{}: \"{}\"", name, native))
+        Ok(format!("\"{}\"", native))
       })
       .collect::<Result<Vec<String>, AnyError>>()?
       .join(", ");
@@ -91,13 +94,15 @@ impl LibraryElement for Function {
       writeln!(source, "{}", docs)?;
     }
 
-    write!(source, "export function ")?;
+    if self.export {
+      write!(source, "export ")?;
+    }
 
     if self.nonblocking {
       write!(source, "async ")?;
     }
 
-    write!(source, "{}(", self.name)?;
+    write!(source, "function {}(", self.name)?;
 
     write!(
       source,
@@ -106,28 +111,23 @@ impl LibraryElement for Function {
         .iter()
         .map(|(name, parameter)| format!(
           "{}: {}",
-          name, parameter.converters.typescript
+          name, parameter.converter.typescript
         ))
         .collect::<Vec<String>>()
         .join(", ")
     )?;
 
     if self.nonblocking {
-      writeln!(source, "): Promise<{}> {{", result.converters.typescript)?;
+      writeln!(source, "): Promise<{}> {{", result.converter.typescript)?;
     } else {
-      writeln!(source, "): {} {{", result.converters.typescript)?;
-    }
-
-    for (name, descriptor) in &parameters {
-      if let Some(local) = &descriptor.converters.into.local {
-        local.replace("{}", name).generate(library, source)?;
-      }
+      writeln!(source, "): {} {{", result.converter.typescript)?;
     }
 
     writeln!(
       source,
-      "const __result = {};",
-      result.converters.from.inline.replace(
+      "{}{};",
+      if result.returns() { "return " } else { "" },
+      result.converter.from.replace(
         "{}",
         &format!(
           "{}.symbols.{}({})",
@@ -136,23 +136,14 @@ impl LibraryElement for Function {
           parameters
             .iter()
             .map(|(name, parameter)| parameter
-              .converters
+              .converter
               .into
-              .inline
               .replace("{}", name))
             .collect::<Vec<String>>()
             .join(", ")
         )
       )
     )?;
-
-    if let Some(local) = &result.converters.from.local {
-      local.replace("{}", "__result").generate(library, source)?;
-    }
-
-    if result.returns() {
-      writeln!(source, "return __result;")?;
-    }
 
     writeln!(source, "}}")?;
 

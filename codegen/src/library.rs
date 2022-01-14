@@ -54,7 +54,7 @@ impl Library {
     self.loader.generate(self, &mut source)?;
 
     for descriptor in self.types.values() {
-      if let Some(global) = &descriptor.converters.global {
+      if let Some(global) = &descriptor.converter.global {
         global.generate(self, &mut source)?;
       }
     }
@@ -93,9 +93,9 @@ mod tests {
   use crate::loader::plug::PlugLoader;
   use crate::loader::plug::PlugLoaderOptions;
   use crate::loader::plug::PlugLoaderSingleOptions;
-  use crate::types::buffer::Buffer;
   use crate::types::primitive::Primitive;
-  use crate::types::BufferType;
+  use crate::types::r#struct::Struct;
+  use crate::types::r#struct::StructLayout;
   use crate::types::NativeType;
   use crate::types::TypeDefinition;
 
@@ -122,8 +122,15 @@ mod tests {
     );
     library.register_type("cstring", TypeDefinition::CString);
     library.register_type(
-      "[usize; 10]",
-      TypeDefinition::Buffer(Buffer::new(BufferType::USize, 10)),
+      "ExampleStruct",
+      TypeDefinition::Struct(Struct::new(
+        "ExampleStruct",
+        StructLayout {
+          size: 8,
+          align: 2,
+          fields: vec![("test".to_string(), TypeDefinition::Primitive(Primitive::new(NativeType::USize)))],
+        },
+      )),
     );
 
     library.append(Box::new(Function::new(
@@ -134,8 +141,9 @@ mod tests {
         "usize".to_string(),
         "cstring".to_string(),
       ]),
-      "[usize; 10]",
+      "ExampleStruct",
       false,
+      true
     )));
 
     let source = library.generate().unwrap();

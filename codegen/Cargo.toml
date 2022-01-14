@@ -7,3 +7,4 @@ edition = "2018"
 
 [dependencies]
 anyhow = "1.0.52"
+Inflector = "0.11.4"
