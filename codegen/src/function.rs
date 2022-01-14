@@ -8,7 +8,7 @@ use crate::source::Source;
 use crate::types::TypeDescriptor;
 
 pub enum FunctionParameters {
-  Named(HashMap<String, String>),
+  Named(Vec<(String, String)>),
   Unnamed(Vec<String>),
 }
 
@@ -16,10 +16,10 @@ pub struct Function {
   symbol: String,
   name: String,
   docs: Option<String>,
-  parameters: HashMap<String, String>,
+  parameters: Vec<(String, String)>,
   result: String,
   nonblocking: bool,
-  export: bool
+  export: bool,
 }
 
 impl Function {
@@ -30,18 +30,18 @@ impl Function {
     parameters: FunctionParameters,
     result: &str,
     nonblocking: bool,
-    export: bool
+    export: bool,
   ) -> Self {
     let name = name.unwrap_or(symbol).to_string();
     let symbol = symbol.to_string();
     let parameters = match parameters {
       FunctionParameters::Named(parameters) => parameters,
       FunctionParameters::Unnamed(parameters) => {
-        let mut map = HashMap::new();
+        let mut named = Vec::new();
         for (index, parameter) in parameters.into_iter().enumerate() {
-          map.insert(format!("parameter{}", index), parameter);
+          named.push((format!("parameter{}", index), parameter));
         }
-        map
+        named
       }
     };
 
@@ -52,7 +52,7 @@ impl Function {
       parameters,
       result: result.to_string(),
       nonblocking,
-      export
+      export,
     }
   }
 }
