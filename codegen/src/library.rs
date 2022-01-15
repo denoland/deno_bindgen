@@ -93,7 +93,9 @@ mod tests {
   use crate::loader::plug::PlugLoader;
   use crate::loader::plug::PlugLoaderOptions;
   use crate::loader::plug::PlugLoaderSingleOptions;
-  use crate::types::pointer::Pointer;
+  use crate::types::BufferType;
+use crate::types::buffer::Buffer;
+use crate::types::pointer::Pointer;
   use crate::types::primitive::Primitive;
   use crate::types::r#struct::Struct;
   use crate::types::r#struct::StructLayout;
@@ -131,12 +133,12 @@ mod tests {
             (
               "a".to_string(),
               TypeDefinition::Pointer(Pointer::new(Box::new(
-                TypeDefinition::Primitive(Primitive::new(NativeType::U8)),
+                TypeDefinition::Primitive(Primitive::new(NativeType::U16)),
               ))),
             ),
             (
               "b".to_string(),
-              TypeDefinition::Primitive(Primitive::new(NativeType::U32)),
+              TypeDefinition::Buffer(Buffer::new(BufferType::U64, 1)),
             ),
             (
               "c".to_string(),

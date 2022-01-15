@@ -28,38 +28,6 @@ pub enum NativeType {
   Pointer,
 }
 
-impl NativeType {
-  fn size_of(&self) -> usize {
-    match self {
-      NativeType::Void => panic!(),
-      NativeType::U8 | NativeType::I8 => 1,
-      NativeType::U16 | NativeType::I16 => 2,
-      NativeType::U32 | NativeType::I32 | NativeType::F32 => 4,
-      NativeType::U64
-      | NativeType::I64
-      | NativeType::USize
-      | NativeType::ISize
-      | NativeType::F64
-      | NativeType::Pointer => 8,
-    }
-  }
-
-  fn align_of(&self) -> usize {
-    match self {
-      NativeType::Void => panic!(),
-      NativeType::U8 | NativeType::I8 => 1,
-      NativeType::U16 | NativeType::I16 => 2,
-      NativeType::U32 | NativeType::I32 | NativeType::F32 => 4,
-      NativeType::U64
-      | NativeType::I64
-      | NativeType::USize
-      | NativeType::ISize
-      | NativeType::F64
-      | NativeType::Pointer => 8,
-    }
-  }
-}
-
 #[derive(Clone, Copy)]
 pub enum BufferType {
   None,
@@ -87,6 +55,70 @@ pub enum TypeDefinition {
   //  Tuple(Vec<TypeDefinition>),
   //  Enum(Vec<(String, Option<TypeDefinition>)>),
   //  Array(Vec<TypeDefinition>),
+}
+
+impl TypeDefinition {
+  fn size_of(&self) -> usize {
+    match self {
+      TypeDefinition::Primitive(primitive) => match primitive.native {
+        NativeType::Void => panic!(),
+        NativeType::U8 | NativeType::I8 => 1,
+        NativeType::U16 | NativeType::I16 => 2,
+        NativeType::U32 | NativeType::I32 | NativeType::F32 => 4,
+        NativeType::U64
+        | NativeType::I64
+        | NativeType::USize
+        | NativeType::ISize
+        | NativeType::F64
+        | NativeType::Pointer => 8,
+      },
+      TypeDefinition::Pointer(_) => 8,
+      TypeDefinition::Buffer(buffer) => match buffer.r#type {
+        BufferType::None | BufferType::U8 | BufferType::I8 => buffer.length * 1,
+        BufferType::U16 | BufferType::I16 => buffer.length * 2,
+        BufferType::U32 | BufferType::I32 | BufferType::F32 => {
+          buffer.length * 4
+        }
+        BufferType::U64
+        | BufferType::I64
+        | BufferType::USize
+        | BufferType::ISize
+        | BufferType::F64 => buffer.length * 8,
+      },
+      TypeDefinition::CString => 8,
+      TypeDefinition::Struct(_) => todo!(),
+    }
+  }
+
+  fn align_of(&self) -> usize {
+    match self {
+      TypeDefinition::Primitive(primitive) => match primitive.native {
+        NativeType::Void => panic!(),
+        NativeType::U8 | NativeType::I8 => 1,
+        NativeType::U16 | NativeType::I16 => 2,
+        NativeType::U32 | NativeType::I32 | NativeType::F32 => 4,
+        NativeType::U64
+        | NativeType::I64
+        | NativeType::USize
+        | NativeType::ISize
+        | NativeType::F64
+        | NativeType::Pointer => 8,
+      },
+      TypeDefinition::Pointer(_) => 8,
+      TypeDefinition::Buffer(buffer) => match buffer.r#type {
+        BufferType::None | BufferType::U8 | BufferType::I8 => 1,
+        BufferType::U16 | BufferType::I16 => 2,
+        BufferType::U32 | BufferType::I32 | BufferType::F32 => 4,
+        BufferType::U64
+        | BufferType::I64
+        | BufferType::USize
+        | BufferType::ISize
+        | BufferType::F64 => 8,
+      },
+      TypeDefinition::CString => 8,
+      TypeDefinition::Struct(_) => todo!(),
+    }
+  }
 }
 
 impl From<TypeDefinition> for TypeDescriptor {
