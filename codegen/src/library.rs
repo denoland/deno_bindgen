@@ -93,12 +93,12 @@ mod tests {
   use crate::loader::plug::PlugLoader;
   use crate::loader::plug::PlugLoaderOptions;
   use crate::loader::plug::PlugLoaderSingleOptions;
-  use crate::types::BufferType;
-use crate::types::buffer::Buffer;
-use crate::types::pointer::Pointer;
+  use crate::types::buffer::Buffer;
+  use crate::types::pointer::Pointer;
   use crate::types::primitive::Primitive;
   use crate::types::r#struct::Struct;
   use crate::types::r#struct::StructLayout;
+  use crate::types::BufferType;
   use crate::types::NativeType;
   use crate::types::TypeDefinition;
 

@@ -86,8 +86,6 @@ impl Struct {
     for (property, definition, descriptor) in self.fields() {
       offset += calculate_padding(offset, definition.align_of());
 
-      println!("{}, {}, {}", offset, definition.size_of(), definition.align_of());
-
       match definition {
         TypeDefinition::Primitive(ref primitive) => {
           let view_constructor =
@@ -157,11 +155,7 @@ impl Struct {
             format!("new Uint8Array({}.buffer)", accessor)
           };
 
-          body.push(format!(
-            "__u8_view.set({}, {});",
-            source,
-            offset,
-          ));
+          body.push(format!("__u8_view.set({}, {});", source, offset,));
         }
         TypeDefinition::CString => unimplemented!(),
         TypeDefinition::Struct(_) => unimplemented!(),
