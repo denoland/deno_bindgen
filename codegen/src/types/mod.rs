@@ -74,7 +74,7 @@ impl TypeDefinition {
       },
       TypeDefinition::Pointer(_) => 8,
       TypeDefinition::Buffer(buffer) => match buffer.r#type {
-        BufferType::None | BufferType::U8 | BufferType::I8 => buffer.length * 1,
+        BufferType::None | BufferType::U8 | BufferType::I8 => buffer.length,
         BufferType::U16 | BufferType::I16 => buffer.length * 2,
         BufferType::U32 | BufferType::I32 | BufferType::F32 => {
           buffer.length * 4
