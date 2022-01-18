@@ -1,5 +1,7 @@
-use std::collections::HashMap;
 use std::fmt::Write;
+use std::iter::FromIterator;
+
+use indexmap::{IndexMap, IndexSet};
 
 use crate::error::{unknown_type, AnyError};
 use crate::source::Source;
@@ -7,7 +9,7 @@ use crate::types::{TypeDefinition, TypeDescriptor};
 
 pub struct Library {
   pub variable: String,
-  types: HashMap<String, TypeDescriptor>,
+  types: IndexMap<String, TypeDescriptor>,
   loader: Box<dyn LibraryElement>,
   elements: Vec<Box<dyn LibraryElement>>,
 }
@@ -16,7 +18,7 @@ impl Library {
   pub fn new(variable: Option<&str>, loader: Box<dyn LibraryElement>) -> Self {
     Self {
       variable: variable.unwrap_or("library").to_string(),
-      types: HashMap::new(),
+      types: IndexMap::new(),
       loader,
       elements: Vec::new(),
     }
@@ -50,13 +52,18 @@ impl Library {
 
   pub fn generate(&mut self) -> Result<Source, AnyError> {
     let mut source = Source::new();
+    let globals: IndexSet<String> = IndexSet::from_iter(
+      self
+        .types
+        .values()
+        .map(|descriptor| descriptor.converter.globals.clone())
+        .flatten(),
+    );
 
     self.loader.generate(self, &mut source)?;
 
-    for descriptor in self.types.values() {
-      if let Some(global) = &descriptor.converter.global {
-        global.generate(self, &mut source)?;
-      }
+    for global in globals {
+      global.generate(self, &mut source)?;
     }
 
     for element in &self.elements {
@@ -93,12 +100,10 @@ mod tests {
   use crate::loader::plug::PlugLoader;
   use crate::loader::plug::PlugLoaderOptions;
   use crate::loader::plug::PlugLoaderSingleOptions;
-  use crate::types::buffer::Buffer;
   use crate::types::pointer::Pointer;
   use crate::types::primitive::Primitive;
   use crate::types::r#struct::Struct;
   use crate::types::r#struct::StructLayout;
-  use crate::types::BufferType;
   use crate::types::NativeType;
   use crate::types::TypeDefinition;
 
@@ -136,10 +141,7 @@ mod tests {
                 TypeDefinition::Primitive(Primitive::new(NativeType::U16)),
               ))),
             ),
-            (
-              "b".to_string(),
-              TypeDefinition::Buffer(Buffer::new(BufferType::U64, 1)),
-            ),
+            ("b".to_string(), TypeDefinition::CString),
             (
               "c".to_string(),
               TypeDefinition::Primitive(Primitive::new(NativeType::Pointer)),
@@ -153,10 +155,7 @@ mod tests {
       "test",
       None,
       None,
-      FunctionParameters::Unnamed(vec![
-        "usize".to_string(),
-        "cstring".to_string(),
-      ]),
+      FunctionParameters::Unnamed(vec!["usize".to_string()]),
       "ExampleStruct",
       false,
       true,

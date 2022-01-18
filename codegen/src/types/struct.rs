@@ -69,7 +69,7 @@ impl Struct {
       .collect()
   }
 
-  pub fn generate_into_function(&self) -> String {
+  pub fn generate_into_function(&self, globals: &mut Vec<String>) {
     let mut views_required: HashSet<String> = HashSet::new();
     views_required
       .insert("const __u8_view = new Uint8Array(__array_buffer);".to_string());
@@ -83,8 +83,10 @@ impl Struct {
       .max()
       .unwrap_or(0);
 
-    for (property, definition, descriptor) in self.fields() {
+    for (property, definition, mut descriptor) in self.fields() {
       offset += calculate_padding(offset, definition.align_of());
+
+      globals.append(&mut descriptor.converter.globals);
 
       match definition {
         TypeDefinition::Primitive(ref primitive) => {
@@ -130,7 +132,7 @@ impl Struct {
             )
           ));
         }
-        TypeDefinition::Pointer(_) => {
+        TypeDefinition::CString | TypeDefinition::Pointer(_) => {
           views_required.insert(
             "const __u64_view = new BigUint64Array(__array_buffer);"
               .to_string(),
@@ -157,7 +159,6 @@ impl Struct {
 
           body.push(format!("__u8_view.set({}, {});", source, offset,));
         }
-        TypeDefinition::CString => unimplemented!(),
         TypeDefinition::Struct(_) => unimplemented!(),
       }
 
@@ -166,29 +167,28 @@ impl Struct {
 
     let size = offset + calculate_padding(offset, align);
 
-    format!(
+    globals.push(format!(
       "function {}({}: {}): Uint8Array {{\n\
-        const __array_buffer = new ArrayBuffer({});\n\
-        {}\n\
-        {}\n\
-        return new Uint8Array(__array_buffer);\n\
-      }}",
+      const __array_buffer = new ArrayBuffer({});\n\
+      {}\n\
+      {}\n\
+      return __u8_view;\n\
+    }}",
       self.into_function_name(),
       self.variable_name(),
       self.type_name(),
       size,
       Vec::from_iter(views_required).join("\n"),
       body.join("\n")
-    )
+    ));
   }
 
-  pub fn generate_from_function(&self) -> String {
-    String::new()
-  }
+  pub fn generate_from_function(&self, globals: &mut Vec<String>) {}
 }
 
 impl From<Struct> for TypeDescriptor {
   fn from(r#struct: Struct) -> Self {
+    let mut globals = Vec::new();
     let mut typescript_properties: Vec<String> = Vec::new();
 
     for (property, _, descriptor) in r#struct.fields() {
@@ -198,21 +198,18 @@ impl From<Struct> for TypeDescriptor {
       ));
     }
 
-    let typescript_interface = format!(
+    globals.push(format!(
       "export interface {} {{\n{}}}",
       r#struct.type_name(),
       typescript_properties.join("")
-    );
+    ));
+    r#struct.generate_into_function(&mut globals);
+    r#struct.generate_from_function(&mut globals);
 
     TypeDescriptor {
       native: NativeType::Pointer,
       converter: TypeConverter {
-        global: Some(format!(
-          "{}\n{}\n{}",
-          typescript_interface,
-          r#struct.generate_into_function(),
-          r#struct.generate_from_function()
-        )),
+        globals,
         typescript: r#struct.type_name(),
         into: format!("{}({{}})", r#struct.into_function_name()),
         from: format!("{}({{}})", r#struct.from_function_name()),

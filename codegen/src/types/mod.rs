@@ -145,7 +145,7 @@ impl TypeDescriptor {
 }
 
 pub struct TypeConverter {
-  pub global: Option<String>,
+  pub globals: Vec<String>,
   pub typescript: String,
   pub into: String,
   pub from: String,

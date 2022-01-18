@@ -24,7 +24,7 @@ impl From<Pointer> for TypeDescriptor {
 
       if let NativeType::Pointer = native {
         TypeConverter {
-          global: target_descriptor.converter.global,
+          globals: target_descriptor.converter.globals,
           typescript: target_descriptor.converter.typescript,
           into: format!(
             "Deno.UnsafePointer.of(new BigUint64Array([{}.value]))",
@@ -37,7 +37,7 @@ impl From<Pointer> for TypeDescriptor {
         let constructor: String = buffer_type.into();
 
         TypeConverter {
-          global: target_descriptor.converter.global,
+          globals: target_descriptor.converter.globals,
           typescript: target_descriptor.converter.typescript,
           into: format!(
             "Deno.UnsafePointer.of(new {}([{}]))",
@@ -48,7 +48,7 @@ impl From<Pointer> for TypeDescriptor {
       }
     } else {
       TypeConverter {
-        global: target_descriptor.converter.global,
+        globals: target_descriptor.converter.globals,
         typescript: target_descriptor.converter.typescript,
         into: format!(
           "Deno.UnsafePointer.of(new BigUint64Array([{}.value]))",

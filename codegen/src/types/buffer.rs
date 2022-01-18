@@ -19,7 +19,7 @@ impl From<Buffer> for TypeDescriptor {
   fn from(buffer: Buffer) -> Self {
     let converter = if let BufferType::None = buffer.r#type {
       TypeConverter {
-        global: None,
+        globals: Vec::new(),
         typescript: "ArrayBuffer".to_string(),
         into: format!("new Uint8Array({{}}, {})", buffer.length),
         from: format!("{{}}.getArrayBuffer({})", buffer.length),
@@ -27,7 +27,7 @@ impl From<Buffer> for TypeDescriptor {
     } else {
       let constructor: String = buffer.r#type.into();
       TypeConverter {
-        global: None,
+        globals: Vec::new(),
         typescript: constructor.to_string(),
         into: format!(
           "Deno.UnsafePointer.of(new {}({{}}.buffer, {}))",
