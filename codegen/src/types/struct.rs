@@ -176,7 +176,7 @@ impl Struct {
     ));
   }
 
-  pub fn generate_from_function(&self, globals: &mut Vec<String>) {}
+  pub fn generate_from_function(&self, _globals: &mut Vec<String>) {}
 }
 
 impl From<Struct> for TypeDescriptor {
