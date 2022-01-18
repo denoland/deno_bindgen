@@ -13,7 +13,7 @@ use super::TypeConverter;
 use super::TypeDefinition;
 use super::TypeDescriptor;
 
-fn hashed_fields_identifer(fields: &Vec<TypeDefinition>) -> String {
+fn hashed_fields_identifer(fields: &[TypeDefinition]) -> String {
   let mut hasher = DefaultHasher::new();
   fields.hash(&mut hasher);
   format!("{:x}", hasher.finish())
@@ -31,7 +31,7 @@ impl Tuple {
     Self {
       identifier: identifier
         .map(String::from)
-        .unwrap_or(hashed_fields_identifer(&fields)),
+        .unwrap_or_else(|| hashed_fields_identifer(&fields)),
       anonymous: identifier.is_none(),
       fields,
     }
