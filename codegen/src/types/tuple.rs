@@ -13,24 +13,21 @@ use super::TypeConverter;
 use super::TypeDefinition;
 use super::TypeDescriptor;
 
-fn hashed_fields_identifer(fields: &Vec<(String, TypeDefinition)>) -> String {
+fn hashed_fields_identifer(fields: &Vec<TypeDefinition>) -> String {
   let mut hasher = DefaultHasher::new();
   fields.hash(&mut hasher);
   format!("{:x}", hasher.finish())
 }
 
 #[derive(Clone, Hash)]
-pub struct Struct {
+pub struct Tuple {
   pub identifier: String,
   pub anonymous: bool,
-  pub fields: Vec<(String, TypeDefinition)>,
+  pub fields: Vec<TypeDefinition>,
 }
 
-impl Struct {
-  pub fn new(
-    identifier: Option<&str>,
-    fields: Vec<(String, TypeDefinition)>,
-  ) -> Self {
+impl Tuple {
+  pub fn new(identifier: Option<&str>, fields: Vec<TypeDefinition>) -> Self {
     Self {
       identifier: identifier
         .map(String::from)
@@ -42,15 +39,13 @@ impl Struct {
 
   pub fn typescript_type(&self) -> String {
     format!(
-      "{{\n{}\n}}",
+      "[{}]",
       self
         .fields()
         .iter()
-        .map(|(property, _, descriptor)| {
-          format!("{}: {};", property, descriptor.converter.typescript)
-        })
+        .map(|(_, descriptor)| { descriptor.converter.typescript.clone() })
         .collect::<Vec<String>>()
-        .join("\n")
+        .join(", ")
     )
   }
 
@@ -70,18 +65,12 @@ impl Struct {
     format!("__from_{}", self.identifier)
   }
 
-  pub fn fields(&self) -> Vec<(String, TypeDefinition, TypeDescriptor)> {
+  pub fn fields(&self) -> Vec<(TypeDefinition, TypeDescriptor)> {
     self
       .fields
       .clone()
       .into_iter()
-      .map(|(property, definition)| {
-        (
-          property,
-          definition.clone(),
-          TypeDescriptor::from(definition),
-        )
-      })
+      .map(|definition| (definition.clone(), TypeDescriptor::from(definition)))
       .collect()
   }
 
@@ -95,15 +84,17 @@ impl Struct {
     let align = self
       .fields()
       .iter()
-      .map(|(_, definition, _)| definition.align_of())
+      .map(|(definition, _)| definition.align_of())
       .max()
       .unwrap_or(0);
 
-    for (property, definition, mut descriptor) in self.fields() {
+    for (field, (definition, mut descriptor)) in
+      self.fields().into_iter().enumerate()
+    {
       offset += calculate_padding(offset, definition.align_of());
       globals.append(&mut descriptor.converter.globals);
 
-      let accessor = format!("__data.{}", property);
+      let accessor = format!("__data[{}]", field);
 
       match definition {
         TypeDefinition::Primitive(ref primitive) => {
@@ -202,28 +193,28 @@ impl Struct {
   pub fn generate_from_function(&self, _globals: &mut Vec<String>) {}
 }
 
-impl From<Struct> for TypeDescriptor {
-  fn from(r#struct: Struct) -> Self {
+impl From<Tuple> for TypeDescriptor {
+  fn from(tuple: Tuple) -> Self {
     let mut globals = Vec::new();
 
-    if !r#struct.anonymous {
+    if !tuple.anonymous {
       globals.push(format!(
-        "export interface {} {}",
-        r#struct.typescript(),
-        r#struct.typescript_type()
+        "export type {} = {};",
+        tuple.typescript(),
+        tuple.typescript_type()
       ));
     }
 
-    r#struct.generate_into_function(&mut globals);
-    r#struct.generate_from_function(&mut globals);
+    tuple.generate_into_function(&mut globals);
+    tuple.generate_from_function(&mut globals);
 
     TypeDescriptor {
       native: NativeType::Pointer,
       converter: TypeConverter {
         globals,
-        typescript: r#struct.typescript(),
-        into: format!("{}({{}})", r#struct.into_function_name()),
-        from: format!("{}({{}})", r#struct.from_function_name()),
+        typescript: tuple.typescript(),
+        into: format!("{}({{}})", tuple.into_function_name()),
+        from: format!("{}({{}})", tuple.from_function_name()),
       },
     }
   }

@@ -104,7 +104,6 @@ mod tests {
   use crate::types::pointer::Pointer;
   use crate::types::primitive::Primitive;
   use crate::types::r#struct::Struct;
-  use crate::types::r#struct::StructLayout;
   use crate::types::BufferType;
   use crate::types::NativeType;
   use crate::types::TypeDefinition;
@@ -134,52 +133,46 @@ mod tests {
     library.register_type(
       "ExampleStruct",
       TypeDefinition::Struct(Struct::new(
-        "ExampleStruct",
-        StructLayout {
-          fields: vec![
-            (
-              "a".to_string(),
-              TypeDefinition::Pointer(Pointer::new(Box::new(
-                TypeDefinition::Primitive(Primitive::new(NativeType::U16)),
-              ))),
-            ),
-            ("b".to_string(), TypeDefinition::CString),
-            (
-              "c".to_string(),
-              TypeDefinition::Primitive(Primitive::new(NativeType::Pointer)),
-            ),
-            (
-              "d".to_string(),
-              TypeDefinition::Primitive(Primitive::new(NativeType::I8)),
-            ),
-            (
-              "f".to_string(),
-              TypeDefinition::Buffer(Buffer::new(BufferType::I64, 13)),
-            ),
-            (
-              "g".to_string(),
-              TypeDefinition::Struct(Struct::new(
-                "ExampleInnerStruct",
-                StructLayout {
-                  fields: vec![
-                    (
-                      "inner_a".to_string(),
-                      TypeDefinition::Primitive(Primitive::new(
-                        NativeType::Pointer,
-                      )),
-                    ),
-                    (
-                      "inner_b".to_string(),
-                      TypeDefinition::Primitive(Primitive::new(
-                        NativeType::ISize,
-                      )),
-                    ),
-                  ],
-                },
-              )),
-            ),
-          ],
-        },
+        None,
+        vec![
+          (
+            "a".to_string(),
+            TypeDefinition::Pointer(Pointer::new(Box::new(
+              TypeDefinition::Primitive(Primitive::new(NativeType::U16)),
+            ))),
+          ),
+          ("b".to_string(), TypeDefinition::CString),
+          (
+            "c".to_string(),
+            TypeDefinition::Primitive(Primitive::new(NativeType::Pointer)),
+          ),
+          (
+            "d".to_string(),
+            TypeDefinition::Primitive(Primitive::new(NativeType::I8)),
+          ),
+          (
+            "f".to_string(),
+            TypeDefinition::Buffer(Buffer::new(BufferType::I64, 13)),
+          ),
+          (
+            "g".to_string(),
+            TypeDefinition::Struct(Struct::new(
+              Some("ExampleInnerStruct"),
+              vec![
+                (
+                  "inner_a".to_string(),
+                  TypeDefinition::Primitive(Primitive::new(
+                    NativeType::Pointer,
+                  )),
+                ),
+                (
+                  "inner_b".to_string(),
+                  TypeDefinition::Primitive(Primitive::new(NativeType::ISize)),
+                ),
+              ],
+            )),
+          ),
+        ],
       )),
     );
 

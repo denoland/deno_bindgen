@@ -3,7 +3,7 @@ use super::NativeType;
 use super::TypeConverter;
 use super::TypeDescriptor;
 
-#[derive(Clone)]
+#[derive(Clone, Hash)]
 pub struct Buffer {
   pub r#type: BufferType,
   pub length: usize,

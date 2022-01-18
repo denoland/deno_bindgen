@@ -2,7 +2,7 @@ use super::NativeType;
 use super::TypeConverter;
 use super::TypeDescriptor;
 
-#[derive(Clone)]
+#[derive(Clone, Hash)]
 pub struct Primitive {
   pub native: NativeType,
 }

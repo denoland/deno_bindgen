@@ -3,12 +3,14 @@ use self::cstring::CString;
 use self::pointer::Pointer;
 use self::primitive::Primitive;
 use self::r#struct::Struct;
+use self::tuple::Tuple;
 
 pub mod buffer;
 pub mod cstring;
 pub mod pointer;
 pub mod primitive;
 pub mod r#struct;
+pub mod tuple;
 
 fn calculate_padding(offset: usize, alignment: usize) -> usize {
   let misalignment = offset % alignment;
@@ -19,7 +21,7 @@ fn calculate_padding(offset: usize, alignment: usize) -> usize {
   }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Hash)]
 pub enum NativeType {
   Void,
   U8,
@@ -37,7 +39,7 @@ pub enum NativeType {
   Pointer,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Hash)]
 pub enum BufferType {
   None,
   U8,
@@ -54,14 +56,14 @@ pub enum BufferType {
   F64,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Hash)]
 pub enum TypeDefinition {
   Primitive(Primitive),
   Pointer(Pointer),
   Buffer(Buffer),
   CString,
   Struct(Struct),
-  //  Tuple(Vec<TypeDefinition>),
+  Tuple(Tuple),
   //  Enum(Vec<(String, Option<TypeDefinition>)>),
   //  Array(Vec<TypeDefinition>),
 }
@@ -103,6 +105,14 @@ impl TypeDefinition {
         }
         offset + calculate_padding(offset, self.align_of())
       }
+      TypeDefinition::Tuple(tuple) => {
+        let mut offset = 0;
+        for (definition, _) in tuple.fields() {
+          offset += calculate_padding(offset, definition.align_of())
+            + definition.size_of();
+        }
+        offset + calculate_padding(offset, self.align_of())
+      }
     }
   }
 
@@ -138,6 +148,12 @@ impl TypeDefinition {
         .map(|(_, definition, _)| definition.align_of())
         .max()
         .unwrap_or(0),
+      TypeDefinition::Tuple(tuple) => tuple
+        .fields()
+        .iter()
+        .map(|(definition, _)| definition.align_of())
+        .max()
+        .unwrap_or(0),
     }
   }
 }
@@ -150,6 +166,7 @@ impl From<TypeDefinition> for TypeDescriptor {
       TypeDefinition::Buffer(buffer) => TypeDescriptor::from(buffer),
       TypeDefinition::CString => TypeDescriptor::from(CString),
       TypeDefinition::Struct(r#struct) => TypeDescriptor::from(r#struct),
+      TypeDefinition::Tuple(tuple) => TypeDescriptor::from(tuple),
     }
   }
 }

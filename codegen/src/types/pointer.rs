@@ -4,7 +4,7 @@ use super::TypeConverter;
 use super::TypeDefinition;
 use super::TypeDescriptor;
 
-#[derive(Clone)]
+#[derive(Clone, Hash)]
 pub struct Pointer {
   pub target: Box<TypeDefinition>,
 }
