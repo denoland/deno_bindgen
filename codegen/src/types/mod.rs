@@ -10,6 +10,15 @@ pub mod pointer;
 pub mod primitive;
 pub mod r#struct;
 
+fn calculate_padding(offset: usize, alignment: usize) -> usize {
+  let misalignment = offset % alignment;
+  if misalignment > 0 {
+    alignment - misalignment
+  } else {
+    0
+  }
+}
+
 #[derive(Clone, Copy)]
 pub enum NativeType {
   Void,
@@ -86,7 +95,14 @@ impl TypeDefinition {
         | BufferType::F64 => buffer.length * 8,
       },
       TypeDefinition::CString => 8,
-      TypeDefinition::Struct(_) => todo!(),
+      TypeDefinition::Struct(r#struct) => {
+        let mut offset = 0;
+        for (_, definition, _) in r#struct.fields() {
+          offset += calculate_padding(offset, definition.align_of())
+            + definition.size_of();
+        }
+        offset + calculate_padding(offset, self.align_of())
+      }
     }
   }
 
@@ -116,7 +132,12 @@ impl TypeDefinition {
         | BufferType::F64 => 8,
       },
       TypeDefinition::CString => 8,
-      TypeDefinition::Struct(_) => todo!(),
+      TypeDefinition::Struct(r#struct) => r#struct
+        .fields()
+        .iter()
+        .map(|(_, definition, _)| definition.align_of())
+        .max()
+        .unwrap_or(0),
     }
   }
 }

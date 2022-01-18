@@ -1,22 +1,14 @@
-use std::collections::HashSet;
 use std::iter::FromIterator;
 
+use indexmap::IndexSet;
 use inflector::Inflector;
 
+use super::calculate_padding;
 use super::BufferType;
 use super::NativeType;
 use super::TypeConverter;
 use super::TypeDefinition;
 use super::TypeDescriptor;
-
-fn calculate_padding(offset: usize, alignment: usize) -> usize {
-  let misalignment = offset % alignment;
-  if misalignment > 0 {
-    alignment - misalignment
-  } else {
-    0
-  }
-}
 
 #[derive(Clone)]
 pub struct StructLayout {
@@ -70,8 +62,8 @@ impl Struct {
   }
 
   pub fn generate_into_function(&self, globals: &mut Vec<String>) {
-    let mut views_required: HashSet<String> = HashSet::new();
-    views_required
+    let mut views: IndexSet<String> = IndexSet::new();
+    views
       .insert("const __u8_view = new Uint8Array(__array_buffer);".to_string());
 
     let mut body = Vec::new();
@@ -85,8 +77,9 @@ impl Struct {
 
     for (property, definition, mut descriptor) in self.fields() {
       offset += calculate_padding(offset, definition.align_of());
-
       globals.append(&mut descriptor.converter.globals);
+
+      let accessor = format!("{}.{}", self.variable_name(), property);
 
       match definition {
         TypeDefinition::Primitive(ref primitive) => {
@@ -108,7 +101,7 @@ impl Struct {
             _ => panic!("Unsupported type"),
           };
 
-          views_required.insert(format!(
+          views.insert(format!(
             "const {} = new {}(__array_buffer);",
             view_variable, view_constructor
           ));
@@ -120,9 +113,8 @@ impl Struct {
             descriptor.converter.into.replace(
               "{}",
               &format!(
-                "{}.{}{}",
-                self.variable_name(),
-                property,
+                "{}{}",
+                accessor,
                 if let NativeType::Pointer = primitive.native {
                   ".value"
                 } else {
@@ -133,7 +125,7 @@ impl Struct {
           ));
         }
         TypeDefinition::CString | TypeDefinition::Pointer(_) => {
-          views_required.insert(
+          views.insert(
             "const __u64_view = new BigUint64Array(__array_buffer);"
               .to_string(),
           );
@@ -141,14 +133,10 @@ impl Struct {
           body.push(format!(
             "__u64_view[{}] = {}.value;",
             offset / definition.size_of(),
-            descriptor.converter.into.replace(
-              "{}",
-              &format!("{}.{}", self.variable_name(), property,)
-            )
+            descriptor.converter.into.replace("{}", &accessor)
           ));
         }
         TypeDefinition::Buffer(ref buffer) => {
-          let accessor = format!("{}.{}", self.variable_name(), property);
           let source = if let BufferType::None = buffer.r#type {
             format!("new Uint8Array({})", accessor)
           } else if let BufferType::U8 = buffer.r#type {
@@ -159,9 +147,14 @@ impl Struct {
 
           body.push(format!("__u8_view.set({}, {});", source, offset,));
         }
-        TypeDefinition::Struct(_) => unimplemented!(),
+        TypeDefinition::Struct(_) => {
+          body.push(format!(
+            "__u8_view.set(new Uint8Array({}.buffer), {});",
+            descriptor.converter.into.replace("{}", &accessor),
+            offset,
+          ));
+        }
       }
-
       offset += definition.size_of();
     }
 
@@ -178,7 +171,7 @@ impl Struct {
       self.variable_name(),
       self.type_name(),
       size,
-      Vec::from_iter(views_required).join("\n"),
+      Vec::from_iter(views).join("\n"),
       body.join("\n")
     ));
   }
