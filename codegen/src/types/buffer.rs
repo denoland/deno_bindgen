@@ -25,7 +25,7 @@ impl From<Buffer> for TypeDescriptor {
         from: format!("{{}}.getArrayBuffer({})", buffer.length),
       }
     } else {
-      let constructor: String = buffer.r#type.into();
+      let constructor = buffer.r#type.typed_array();
       TypeConverter {
         globals: Vec::new(),
         typescript: constructor.to_string(),

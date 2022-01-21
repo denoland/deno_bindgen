@@ -99,7 +99,7 @@ impl Tuple {
       match definition {
         TypeDefinition::Primitive(ref primitive) => {
           let view_constructor =
-            String::from(BufferType::from(primitive.native));
+            BufferType::from(primitive.native).typed_array();
           let view_variable = match primitive.native {
             NativeType::U8 => "__u8_view",
             NativeType::I8 => "__i8_view",
@@ -160,7 +160,7 @@ impl Tuple {
             format!("new Uint8Array({}.buffer)", accessor)
           };
 
-          body.push(format!("__u8_view.set({}, {});", source, offset,));
+          body.push(format!("__u8_view.set({}, {});", source, offset));
         }
         TypeDefinition::Tuple(_) | TypeDefinition::Struct(_) => {
           body.push(format!(

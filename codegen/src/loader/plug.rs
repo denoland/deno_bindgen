@@ -102,7 +102,7 @@ impl From<PlugLoaderSingleOptions> for String {
   fn from(options: PlugLoaderSingleOptions) -> Self {
     let mut properties = Vec::new();
 
-    properties.push(format!("name: \"{}\"", options.name,));
+    properties.push(format!("name: \"{}\"", options.name));
     properties.push(format!("url: \"{}\"", options.url));
 
     if let Some(policy) = options.policy {
@@ -125,7 +125,7 @@ impl From<PlugLoaderCrossOptions> for String {
   fn from(options: PlugLoaderCrossOptions) -> Self {
     let mut properties = Vec::new();
 
-    properties.push(format!("name: \"{}\"", options.name,));
+    properties.push(format!("name: \"{}\"", options.name));
     properties.push(format!("urls: \"{}\"", String::from(options.urls)));
 
     if let Some(policy) = options.policy {

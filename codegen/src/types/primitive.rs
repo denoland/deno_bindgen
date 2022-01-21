@@ -35,7 +35,12 @@ impl From<Primitive> for TypeDescriptor {
       globals: Vec::new(),
       typescript: typescript.to_string(),
       into: "{}".to_string(),
-      from: "{}".to_string(),
+      from: if let NativeType::Pointer = primitive.native {
+        "new Deno.UnsafePointer({})"
+      } else {
+        "{}"
+      }
+      .to_string(),
     };
 
     TypeDescriptor {

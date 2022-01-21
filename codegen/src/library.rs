@@ -133,7 +133,7 @@ mod tests {
     library.register_type(
       "ExampleStruct",
       TypeDefinition::Struct(Struct::new(
-        None,
+        Some("ExampleStruct"),
         vec![
           (
             "a".to_string(),

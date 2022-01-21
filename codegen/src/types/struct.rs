@@ -108,7 +108,7 @@ impl Struct {
       match definition {
         TypeDefinition::Primitive(ref primitive) => {
           let view_constructor =
-            String::from(BufferType::from(primitive.native));
+            BufferType::from(primitive.native).typed_array();
           let view_variable = match primitive.native {
             NativeType::U8 => "__u8_view",
             NativeType::I8 => "__i8_view",
@@ -169,7 +169,7 @@ impl Struct {
             format!("new Uint8Array({}.buffer)", accessor)
           };
 
-          body.push(format!("__u8_view.set({}, {});", source, offset,));
+          body.push(format!("__u8_view.set({}, {});", source, offset));
         }
         TypeDefinition::Tuple(_) | TypeDefinition::Struct(_) => {
           body.push(format!(
@@ -186,11 +186,11 @@ impl Struct {
 
     globals.push(format!(
       "function {}(__data: {}): Uint8Array {{\n\
-      const __array_buffer = new ArrayBuffer({});\n\
-      {}\n\
-      {}\n\
-      return __u8_view;\n\
-    }}",
+        const __array_buffer = new ArrayBuffer({});\n\
+        {}\n\
+        {}\n\
+        return __u8_view;\n\
+      }}",
       self.into_function_name(),
       self.typescript(),
       size,
@@ -199,7 +199,141 @@ impl Struct {
     ));
   }
 
-  pub fn generate_from_function(&self, _globals: &mut Vec<String>) {}
+  pub fn generate_from_function(&self, globals: &mut Vec<String>) {
+    let mut properties = Vec::new();
+    let mut body: Vec<String> = Vec::new();
+    let mut views: IndexSet<String> = IndexSet::new();
+    let mut offset = 0;
+    let align = self
+      .fields()
+      .iter()
+      .map(|(_, definition, _)| definition.align_of())
+      .max()
+      .unwrap_or(0);
+
+    for (property, definition, mut descriptor) in self.fields() {
+      offset += calculate_padding(offset, definition.align_of());
+      globals.append(&mut descriptor.converter.globals);
+
+      let variable_name = format!("__{}", property);
+      properties.push((property, variable_name.clone()));
+
+      match definition {
+        TypeDefinition::Primitive(ref primitive) => {
+          let view_constructor =
+            BufferType::from(primitive.native).typed_array();
+          let view_variable = match primitive.native {
+            NativeType::U8 => "__u8_view",
+            NativeType::I8 => "__i8_view",
+            NativeType::U16 => "__u16_view",
+            NativeType::I16 => "__i16_view",
+            NativeType::U32 => "__u32_view",
+            NativeType::I32 => "__i32_view",
+            NativeType::Pointer | NativeType::U64 | NativeType::USize => {
+              "__u64_view"
+            }
+            NativeType::I64 | NativeType::ISize => "__i64_view",
+            NativeType::F32 => "__f32_view",
+            NativeType::F64 => "__f64_view",
+            _ => panic!("Unsupported type"),
+          };
+
+          views.insert(format!(
+            "const {} = new {}(__array_buffer);",
+            view_variable, view_constructor
+          ));
+
+          body.push(format!(
+            "const {} = {};",
+            variable_name,
+            descriptor.converter.from.replace(
+              "{}",
+              &format!("{}[{}]", view_variable, offset / definition.size_of())
+            ),
+          ));
+        }
+
+        TypeDefinition::CString | TypeDefinition::Pointer(_) => {
+          views.insert(
+            "const __u64_view = new BigUint64Array(__array_buffer);"
+              .to_string(),
+          );
+
+          body.push(format!(
+            "const {} = {};",
+            variable_name,
+            descriptor.converter.from.replace(
+              "{}",
+              &format!(
+                "new Deno.UnsafePointer(__u64_view[{}])",
+                offset / definition.size_of()
+              )
+            ),
+          ));
+        }
+        TypeDefinition::Buffer(ref buffer) => {
+          let constructor = buffer.r#type.typed_array();
+          let array_buffer = format!(
+            "__array_buffer.slice({}, {})",
+            offset,
+            offset + definition.size_of()
+          );
+
+          body.push(format!(
+            "const {} = {};",
+            variable_name,
+            if let BufferType::None = buffer.r#type {
+              array_buffer
+            } else {
+              format!("new {}({})", constructor, array_buffer)
+            }
+          ));
+        }
+        TypeDefinition::Tuple(_) | TypeDefinition::Struct(_) => {
+          body.push(format!(
+            "const {} = {};",
+            variable_name,
+            descriptor.converter.from.replace(
+              "{}",
+              &format!(
+                "__array_buffer.slice({}, {})",
+                offset,
+                offset + definition.size_of()
+              )
+            ),
+          ));
+        }
+      }
+
+      offset += definition.size_of();
+    }
+
+    let size = offset + calculate_padding(offset, align);
+
+    globals.push(format!(
+      "function {}(__source: ArrayBuffer | Uint8Array | Deno.UnsafePointer | Deno.UnsafePointerView): {} {{\n\
+        const __array_buffer =\n\
+          (__source instanceof ArrayBuffer\n\
+            ? __source\n\
+            : __source instanceof Uint8Array\n\
+            ? __source.buffer\n\
+            : __source instanceof Deno.UnsafePointer\n\
+            ? new Deno.UnsafePointerView(__source).getArrayBuffer({size})\n\
+            : __source instanceof Deno.UnsafePointerView\n\
+            ? __source.getArrayBuffer({size})\n\
+            : undefined)!;\n\
+        {}\n\
+        {}\n\
+        return {{\n{}\n}};\n\
+      }}",
+      self.from_function_name(),
+      self.typescript(),
+      Vec::from_iter(views).join("\n"),
+      body.join("\n"),
+      properties.iter().map(|(property, variable_name)| format!("  {}: {}", property, variable_name)).collect::<Vec<String>>().join(",\n"),
+      size = size,
+    ));
+  }
 }
 
 impl From<Struct> for TypeDescriptor {

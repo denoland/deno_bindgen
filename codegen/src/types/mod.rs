@@ -56,6 +56,42 @@ pub enum BufferType {
   F64,
 }
 
+impl BufferType {
+  fn typed_array(&self) -> String {
+    match self {
+      BufferType::None => "ArrayBuffer",
+      BufferType::U8 => "Uint8Array",
+      BufferType::I8 => "Int8Array",
+      BufferType::U16 => "Uint16Array",
+      BufferType::I16 => "Int16Array",
+      BufferType::U32 => "Uint32Array",
+      BufferType::I32 => "Int32Array",
+      BufferType::U64 | BufferType::USize => "BigUint64Array",
+      BufferType::I64 | BufferType::ISize => "BigInt64Array",
+      BufferType::F32 => "Float32Array",
+      BufferType::F64 => "Float64Array",
+    }
+    .to_string()
+  }
+
+  fn pointer_view_getter(&self) -> String {
+    match self {
+      BufferType::U8 => "getUint8",
+      BufferType::I8 => "getInt8",
+      BufferType::U16 => "getUint16",
+      BufferType::I16 => "getInt16",
+      BufferType::U32 => "getUint32",
+      BufferType::I32 => "getInt32",
+      BufferType::USize | BufferType::U64 => "getBigUint64",
+      BufferType::ISize | BufferType::I64 => "getBigInt64",
+      BufferType::F32 => "getFloat32",
+      BufferType::F64 => "getFloat64",
+      _ => panic!(),
+    }
+    .to_string()
+  }
+}
+
 #[derive(Clone, Hash)]
 pub enum TypeDefinition {
   Primitive(Primitive),
@@ -207,25 +243,6 @@ impl From<NativeType> for BufferType {
       NativeType::Pointer => BufferType::U64,
       _ => BufferType::None,
     }
-  }
-}
-
-impl From<BufferType> for String {
-  fn from(buffer_type: BufferType) -> Self {
-    match buffer_type {
-      BufferType::None => "ArrayBuffer",
-      BufferType::U8 => "Uint8Array",
-      BufferType::I8 => "Int8Array",
-      BufferType::U16 => "Uint16Array",
-      BufferType::I16 => "Int16Array",
-      BufferType::U32 => "Uint32Array",
-      BufferType::I32 => "Int32Array",
-      BufferType::U64 | BufferType::USize => "BigUint64Array",
-      BufferType::I64 | BufferType::ISize => "BigInt64Array",
-      BufferType::F32 => "Float32Array",
-      BufferType::F64 => "Float64Array",
-    }
-    .to_string()
   }
 }
 

@@ -30,11 +30,12 @@ impl From<Pointer> for TypeDescriptor {
             "Deno.UnsafePointer.of(new BigUint64Array([{}.value]))",
             target_descriptor.converter.into
           ),
-          from: "".to_string(),
+          from: "{}".to_string(),
         }
       } else {
         let buffer_type: BufferType = native.into();
-        let constructor: String = buffer_type.into();
+        let constructor = buffer_type.typed_array();
+        let getter = buffer_type.pointer_view_getter();
 
         TypeConverter {
           globals: target_descriptor.converter.globals,
@@ -43,7 +44,11 @@ impl From<Pointer> for TypeDescriptor {
             "Deno.UnsafePointer.of(new {}([{}]))",
             constructor, target_descriptor.converter.into
           ),
-          from: "".to_string(),
+          from: if let BufferType::None = buffer_type {
+            "/* ? */".to_string()
+          } else {
+            format!("new Deno.UnsafePointerView({{}}).{}(0)", getter)
+          },
         }
       }
     } else {
