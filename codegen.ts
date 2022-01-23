@@ -102,9 +102,7 @@ function isBufferType(p: any) {
   return isTypeDef(p) || BufferTypes[p] !== undefined;
 }
 
-// @littledivy is a dumb kid!
-// he just can't make an interface
-// for bindings.json
+// TODO(@littledivy): factor out options in an interface
 export function codegen(
   fetchPrefix: string,
   name: string,
