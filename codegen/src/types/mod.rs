@@ -2,11 +2,13 @@ use self::buffer::Buffer;
 use self::cstring::CString;
 use self::pointer::Pointer;
 use self::primitive::Primitive;
+// use self::r#enum::Enum;
 use self::r#struct::Struct;
 use self::tuple::Tuple;
 
 pub mod buffer;
 pub mod cstring;
+// pub mod r#enum;
 pub mod pointer;
 pub mod primitive;
 pub mod r#struct;
@@ -37,6 +39,46 @@ pub enum NativeType {
   F32,
   F64,
   Pointer,
+}
+
+impl NativeType {
+  fn data_view_getter(&self) -> String {
+    match self {
+      NativeType::U8 => "getUint8",
+      NativeType::I8 => "getInt8",
+      NativeType::U16 => "getUint16",
+      NativeType::I16 => "getInt16",
+      NativeType::U32 => "getUint32",
+      NativeType::I32 => "getInt32",
+      NativeType::Pointer | NativeType::USize | NativeType::U64 => {
+        "getBigUint64"
+      }
+      NativeType::ISize | NativeType::I64 => "getBigInt64",
+      NativeType::F32 => "getFloat32",
+      NativeType::F64 => "getFloat64",
+      _ => panic!(),
+    }
+    .to_string()
+  }
+
+  fn data_view_setter(&self) -> String {
+    match self {
+      NativeType::U8 => "setUint8",
+      NativeType::I8 => "setInt8",
+      NativeType::U16 => "setUint16",
+      NativeType::I16 => "setInt16",
+      NativeType::U32 => "setUint32",
+      NativeType::I32 => "setInt32",
+      NativeType::Pointer | NativeType::USize | NativeType::U64 => {
+        "setBigUint64"
+      }
+      NativeType::ISize | NativeType::I64 => "setBigInt64",
+      NativeType::F32 => "setFloat32",
+      NativeType::F64 => "setFloat64",
+      _ => panic!(),
+    }
+    .to_string()
+  }
 }
 
 #[derive(Clone, Copy, Hash)]
@@ -100,7 +142,7 @@ pub enum TypeDefinition {
   CString,
   Struct(Struct),
   Tuple(Tuple),
-  //  Enum(Vec<(String, Option<TypeDefinition>)>),
+  // Enum(Enum),
   //  Array(Vec<TypeDefinition>),
 }
 

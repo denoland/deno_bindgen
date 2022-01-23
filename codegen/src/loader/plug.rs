@@ -71,7 +71,7 @@ impl LibraryElement for PlugLoader {
     library: &Library,
     source: &mut Source,
   ) -> Result<(), AnyError> {
-    writeln!(source, "import * as Plug from \"{}\";", self.import)?;
+    writeln!(source, "import {{ Plug }} from \"{}\";", self.import)?;
 
     if self.export {
       write!(source, "export ")?;

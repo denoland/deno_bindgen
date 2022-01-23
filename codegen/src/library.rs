@@ -104,6 +104,7 @@ mod tests {
   use crate::types::pointer::Pointer;
   use crate::types::primitive::Primitive;
   use crate::types::r#struct::Struct;
+  use crate::types::tuple::Tuple;
   use crate::types::BufferType;
   use crate::types::NativeType;
   use crate::types::TypeDefinition;
@@ -134,6 +135,7 @@ mod tests {
       "ExampleStruct",
       TypeDefinition::Struct(Struct::new(
         Some("ExampleStruct"),
+        true,
         vec![
           (
             "a".to_string(),
@@ -158,20 +160,36 @@ mod tests {
             "g".to_string(),
             TypeDefinition::Struct(Struct::new(
               Some("ExampleInnerStruct"),
+              false,
               vec![
                 (
                   "inner_a".to_string(),
+                  TypeDefinition::Primitive(Primitive::new(NativeType::U32)),
+                ),
+                (
+                  "inner_b".to_string(),
                   TypeDefinition::Primitive(Primitive::new(
                     NativeType::Pointer,
                   )),
                 ),
-                (
-                  "inner_b".to_string(),
-                  TypeDefinition::Primitive(Primitive::new(NativeType::ISize)),
-                ),
               ],
             )),
           ),
+        ],
+      )),
+    );
+
+    library.register_type(
+      "TestTuple",
+      TypeDefinition::Tuple(Tuple::new(
+        Some("TestTuple"),
+        true,
+        vec![
+          TypeDefinition::Pointer(Pointer::new(Box::new(
+            TypeDefinition::Primitive(Primitive::new(NativeType::U16)),
+          ))),
+          TypeDefinition::CString,
+          TypeDefinition::Primitive(Primitive::new(NativeType::Pointer)),
         ],
       )),
     );

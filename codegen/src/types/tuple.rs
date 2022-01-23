@@ -1,9 +1,7 @@
 use std::collections::hash_map::DefaultHasher;
 use std::hash::Hash;
 use std::hash::Hasher;
-use std::iter::FromIterator;
 
-use indexmap::IndexSet;
 use inflector::Inflector;
 
 use super::calculate_padding;
@@ -23,16 +21,22 @@ fn hashed_fields_identifer(fields: &[TypeDefinition]) -> String {
 pub struct Tuple {
   pub identifier: String,
   pub anonymous: bool,
+  pub padded: bool,
   pub fields: Vec<TypeDefinition>,
 }
 
 impl Tuple {
-  pub fn new(identifier: Option<&str>, fields: Vec<TypeDefinition>) -> Self {
+  pub fn new(
+    identifier: Option<&str>,
+    padded: bool,
+    fields: Vec<TypeDefinition>,
+  ) -> Self {
     Self {
       identifier: identifier
         .map(String::from)
         .unwrap_or_else(|| hashed_fields_identifer(&fields)),
       anonymous: identifier.is_none(),
+      padded,
       fields,
     }
   }
@@ -73,13 +77,24 @@ impl Tuple {
       .map(|definition| (definition.clone(), TypeDescriptor::from(definition)))
       .collect()
   }
+}
 
-  pub fn generate_into_function(&self, globals: &mut Vec<String>) {
-    let mut views: IndexSet<String> = IndexSet::new();
-    views
-      .insert("const __u8_view = new Uint8Array(__array_buffer);".to_string());
+impl Into<TypeConverter> for Tuple {
+  fn into(self) -> TypeConverter {
+    let mut globals = Vec::new();
+    let typescript = self.typescript();
 
-    let mut body = Vec::new();
+    if !self.anonymous {
+      globals.push(format!(
+        "export type {} = {};",
+        typescript,
+        self.typescript_type()
+      ));
+    }
+
+    let mut into_body = Vec::new();
+    let mut properties = Vec::new();
+
     let mut offset = 0;
     let align = self
       .fields()
@@ -91,40 +106,29 @@ impl Tuple {
     for (field, (definition, mut descriptor)) in
       self.fields().into_iter().enumerate()
     {
-      offset += calculate_padding(offset, definition.align_of());
+      if self.padded {
+        offset += calculate_padding(offset, definition.align_of());
+      }
+
       globals.append(&mut descriptor.converter.globals);
 
       let accessor = format!("__data[{}]", field);
 
       match definition {
         TypeDefinition::Primitive(ref primitive) => {
-          let view_constructor =
-            BufferType::from(primitive.native).typed_array();
-          let view_variable = match primitive.native {
-            NativeType::U8 => "__u8_view",
-            NativeType::I8 => "__i8_view",
-            NativeType::U16 => "__u16_view",
-            NativeType::I16 => "__i16_view",
-            NativeType::U32 => "__u32_view",
-            NativeType::I32 => "__i32_view",
-            NativeType::Pointer | NativeType::U64 | NativeType::USize => {
-              "__u64_view"
-            }
-            NativeType::I64 | NativeType::ISize => "__i64_view",
-            NativeType::F32 => "__f32_view",
-            NativeType::F64 => "__f64_view",
-            _ => panic!("Unsupported type"),
-          };
-
-          views.insert(format!(
-            "const {} = new {}(__array_buffer);",
-            view_variable, view_constructor
+          properties.push(descriptor.converter.from.replace(
+            "{}",
+            &format!(
+              "__data_view.{}({})",
+              primitive.native.data_view_getter(),
+              offset
+            ),
           ));
 
-          body.push(format!(
-            "{}[{}] = {};",
-            view_variable,
-            offset / definition.size_of(),
+          into_body.push(format!(
+            "__data_view.{}({}, {});",
+            primitive.native.data_view_setter(),
+            offset,
             descriptor.converter.into.replace(
               "{}",
               &format!(
@@ -140,82 +144,124 @@ impl Tuple {
           ));
         }
         TypeDefinition::CString | TypeDefinition::Pointer(_) => {
-          views.insert(
-            "const __u64_view = new BigUint64Array(__array_buffer);"
-              .to_string(),
-          );
+          properties.push(descriptor.converter.from.replace(
+            "{}",
+            &format!(
+              "new Deno.UnsafePointer(__data_view.getBigUint64({}))",
+              offset
+            ),
+          ));
 
-          body.push(format!(
-            "__u64_view[{}] = {}.value;",
-            offset / definition.size_of(),
+          into_body.push(format!(
+            "__data_view.setBigUint64({}, {}.value);",
+            offset,
             descriptor.converter.into.replace("{}", &accessor)
           ));
         }
         TypeDefinition::Buffer(ref buffer) => {
-          let source = if let BufferType::None = buffer.r#type {
-            format!("new Uint8Array({})", accessor)
-          } else if let BufferType::U8 = buffer.r#type {
-            accessor
-          } else {
-            format!("new Uint8Array({}.buffer)", accessor)
-          };
+          let source_buffer = format!(
+            "__array_buffer.slice({}, {})",
+            offset,
+            offset + definition.size_of()
+          );
 
-          body.push(format!("__u8_view.set({}, {});", source, offset));
+          properties.push(if let BufferType::None = buffer.r#type {
+            source_buffer
+          } else {
+            format!("new {}({})", buffer.r#type.typed_array(), source_buffer)
+          });
+
+          into_body.push(format!(
+            "__u8_array.set({}, {});",
+            if let BufferType::None = buffer.r#type {
+              format!("new Uint8Array({})", accessor)
+            } else if let BufferType::U8 = buffer.r#type {
+              accessor
+            } else {
+              format!("new Uint8Array({}.buffer)", accessor)
+            },
+            offset
+          ));
         }
         TypeDefinition::Tuple(_) | TypeDefinition::Struct(_) => {
-          body.push(format!(
-            "__u8_view.set(new Uint8Array({}.buffer), {});",
+          properties.push(descriptor.converter.from.replace(
+            "{}",
+            &format!(
+              "__array_buffer.slice({}, {})",
+              offset,
+              offset + definition.size_of()
+            ),
+          ));
+
+          into_body.push(format!(
+            "__u8_array.set(new Uint8Array({}.buffer), {});",
             descriptor.converter.into.replace("{}", &accessor),
             offset,
           ));
         }
       }
+
       offset += definition.size_of();
     }
 
-    let size = offset + calculate_padding(offset, align);
+    let size = offset
+      + if self.padded {
+        calculate_padding(offset, align)
+      } else {
+        0
+      };
 
+    // from function
+    globals.push(format!(
+      "function {}(__source: ArrayBuffer | Uint8Array | Deno.UnsafePointer | Deno.UnsafePointerView): {} {{\n\
+        const __array_buffer =\n\
+          (__source instanceof ArrayBuffer\n\
+            ? __source\n\
+            : __source instanceof Uint8Array\n\
+            ? __source.buffer\n\
+            : __source instanceof Deno.UnsafePointer\n\
+            ? new Deno.UnsafePointerView(__source).getArrayBuffer({size})\n\
+            : __source instanceof Deno.UnsafePointerView\n\
+            ? __source.getArrayBuffer({size})\n\
+            : undefined)!;\n\
+        const __data_view = new DataView(__array_buffer);\n\
+        return [\n{}\n];\n\
+      }}",
+      self.from_function_name(),
+      typescript,
+      properties.join(",\n"),
+      size = size,
+    ));
+
+    // into function
     globals.push(format!(
       "function {}(__data: {}): Uint8Array {{\n\
-      const __array_buffer = new ArrayBuffer({});\n\
-      {}\n\
-      {}\n\
-      return __u8_view;\n\
-    }}",
+        const __array_buffer = new ArrayBuffer({});\n\
+        const __u8_array = new Uint8Array(__array_buffer);
+        const __data_view = new DataView(__array_buffer);\n\
+        {}\n\
+        return __u8_array;\n\
+      }}",
       self.into_function_name(),
-      self.typescript(),
+      typescript,
       size,
-      Vec::from_iter(views).join("\n"),
-      body.join("\n")
+      into_body.join("\n")
     ));
-  }
 
-  pub fn generate_from_function(&self, _globals: &mut Vec<String>) {}
+    TypeConverter {
+      globals,
+      typescript,
+      into: format!("{}({{}})", self.into_function_name()),
+      from: format!("{}({{}})", self.from_function_name()),
+    }
+  }
 }
 
 impl From<Tuple> for TypeDescriptor {
   fn from(tuple: Tuple) -> Self {
-    let mut globals = Vec::new();
-
-    if !tuple.anonymous {
-      globals.push(format!(
-        "export type {} = {};",
-        tuple.typescript(),
-        tuple.typescript_type()
-      ));
-    }
-
-    tuple.generate_into_function(&mut globals);
-    tuple.generate_from_function(&mut globals);
-
     TypeDescriptor {
       native: NativeType::Pointer,
-      converter: TypeConverter {
-        globals,
-        typescript: tuple.typescript(),
-        into: format!("{}({{}})", tuple.into_function_name()),
-        from: format!("{}({{}})", tuple.from_function_name()),
-      },
+      converter: tuple.into(),
     }
   }
 }
