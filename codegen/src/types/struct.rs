@@ -87,16 +87,16 @@ impl Struct {
   }
 }
 
-impl Into<TypeConverter> for Struct {
-  fn into(self) -> TypeConverter {
+impl From<Struct> for TypeConverter {
+  fn from(r#struct: Struct) -> Self {
     let mut globals = Vec::new();
-    let typescript = self.typescript();
+    let typescript = r#struct.typescript();
 
-    if !self.anonymous {
+    if !r#struct.anonymous {
       globals.push(format!(
         "export interface {} {}",
         typescript,
-        self.typescript_type()
+        r#struct.typescript_type()
       ));
     }
 
@@ -104,15 +104,15 @@ impl Into<TypeConverter> for Struct {
     let mut properties = Vec::new();
 
     let mut offset = 0;
-    let align = self
+    let align = r#struct
       .fields()
       .iter()
       .map(|(_, definition, _)| definition.align_of())
       .max()
       .unwrap_or(0);
 
-    for (property, definition, mut descriptor) in self.fields() {
-      if self.padded {
+    for (property, definition, mut descriptor) in r#struct.fields() {
+      if r#struct.padded {
         offset += calculate_padding(offset, definition.align_of());
       }
 
@@ -223,7 +223,7 @@ impl Into<TypeConverter> for Struct {
     }
 
     let size = offset
-      + if self.padded {
+      + if r#struct.padded {
         calculate_padding(offset, align)
       } else {
         0
@@ -245,7 +245,7 @@ impl Into<TypeConverter> for Struct {
         const __data_view = new DataView(__array_buffer);\n\
         return {{\n{}\n}};\n\
       }}",
-      self.from_function_name(),
+      r#struct.from_function_name(),
       typescript,
       properties.iter().map(|(property, value)| format!("  {}: {}", property, value)).collect::<Vec<String>>().join(",\n"),
       size = size,
@@ -260,7 +260,7 @@ impl Into<TypeConverter> for Struct {
         {}\n\
         return __u8_array;\n\
       }}",
-      self.into_function_name(),
+      r#struct.into_function_name(),
       typescript,
       size,
       into_body.join("\n")
@@ -269,8 +269,8 @@ impl Into<TypeConverter> for Struct {
     TypeConverter {
       globals,
       typescript,
-      into: format!("{}({{}})", self.into_function_name()),
-      from: format!("{}({{}})", self.from_function_name()),
+      into: format!("{}({{}})", r#struct.into_function_name()),
+      from: format!("{}({{}})", r#struct.from_function_name()),
     }
   }
 }

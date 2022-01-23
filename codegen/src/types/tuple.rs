@@ -79,16 +79,16 @@ impl Tuple {
   }
 }
 
-impl Into<TypeConverter> for Tuple {
-  fn into(self) -> TypeConverter {
+impl From<Tuple> for TypeConverter {
+  fn from(tuple: Tuple) -> Self {
     let mut globals = Vec::new();
-    let typescript = self.typescript();
+    let typescript = tuple.typescript();
 
-    if !self.anonymous {
+    if !tuple.anonymous {
       globals.push(format!(
         "export type {} = {};",
         typescript,
-        self.typescript_type()
+        tuple.typescript_type()
       ));
     }
 
@@ -96,7 +96,7 @@ impl Into<TypeConverter> for Tuple {
     let mut properties = Vec::new();
 
     let mut offset = 0;
-    let align = self
+    let align = tuple
       .fields()
       .iter()
       .map(|(definition, _)| definition.align_of())
@@ -104,9 +104,9 @@ impl Into<TypeConverter> for Tuple {
       .unwrap_or(0);
 
     for (field, (definition, mut descriptor)) in
-      self.fields().into_iter().enumerate()
+      tuple.fields().into_iter().enumerate()
     {
-      if self.padded {
+      if tuple.padded {
         offset += calculate_padding(offset, definition.align_of());
       }
 
@@ -205,7 +205,7 @@ impl Into<TypeConverter> for Tuple {
     }
 
     let size = offset
-      + if self.padded {
+      + if tuple.padded {
         calculate_padding(offset, align)
       } else {
         0
@@ -227,7 +227,7 @@ impl Into<TypeConverter> for Tuple {
         const __data_view = new DataView(__array_buffer);\n\
         return [\n{}\n];\n\
       }}",
-      self.from_function_name(),
+      tuple.from_function_name(),
       typescript,
       properties.join(",\n"),
       size = size,
@@ -242,7 +242,7 @@ impl Into<TypeConverter> for Tuple {
         {}\n\
         return __u8_array;\n\
       }}",
-      self.into_function_name(),
+      tuple.into_function_name(),
       typescript,
       size,
       into_body.join("\n")
@@ -251,8 +251,8 @@ impl Into<TypeConverter> for Tuple {
     TypeConverter {
       globals,
       typescript,
-      into: format!("{}({{}})", self.into_function_name()),
-      from: format!("{}({{}})", self.from_function_name()),
+      into: format!("{}({{}})", tuple.into_function_name()),
+      from: format!("{}({{}})", tuple.from_function_name()),
     }
   }
 }
