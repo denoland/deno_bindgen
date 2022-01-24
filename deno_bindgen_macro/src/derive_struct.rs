@@ -6,6 +6,7 @@ use crate::docs::get_docs;
 use crate::meta::Glue;
 
 use std::collections::HashMap;
+use syn::ext::IdentExt;
 use syn::Data;
 use syn::DataStruct;
 use syn::DeriveInput;
@@ -47,6 +48,8 @@ pub fn process_struct(
           .ident
           .as_ref()
           .expect("Field without ident")
+          // Strips the raw marker `r#`, if present.
+          .unraw()
           .to_string();
 
         match field.ty {
@@ -111,6 +114,8 @@ pub fn process_struct(
             .ident
             .as_ref()
             .expect("Field without ident")
+            // Strips the raw marker `r#`, if present.
+            .unraw()
             .to_string();
 
           for attr in &serde_attrs {
