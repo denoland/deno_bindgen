@@ -181,3 +181,18 @@ fn test_output_async() -> Input {
     b: 4
   }
 }
+
+#[deno_bindgen]
+struct TestReservedField {
+  r#type: u8,
+  r#ref: u8,
+}
+
+#[deno_bindgen]
+fn test_reserved_field() -> TestReservedField {
+  TestReservedField {
+    r#type: 1,
+    r#ref: 2,
+  }
+}
+
