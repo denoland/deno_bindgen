@@ -59,8 +59,8 @@ impl Enum {
     self
       .variants()
       .iter()
-      .map(|(property, r#type)| {
-        if let Some((definition, descriptor)) = r#type {
+      .map(|(property, ty)| {
+        if let Some((definition, descriptor)) = ty {
           format!(
             "{{ tag: {}, value: {} }}",
             property, descriptor.converter.typescript

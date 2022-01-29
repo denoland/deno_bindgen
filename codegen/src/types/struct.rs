@@ -179,18 +179,18 @@ impl From<Struct> for TypeConverter {
 
           properties.push((
             property,
-            if let BufferType::None = buffer.r#type {
+            if let BufferType::None = buffer.ty {
               source_buffer
             } else {
-              format!("new {}({})", buffer.r#type.typed_array(), source_buffer)
+              format!("new {}({})", buffer.ty.typed_array(), source_buffer)
             },
           ));
 
           into_body.push(format!(
             "__u8_array.set({}, {});",
-            if let BufferType::None = buffer.r#type {
+            if let BufferType::None = buffer.ty {
               format!("new Uint8Array({})", accessor)
-            } else if let BufferType::U8 = buffer.r#type {
+            } else if let BufferType::U8 = buffer.ty {
               accessor
             } else {
               format!("new Uint8Array({}.buffer)", accessor)

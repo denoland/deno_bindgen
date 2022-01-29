@@ -5,19 +5,19 @@ use super::TypeDescriptor;
 
 #[derive(Clone, Hash)]
 pub struct Buffer {
-  pub r#type: BufferType,
+  pub ty: BufferType,
   pub length: usize,
 }
 
 impl Buffer {
-  pub fn new(r#type: BufferType, length: usize) -> Self {
-    Self { r#type, length }
+  pub fn new(ty: BufferType, length: usize) -> Self {
+    Self { ty, length }
   }
 }
 
 impl From<Buffer> for TypeDescriptor {
   fn from(buffer: Buffer) -> Self {
-    let converter = if let BufferType::None = buffer.r#type {
+    let converter = if let BufferType::None = buffer.ty {
       TypeConverter {
         globals: Vec::new(),
         typescript: "ArrayBuffer".to_string(),
@@ -25,7 +25,7 @@ impl From<Buffer> for TypeDescriptor {
         from: format!("{{}}.getArrayBuffer({})", buffer.length),
       }
     } else {
-      let constructor = buffer.r#type.typed_array();
+      let constructor = buffer.ty.typed_array();
       TypeConverter {
         globals: Vec::new(),
         typescript: constructor.to_string(),

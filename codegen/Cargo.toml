@@ -1,9 +1,9 @@
 [package]
-name = "codegen"
+name = "deno_bindgen_codegen"
 version = "0.1.0"
 description = "This tool aims to simplify glue code generation for Deno FFI libraries"
 license = "MIT"
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 anyhow = "1.0.52"

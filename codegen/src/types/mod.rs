@@ -162,7 +162,7 @@ impl TypeDefinition {
         | NativeType::Pointer => 8,
       },
       TypeDefinition::Pointer(_) => 8,
-      TypeDefinition::Buffer(buffer) => match buffer.r#type {
+      TypeDefinition::Buffer(buffer) => match buffer.ty {
         BufferType::None | BufferType::U8 | BufferType::I8 => buffer.length,
         BufferType::U16 | BufferType::I16 => buffer.length * 2,
         BufferType::U32 | BufferType::I32 | BufferType::F32 => {
@@ -209,7 +209,7 @@ impl TypeDefinition {
         | NativeType::Pointer => 8,
       },
       TypeDefinition::Pointer(_) => 8,
-      TypeDefinition::Buffer(buffer) => match buffer.r#type {
+      TypeDefinition::Buffer(buffer) => match buffer.ty {
         BufferType::None | BufferType::U8 | BufferType::I8 => 1,
         BufferType::U16 | BufferType::I16 => 2,
         BufferType::U32 | BufferType::I32 | BufferType::F32 => 4,
@@ -249,6 +249,7 @@ impl From<TypeDefinition> for TypeDescriptor {
   }
 }
 
+#[derive(Clone)]
 pub struct TypeDescriptor {
   pub native: NativeType,
   pub converter: TypeConverter,
@@ -260,6 +261,7 @@ impl TypeDescriptor {
   }
 }
 
+#[derive(Clone)]
 pub struct TypeConverter {
   pub globals: Vec<String>,
   pub typescript: String,
