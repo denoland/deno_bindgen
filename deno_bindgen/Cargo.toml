@@ -1,6 +1,6 @@
 [package]
 name = "deno_bindgen"
-version = "0.4.1"
+version = "0.5.0"
 description = "This tool aims to simplify glue code generation for Deno FFI libraries written in Rust."
 documentation = "https://docs.rs/deno_bindgen"
 homepage = "https://github.com/denoland/deno_bindgen"
@@ -15,6 +15,6 @@ edition = "2018"
 path = "./lib.rs"
 
 [dependencies]
-deno_bindgen_macro = { path = "../deno_bindgen_macro", version = "0.4.1" }
+deno_bindgen_macro = { path = "../deno_bindgen_macro", version = "0.5.0" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
