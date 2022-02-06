@@ -134,7 +134,7 @@ function encode(v: string | Uint8Array): Uint8Array {
 function decode(v: Uint8Array): string {
   return new TextDecoder().decode(v);
 }
-function read_pointer(v: any): Uint8Array {
+function readPointer(v: any): Uint8Array {
   const ptr = new Deno.UnsafePointerView(v as Deno.UnsafePointer)
   const lengthBe = new Uint8Array(4);
   const view = new DataView(lengthBe.buffer);
@@ -180,38 +180,28 @@ ${
               : null
           ).filter((c) => c !== null).join("\n")
         }
-  let result = _lib.symbols.${sig}(${
+  let rawResult = _lib.symbols.${sig}(${
           parameters.map((p, i) =>
             isBufferType(p) ? `a${i}_buf, a${i}_buf.byteLength` : `a${i}`
           ).join(", ")
-        }) as ${
-          nonBlocking
-            ? `Promise<${
-              isTypeDef(result)
-                ? "Uint8Array"
-                : resolveType(decl, result)
-            }>`
-            : isTypeDef(result)
-            ? "Uint8Array"
-            : resolveType(decl, result)
-        }
+        });
   ${
           isBufferType(result)
             ? nonBlocking
-              ? `result = result.then(read_pointer)`
-              : `result = read_pointer(result)`
-            : ""
+              ? `const result = rawResult.then(readPointer);`
+              : `const result = readPointer(rawResult);`
+            : "const result = rawResult;"
         };
   ${
           isTypeDef(result)
             ? nonBlocking
               ? `return result.then(r => JSON.parse(decode(r))) as Promise<${
                 resolveType(decl, result)
-              }>`
+              }>;`
               : `return JSON.parse(decode(result)) as ${
                 resolveType(decl, result)
-              }`
-            : "return result"
+              };`
+            : "return result;"
         };
 }`;
       }).join("\n")

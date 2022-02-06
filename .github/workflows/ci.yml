@@ -12,7 +12,7 @@ jobs:
 
       - uses: denoland/setup-deno@v1
         with:
-          deno-version: 1.17
+          deno-version: 1.18.2
 
       - name: Install rust
         uses: hecrj/setup-rust-action@v1
