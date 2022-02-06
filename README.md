@@ -181,4 +181,3 @@ The `deno_bindgen` CLI tool provides the following flags:
   ```shell
   deno_bindgen -- --features "cool_stuff"
   ```
-
