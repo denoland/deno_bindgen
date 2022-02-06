@@ -18,4 +18,3 @@ path = "./lib.rs"
 deno_bindgen_macro = { path = "../deno_bindgen_macro", version = "0.4.1" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-
