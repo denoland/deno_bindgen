@@ -137,7 +137,7 @@ pub fn deno_bindgen(attr: TokenStream, input: TokenStream) -> TokenStream {
       }
 
       let (result, transformer) = match symbol.result {
-        Type::Buffer 
+        Type::Buffer
         // Note that this refers to an owned String
         // and not a `&str`
         | Type::Str => {

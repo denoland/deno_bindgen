@@ -201,3 +201,8 @@ fn test_reserved_field() -> TestReservedField {
     r#ref: 2,
   }
 }
+
+#[deno_bindgen]
+fn test_str_ret() -> String {
+  String::from("🦕")
+} 

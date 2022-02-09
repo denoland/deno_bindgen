@@ -17,6 +17,7 @@ import {
   test_reserved_field,
   test_serde,
   test_str,
+  test_str_ret,
   test_tag_and_content,
   TestReservedField,
 } from "./bindings/bindings.ts";
@@ -187,5 +188,12 @@ Deno.test({
 
     assertEquals(obj.type, 1);
     assertEquals(obj.ref, 2);
+  },
+});
+
+Deno.test({
+  name: "test_str_ret#test",
+  fn: () => {
+    assertEquals(test_str_ret(), "🦕");
   },
 });

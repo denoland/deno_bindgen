@@ -83,6 +83,7 @@ const _lib = await prepare(opts, {
     result: "void",
     nonblocking: false,
   },
+  test_str_ret: { parameters: [], result: "pointer", nonblocking: false },
   test_tag_and_content: {
     parameters: ["pointer", "usize"],
     result: "i32",
@@ -93,9 +94,6 @@ export type TestLifetimeEnums = {
   Text: {
     _text: string
   }
-}
-export type MyStruct = {
-  arr: Array<string>
 }
 export type TestLifetimes = {
   text: string
@@ -113,8 +111,21 @@ export type Input = {
   a: number
   b: number
 }
+export type TestLifetimeWrap = {
+  _a: TestLifetimeEnums
+}
+export type TagAndContent =
+  | { key: "A"; value: { b: number } }
+  | { key: "C"; value: { d: number } }
+export type MyStruct = {
+  arr: Array<string>
+}
 export type OptionStruct = {
   maybe: string | undefined | null
+}
+export type TestReservedField = {
+  type: number
+  ref: number
 }
 export type PlainEnum =
   | {
@@ -124,16 +135,6 @@ export type PlainEnum =
   }
   | "b"
   | "c"
-export type TagAndContent =
-  | { key: "A"; value: { b: number } }
-  | { key: "C"; value: { d: number } }
-export type TestReservedField = {
-  type: number
-  ref: number
-}
-export type TestLifetimeWrap = {
-  _a: TestLifetimeEnums
-}
 export function add(a0: number, a1: number) {
   let rawResult = _lib.symbols.add(a0, a1)
   const result = rawResult
@@ -236,6 +237,11 @@ export function test_str(a0: string) {
   let rawResult = _lib.symbols.test_str(a0_buf, a0_buf.byteLength)
   const result = rawResult
   return result
+}
+export function test_str_ret() {
+  let rawResult = _lib.symbols.test_str_ret()
+  const result = readPointer(rawResult)
+  return decode(result)
 }
 export function test_tag_and_content(a0: TagAndContent) {
   const a0_buf = encode(JSON.stringify(a0))
