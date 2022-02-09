@@ -137,12 +137,21 @@ pub fn deno_bindgen(attr: TokenStream, input: TokenStream) -> TokenStream {
       }
 
       let (result, transformer) = match symbol.result {
-        Type::Buffer => {
+        Type::Buffer 
+        // Note that this refers to an owned String
+        // and not a `&str`
+        | Type::Str => {
           let ty = parse_quote! { *const u8 };
+          let slice = match symbol.result {
+            Type::Str => quote! {
+              result.as_bytes()
+            },
+            _ => quote! { result }
+          };
           let transformer = quote! {
             let length = (result.len() as u32).to_be_bytes();
             let mut v = length.to_vec();
-            v.extend_from_slice(result);
+            v.extend_from_slice(#slice);
 
             ::std::mem::forget(result);
             let result = v.as_ptr();
