@@ -86,6 +86,12 @@ fn test_mut_buf(buf: &mut [u8]) {
     buf[0] = 69;
 }
 
+// Test mut buffer prevent return
+// #[deno_bindgen]
+// fn test_mut_buf_ret(buf: &mut [u8]) -> &mut [u8] {
+//   buf
+// }
+
 // Test mut buffer musn't outlive symbol call
 // #[deno_bindgen]
 // fn test_mut_buf_outlive(_: &'static mut [u8]) {
