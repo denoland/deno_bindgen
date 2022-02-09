@@ -123,7 +123,8 @@ pub fn process_function(
             match ident.as_str() {
               "u8" => {
                 if ty.mutability.is_some() {
-                  Type::BufferMut
+                  // https://github.com/denoland/deno_bindgen/issues/39
+                  panic!("Mutable slices are not mutable from JS");
                 } else {
                   Type::Buffer
                 }
