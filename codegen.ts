@@ -201,6 +201,8 @@ ${
               : `return JSON.parse(decode(result)) as ${
                 resolveType(decl, result)
               };`
+            : result == "str"
+            ? "return decode(result);"
             : "return result;"
         };
 }`;

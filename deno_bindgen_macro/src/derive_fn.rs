@@ -108,6 +108,9 @@ pub fn process_function(
           "isize" => Type::Isize,
           "f32" => Type::F32,
           "f64" => Type::F64,
+          // This isn't a &str but i really but
+          // don't want to add another type for just owned strings.
+          "String" => Type::Str,
           _ => match metadata.type_defs.get(&ident) {
             Some(_) => Type::StructEnum { ident },
             None => panic!("{} return type not supported by Deno FFI", ident),
