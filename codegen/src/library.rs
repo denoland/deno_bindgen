@@ -9,9 +9,9 @@ use crate::types::{TypeDefinition, TypeDescriptor};
 
 pub struct Library {
   pub variable: String,
-  types: IndexMap<String, TypeDescriptor>,
-  loader: Box<dyn LibraryElement>,
-  elements: Vec<Box<dyn LibraryElement>>,
+  pub types: IndexMap<String, TypeDescriptor>,
+  pub loader: Box<dyn LibraryElement>,
+  pub elements: Vec<Box<dyn LibraryElement>>,
 }
 
 impl Library {
@@ -80,6 +80,7 @@ pub trait LibraryElement {
     library: &Library,
     source: &mut Source,
   ) -> Result<(), AnyError>;
+
   fn symbol(&self, _library: &Library) -> Result<Option<String>, AnyError> {
     Ok(None)
   }

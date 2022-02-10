@@ -1,0 +1,45 @@
+{
+  "loader": {
+    "plug": {
+      "export": false,
+      "options": {
+        "name": "test_lib",
+        "urls": {
+          "darwin": "https://example.com/some/path/libtest_lib.dylib",
+          "windows": "https://example.com/some/path/test_lib.dll",
+          "linux": "https://example.com/some/path/libtest_lib.so"
+        }
+      }
+    }
+  },
+  "types": {
+    "void": { "primitive": { "native": "void" } },
+    "u8": { "primitive": { "native": "u8" } },
+    "i8": { "primitive": { "native": "i8" } },
+    "u16": { "primitive": { "native": "u16" } },
+    "i16": { "primitive": { "native": "i16" } },
+    "u32": { "primitive": { "native": "u32" } },
+    "i32": { "primitive": { "native": "i32" } },
+    "u64": { "primitive": { "native": "u64" } },
+    "i64": { "primitive": { "native": "i64" } },
+    "usize": { "primitive": { "native": "usize" } },
+    "isize": { "primitive": { "native": "isize" } },
+    "f32": { "primitive": { "native": "f32" } },
+    "f64": { "primitive": { "native": "f64" } },
+
+    "TestStruct": {
+      "struct": {
+        "identifier": "TestStruct",
+        "fields": [
+          ["property", { "primitive": { "native": "f64" } }],
+          [
+            "pointer",
+            { "pointer": { "target": { "primitive": { "native": "f64" } } } }
+          ]
+        ]
+      }
+    }
+  },
+  "functions": {
+  }
+}

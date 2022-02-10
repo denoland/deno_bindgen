@@ -1,3 +1,6 @@
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use std::collections::hash_map::DefaultHasher;
 use std::hash::Hash;
 use std::hash::Hasher;
@@ -18,6 +21,10 @@ fn hashed_fields_identifer(fields: &[TypeDefinition]) -> String {
 }
 
 #[derive(Clone, Hash)]
+#[cfg_attr(
+  feature = "serde",
+  derive(Serialize, Deserialize)
+)]
 pub struct Tuple {
   pub identifier: String,
   pub anonymous: bool,

@@ -1,3 +1,6 @@
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use std::collections::hash_map::DefaultHasher;
 use std::hash::Hash;
 use std::hash::Hasher;
@@ -17,10 +20,15 @@ fn hashed_fields_identifer(fields: &[(String, TypeDefinition)]) -> String {
   format!("{:x}", hasher.finish())
 }
 
+fn default_padded() -> bool {
+  true
+}
+
 #[derive(Clone, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Struct {
-  pub identifier: String,
-  pub anonymous: bool,
+  pub identifier: Option<String>,
+  #[cfg_attr(feature = "serde", serde(default = "default_padded"))]
   pub padded: bool,
   pub fields: Vec<(String, TypeDefinition)>,
 }
@@ -32,12 +40,17 @@ impl Struct {
     fields: Vec<(String, TypeDefinition)>,
   ) -> Self {
     Self {
-      identifier: identifier
-        .map(String::from)
-        .unwrap_or_else(|| hashed_fields_identifer(&fields)),
-      anonymous: identifier.is_none(),
+      identifier: identifier.map(String::from),
       padded,
       fields,
+    }
+  }
+
+  pub fn identifier(&self) -> String {
+    if let Some(identifier) = &self.identifier {
+      identifier.clone()
+    } else {
+      hashed_fields_identifer(&self.fields)
     }
   }
 
@@ -56,19 +69,19 @@ impl Struct {
   }
 
   pub fn typescript(&self) -> String {
-    if self.anonymous {
+    if self.identifier.is_none() {
       self.typescript_type()
     } else {
-      self.identifier.to_pascal_case()
+      self.identifier().to_pascal_case()
     }
   }
 
   pub fn into_function_name(&self) -> String {
-    format!("__into_{}", self.identifier)
+    format!("__into_{}", self.identifier())
   }
 
   pub fn from_function_name(&self) -> String {
-    format!("__from_{}", self.identifier)
+    format!("__from_{}", self.identifier())
   }
 
   pub fn fields(&self) -> Vec<(String, TypeDefinition, TypeDescriptor)> {
@@ -92,7 +105,7 @@ impl From<Struct> for TypeConverter {
     let mut globals = Vec::new();
     let typescript = r#struct.typescript();
 
-    if !r#struct.anonymous {
+    if r#struct.identifier.is_some() {
       globals.push(format!(
         "export interface {} {}",
         typescript,
@@ -223,7 +236,7 @@ impl From<Struct> for TypeConverter {
     }
 
     let size = offset
-      + if r#struct.padded {
+      + if r#struct.padded && offset != 0 {
         calculate_padding(offset, align)
       } else {
         0

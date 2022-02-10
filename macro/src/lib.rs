@@ -45,7 +45,7 @@ pub fn deno_bindgen(attr: TokenStream, input: TokenStream) -> TokenStream {
   let item = syn::parse_macro_input!(input as Item);
 
   META.with(|meta| {
-    let meta = meta.borrow_mut();
+    let mut meta = meta.borrow_mut();
 
     match item {
       Item::Fn(fn_item) => generate_function(&mut meta, fn_item),
@@ -75,42 +75,40 @@ fn generate_function(meta: &mut Meta, fn_item: ItemFn) -> TokenStream {
             let ident = ty.path.get_ident().expect("Expected ident").to_string();
             meta.library.lookup_type(&ident).expect(&format!("Could not find {} type", ident))
           }
-          syn::Type::Tuple(ref tuple) => {
-            let fields = tuple.elems.iter().map(|ty| meta.library.lookup_type())
-          },
-          syn::Type::Reference(ref ty) => match *ty.elem {
-            syn::Type::Path(ref ty) => {
-              let segment = ty.path.segments.first().unwrap();
-              let ident = segment.ident.to_string();
-
-              match ident.as_str() {
-                "str" => Type::Str,
-                _ => unimplemented!(),
-              }
-            }
-            syn::Type::Slice(ref slice) => match *slice.elem {
-              syn::Type::Path(ref path) => {
-                let segment = path.path.segments.first().unwrap();
-                let ident = segment.ident.to_string();
-
-                match ident.as_str() {
-                  "u8" => {
-                    if ty.mutability.is_some() {
-                      Type::BufferMut
-                    } else {
-                      Type::Buffer
-                    }
-                  }
-                  _ => unimplemented!(),
-                }
-              }
-              _ => unimplemented!(),
-            },
-            _ => unimplemented!(),
-          },
+          // syn::Type::Tuple(ref tuple) => {
+          //   tuple.elems.iter().map(|ty| meta.library.lookup_type(ty.path.get_ident()))
+          // },
+          //syn::Type::Reference(ref ty) => match *ty.elem {
+          //  syn::Type::Path(ref ty) => {
+          //    let segment = ty.path.segments.first().unwrap();
+          //    let ident = segment.ident.to_string();
+          //    match ident.as_str() {
+          //      "str" => Type::Str,
+          //      _ => unimplemented!(),
+          //    }
+          //  }
+          //  syn::Type::Slice(ref slice) => match *slice.elem {
+          //    syn::Type::Path(ref path) => {
+          //      let segment = path.path.segments.first().unwrap();
+          //      let ident = segment.ident.to_string();
+          //      match ident.as_str() {
+          //        "u8" => {
+          //          if ty.mutability.is_some() {
+          //            Type::BufferMut
+          //          } else {
+          //            Type::Buffer
+          //          }
+          //        }
+          //        _ => unimplemented!(),
+          //      }
+          //    }
+          //    _ => unimplemented!(),
+          //  },
+          //  _ => unimplemented!(),
+          //},
           _ => unimplemented!(),
         };
-        parameters.push(None);
+        parameters.push(Some(ty));
       }
       _ => unimplemented!(),
     }

@@ -1,8 +1,15 @@
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use super::NativeType;
 use super::TypeConverter;
 use super::TypeDescriptor;
 
 #[derive(Clone, Hash)]
+#[cfg_attr(
+  feature = "serde",
+  derive(Serialize, Deserialize)
+)]
 pub struct Primitive {
   pub native: NativeType,
 }

@@ -1,3 +1,6 @@
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use self::buffer::Buffer;
 use self::cstring::CString;
 use self::pointer::Pointer;
@@ -24,6 +27,11 @@ fn calculate_padding(offset: usize, alignment: usize) -> usize {
 }
 
 #[derive(Clone, Copy, Hash)]
+#[cfg_attr(
+  feature = "serde",
+  derive(Serialize, Deserialize),
+  serde(rename_all = "lowercase")
+)]
 pub enum NativeType {
   Void,
   U8,
@@ -82,6 +90,11 @@ impl NativeType {
 }
 
 #[derive(Clone, Copy, Hash)]
+#[cfg_attr(
+  feature = "serde",
+  derive(Serialize, Deserialize),
+  serde(rename_all = "lowercase")
+)]
 pub enum BufferType {
   None,
   U8,
@@ -135,6 +148,11 @@ impl BufferType {
 }
 
 #[derive(Clone, Hash)]
+#[cfg_attr(
+  feature = "serde",
+  derive(Serialize, Deserialize),
+  serde(rename_all = "lowercase")
+)]
 pub enum TypeDefinition {
   Primitive(Primitive),
   Pointer(Pointer),
@@ -250,6 +268,10 @@ impl From<TypeDefinition> for TypeDescriptor {
 }
 
 #[derive(Clone)]
+#[cfg_attr(
+  feature = "serde",
+  derive(Serialize, Deserialize)
+)]
 pub struct TypeDescriptor {
   pub native: NativeType,
   pub converter: TypeConverter,
@@ -262,6 +284,10 @@ impl TypeDescriptor {
 }
 
 #[derive(Clone)]
+#[cfg_attr(
+  feature = "serde",
+  derive(Serialize, Deserialize)
+)]
 pub struct TypeConverter {
   pub globals: Vec<String>,
   pub typescript: String,

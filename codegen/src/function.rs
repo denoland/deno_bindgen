@@ -1,3 +1,6 @@
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use std::fmt::Write;
 
 use crate::error::AnyError;
@@ -6,11 +9,20 @@ use crate::library::LibraryElement;
 use crate::source::Source;
 use crate::types::TypeDescriptor;
 
+#[cfg_attr(
+  feature = "serde",
+  derive(Serialize, Deserialize),
+  serde(untagged)
+)]
 pub enum FunctionParameters {
-  Named(Vec<(String, String)>),
   Unnamed(Vec<String>),
+  Named(Vec<(String, String)>),
 }
 
+#[cfg_attr(
+  feature = "serde",
+  derive(Serialize, Deserialize)
+)]
 pub struct Function {
   symbol: String,
   name: String,

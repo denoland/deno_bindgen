@@ -1,7 +1,8 @@
 [workspace]
 members = [
+  "cli",
+  "codegen",
   "deno_bindgen",
-  "macro",
-  "codegen"
+  "macro"
 ]
 exclude = ["example/"]

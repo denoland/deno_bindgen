@@ -1,0 +1,15 @@
+[package]
+name = "deno_bindgen_cli"
+version = "0.1.0"
+description = "This tool aims to simplify glue code generation for Deno FFI libraries"
+license = "MIT"
+edition = "2021"
+
+[[bin]]
+name = "dbindgen"
+path = "main.rs"
+
+[dependencies]
+clap = { version = "3.0.14", features = ["derive"] }
+serde_json = "1.0.78"
+deno_bindgen_codegen = { path = "../codegen", features = ["serde"] }

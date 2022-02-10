@@ -1,10 +1,18 @@
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use super::BufferType;
 use super::NativeType;
 use super::TypeConverter;
 use super::TypeDescriptor;
 
 #[derive(Clone, Hash)]
+#[cfg_attr(
+  feature = "serde",
+  derive(Serialize, Deserialize)
+)]
 pub struct Buffer {
+  #[cfg_attr(feature = "serde", serde(rename = "type"))]
   pub ty: BufferType,
   pub length: usize,
 }
