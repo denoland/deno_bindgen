@@ -6,6 +6,7 @@ import { codegen } from "./codegen.ts";
 
 const flags = parse(Deno.args, { "--": true });
 const release = !!flags.release;
+const useCache = ("nocache" in flags) ? false : release; // disable cache with --nocache, otherwise cache only in release mode
 
 const fetchPrefix = typeof flags.release == "string"
   ? flags.release
@@ -41,6 +42,7 @@ async function generate() {
     {
       le: conf.littleEndian,
       release,
+      useCache,
     },
   );
 

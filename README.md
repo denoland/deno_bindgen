@@ -177,6 +177,8 @@ The `deno_bindgen` CLI tool provides the following flags:
   Under the hood this uses [`x/plug`](https://deno.land/x/plug) to fetch and
   cache the artifact.
 
+- Pass `--nocache` to disable artifact caching.
+
 - Flags after `--` will be passed to `cargo build`. Example:
   ```shell
   deno_bindgen -- --features "cool_stuff"
