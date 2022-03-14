@@ -208,6 +208,13 @@ pub fn deno_bindgen(attr: TokenStream, input: TokenStream) -> TokenStream {
       })
     }
     Err(_) => {
+      // impl Item
+      match syn::parse::<ItemImpl>(input.clone()) {
+        Ok(item) => {
+          return process_impl(&mut metadata, item).unwrap();
+        }
+        _ => {},
+      };
       let input = syn::parse_macro_input!(input as syn::DeriveInput);
       process_struct(&mut metadata, input.clone()).unwrap();
 
@@ -222,3 +229,15 @@ pub fn deno_bindgen(attr: TokenStream, input: TokenStream) -> TokenStream {
     }
   }
 }
+
+fn process_impl(
+  metadata: &mut Glue,
+  item: ItemImpl,
+) {
+  assert!(item.trait_.is_none());
+  for item in item.items {
+    syn::ImplItem::Method(impl_method) => {
+      process_func()
+    }
+    _ => unimplemented!("only methods in impl items")
+  }
