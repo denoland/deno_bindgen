@@ -3,7 +3,7 @@
 import {
   createFromBuffer,
   GlobalConfiguration,
-} from "https://deno.land/x/dprint/mod.ts";
+} from "https://deno.land/x/dprint@0.2.0/mod.ts";
 import * as Cache from "https://deno.land/x/cache@0.2.13/mod.ts";
 
 Cache.configure({ directory: Cache.options.directory });
