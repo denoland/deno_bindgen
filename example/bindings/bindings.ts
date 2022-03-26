@@ -90,9 +90,21 @@ const _lib = await prepare(opts, {
     nonblocking: false,
   },
 })
-export type TagAndContent =
-  | { key: "A"; value: { b: number } }
-  | { key: "C"; value: { d: number } }
+export type TestLifetimeWrap = {
+  _a: TestLifetimeEnums
+}
+export type PlainEnum =
+  | {
+    a: {
+      _a: string
+    }
+  }
+  | "b"
+  | "c"
+export type TestReservedField = {
+  type: number
+  ref: number
+}
 /**
  * Doc comment for `Input` struct.
  * ...testing multiline
@@ -106,29 +118,17 @@ export type Input = {
   a: number
   b: number
 }
-export type MyStruct = {
-  arr: Array<string>
-}
-export type TestReservedField = {
-  type: number
-  ref: number
-}
+export type TagAndContent =
+  | { key: "A"; value: { b: number } }
+  | { key: "C"; value: { d: number } }
 export type TestLifetimes = {
   text: string
 }
-export type PlainEnum =
-  | {
-    a: {
-      _a: string
-    }
-  }
-  | "b"
-  | "c"
 export type OptionStruct = {
   maybe: string | undefined | null
 }
-export type TestLifetimeWrap = {
-  _a: TestLifetimeEnums
+export type MyStruct = {
+  arr: Array<string>
 }
 export type TestLifetimeEnums = {
   Text: {

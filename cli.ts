@@ -16,7 +16,7 @@ async function build() {
   if (release) cmd.push("--release");
   cmd.push(...flags["--"]);
   const proc = Deno.run({ cmd });
-  await proc.status();
+  return proc.status();
 }
 
 let source = null;
@@ -53,10 +53,13 @@ try {
   // no op
 }
 
-await build().catch((_) => Deno.removeSync("bindings.json"));
-await generate();
-
-if (source != null) {
-  await ensureDir("bindings");
-  await Deno.writeTextFile("bindings/bindings.ts", source);
+const status = await build().catch((_) => Deno.removeSync("bindings.json"));
+if (status?.success) {
+  await generate();
+  if (source) {
+    await ensureDir("bindings");
+    await Deno.writeTextFile("bindings/bindings.ts", source);
+  }
 }
+
+Deno.exit(status?.code || 0);
