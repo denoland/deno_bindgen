@@ -40,6 +40,7 @@ const _lib = await prepare(opts, {
     result: "pointer",
     nonblocking: true,
   },
+  test_hashmap: { parameters: [], result: "pointer", nonblocking: false },
   test_lifetime: {
     parameters: ["pointer", "usize"],
     result: "usize",
@@ -90,20 +91,8 @@ const _lib = await prepare(opts, {
     nonblocking: false,
   },
 })
-export type TestLifetimeWrap = {
-  _a: TestLifetimeEnums
-}
-export type PlainEnum =
-  | {
-    a: {
-      _a: string
-    }
-  }
-  | "b"
-  | "c"
-export type TestReservedField = {
-  type: number
-  ref: number
+export type TestLifetimes = {
+  text: string
 }
 /**
  * Doc comment for `Input` struct.
@@ -121,19 +110,34 @@ export type Input = {
 export type TagAndContent =
   | { key: "A"; value: { b: number } }
   | { key: "C"; value: { d: number } }
-export type TestLifetimes = {
-  text: string
+export type WithRecord = {
+  my_map: Record<string, string>
 }
-export type OptionStruct = {
-  maybe: string | undefined | null
+export type TestReservedField = {
+  type: number
+  ref: number
 }
 export type MyStruct = {
   arr: Array<string>
 }
+export type TestLifetimeWrap = {
+  _a: TestLifetimeEnums
+}
+export type PlainEnum =
+  | {
+    a: {
+      _a: string
+    }
+  }
+  | "b"
+  | "c"
 export type TestLifetimeEnums = {
   Text: {
     _text: string
   }
+}
+export type OptionStruct = {
+  maybe: string | undefined | null
 }
 export function add(a0: number, a1: number) {
   let rawResult = _lib.symbols.add(a0, a1)
@@ -171,6 +175,11 @@ export function test_buffer_return_async(a0: Uint8Array) {
   )
   const result = rawResult.then(readPointer)
   return result
+}
+export function test_hashmap() {
+  let rawResult = _lib.symbols.test_hashmap()
+  const result = readPointer(rawResult)
+  return JSON.parse(decode(result)) as WithRecord
 }
 export function test_lifetime(a0: TestLifetimes) {
   const a0_buf = encode(JSON.stringify(a0))
