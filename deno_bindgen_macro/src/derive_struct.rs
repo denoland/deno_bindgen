@@ -265,7 +265,7 @@ fn rs_to_ts(ty: &str) -> &str {
     "str" => "string",
     "f32" => "number",
     "f64" => "number",
-    "HashMap" => "Map",
+    "HashMap" => "Record",
     "Vec" => "Array",
     "HashSet" => "Array",
     "Value" => "any",

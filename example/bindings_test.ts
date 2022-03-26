@@ -6,6 +6,7 @@ import {
   test_buf,
   test_buffer_return,
   test_buffer_return_async,
+  test_hashmap,
   test_lifetime,
   test_manual_ptr,
   test_manual_ptr_async,
@@ -20,6 +21,7 @@ import {
   test_str_ret,
   test_tag_and_content,
   TestReservedField,
+  WithRecord,
 } from "./bindings/bindings.ts";
 import { assert, assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
@@ -195,5 +197,12 @@ Deno.test({
   name: "test_str_ret#test",
   fn: () => {
     assertEquals(test_str_ret(), "🦕");
+  },
+});
+
+Deno.test({
+  name: "test_hashmap#test",
+  fn: () => {
+    assertEquals(test_hashmap(), { my_map: { "key": "value" } } as WithRecord);
   },
 });
