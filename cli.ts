@@ -54,7 +54,7 @@ try {
 }
 
 const status = await build().catch((_) => Deno.removeSync("bindings.json"));
-if (status?.success) {
+if (status?.success || typeof flags.release == "string") {
   await generate();
   if (source) {
     await ensureDir("bindings");
