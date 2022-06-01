@@ -202,7 +202,9 @@ ${
                 resolveType(decl, result)
               };`
             : result == "str"
-            ? "return decode(result);"
+            ? nonBlocking
+              ? "return result.then(decode);"
+              : "return decode(result);"
             : "return result;"
         };
 }`;
