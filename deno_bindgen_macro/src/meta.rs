@@ -1,5 +1,6 @@
 // Copyright 2020-2021 the Deno authors. All rights reserved. MIT license.
 
+use proc_macro2::TokenStream;
 use serde::Deserialize;
 use serde::Serialize;
 use std::collections::HashMap;
@@ -23,9 +24,9 @@ pub enum Type {
   Usize,
   Isize,
   Void,
+  Function(Box<Symbol>),
 
-  /// Types that pave way for
-  /// serializers. buffers <3
+  /// buffers <3
   Buffer,
   BufferMut,
   Str,

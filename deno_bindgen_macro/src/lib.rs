@@ -1,6 +1,7 @@
 // Copyright 2020-2021 the Deno authors. All rights reserved. MIT license.
 
 use proc_macro::TokenStream;
+use proc_macro2::TokenStream as TokenStream2;
 use quote::format_ident;
 use quote::quote;
 use std::env;
@@ -29,6 +30,89 @@ const ENDIANNESS: bool = true;
 
 #[cfg(target_endian = "big")]
 const ENDIANNESS: bool = false;
+
+fn transform_params(
+  parameters: Vec<Type>,
+  params: &mut Vec<TokenStream2>,
+  overrides: &mut Vec<TokenStream2>,
+  input_idents: &mut Vec<syn::Ident>,
+  c_index: &mut usize,
+) {
+  for parameter in parameters {
+    match parameter {
+      Type::StructEnum { .. } => {
+        let ident = format_ident!("arg{}", c_index.to_string());
+        params.push(quote! { #ident: *const u8 });
+
+        *c_index += 1;
+        let len_ident = format_ident!("arg{}", c_index.to_string());
+        params.push(quote! { #len_ident: usize });
+
+        overrides.push(quote! {
+          let buf = unsafe {
+            ::std::slice::from_raw_parts(#ident, #len_ident)
+          };
+          let #ident = deno_bindgen::serde_json::from_slice(buf).unwrap();
+        });
+
+        input_idents.push(ident);
+      }
+      Type::Str | Type::Buffer | Type::BufferMut => {
+        let ident = format_ident!("arg{}", c_index.to_string());
+        match parameter {
+          Type::Str | Type::Buffer => params.push(quote! { #ident: *const u8 }),
+          Type::BufferMut => params.push(quote! { #ident: *mut u8 }),
+          _ => unreachable!(),
+        };
+
+        *c_index += 1;
+        let len_ident = format_ident!("arg{}", c_index.to_string());
+        params.push(quote! { #len_ident: usize });
+
+        let return_type = match parameter {
+          Type::Str => quote! { ::std::str::from_utf8(buf).unwrap() },
+          Type::Buffer | Type::BufferMut => quote! { buf },
+          _ => unreachable!(),
+        };
+
+        let buf_expr = match parameter {
+          Type::Str | Type::Buffer => {
+            quote! { let buf = ::std::slice::from_raw_parts(#ident, #len_ident); }
+          }
+          Type::BufferMut => {
+            // https://github.com/littledivy/deno_bindgen/issues/26
+            // *mut u8 should never outlive the symbol call. This can lead to UB.
+            quote! { let mut buf: &'sym mut [u8] = ::std::slice::from_raw_parts_mut(#ident, #len_ident);
+            }
+          }
+          _ => unreachable!(),
+        };
+
+        overrides.push(quote! {
+          let #ident = unsafe {
+            #buf_expr
+            #return_type
+          };
+        });
+
+        input_idents.push(ident);
+      }
+      Type::Function(symbol) => {
+        let ident = format_ident!("arg{}", c_index.to_string());
+        todo!();
+      }
+      // TODO
+      _ => {
+        let ident = format_ident!("arg{}", c_index.to_string());
+        let ty = syn::Type::from(parameter);
+        params.push(quote! { #ident: #ty });
+        input_idents.push(ident);
+      }
+    };
+
+    *c_index += 1;
+  }
+}
 
 #[proc_macro_attribute]
 pub fn deno_bindgen(attr: TokenStream, input: TokenStream) -> TokenStream {
@@ -63,78 +147,13 @@ pub fn deno_bindgen(attr: TokenStream, input: TokenStream) -> TokenStream {
       let mut input_idents = vec![];
       let mut c_index = 0;
 
-      for parameter in symbol.parameters {
-        match parameter {
-          Type::StructEnum { .. } => {
-            let ident = format_ident!("arg{}", c_index.to_string());
-            params.push(quote! { #ident: *const u8 });
-
-            c_index += 1;
-            let len_ident = format_ident!("arg{}", c_index.to_string());
-            params.push(quote! { #len_ident: usize });
-
-            overrides.push(quote! {
-              let buf = unsafe {
-                ::std::slice::from_raw_parts(#ident, #len_ident)
-              };
-              let #ident = deno_bindgen::serde_json::from_slice(buf).unwrap();
-            });
-
-            input_idents.push(ident);
-          }
-          Type::Str | Type::Buffer | Type::BufferMut => {
-            let ident = format_ident!("arg{}", c_index.to_string());
-            match parameter {
-              Type::Str | Type::Buffer => {
-                params.push(quote! { #ident: *const u8 })
-              }
-              Type::BufferMut => params.push(quote! { #ident: *mut u8 }),
-              _ => unreachable!(),
-            };
-
-            c_index += 1;
-            let len_ident = format_ident!("arg{}", c_index.to_string());
-            params.push(quote! { #len_ident: usize });
-
-            let return_type = match parameter {
-              Type::Str => quote! { ::std::str::from_utf8(buf).unwrap() },
-              Type::Buffer | Type::BufferMut => quote! { buf },
-              _ => unreachable!(),
-            };
-
-            let buf_expr = match parameter {
-              Type::Str | Type::Buffer => {
-                quote! { let buf = ::std::slice::from_raw_parts(#ident, #len_ident); }
-              }
-              Type::BufferMut => {
-                // https://github.com/littledivy/deno_bindgen/issues/26
-                // *mut u8 should never outlive the symbol call. This can lead to UB.
-                quote! { let mut buf: &'sym mut [u8] = ::std::slice::from_raw_parts_mut(#ident, #len_ident);
-                }
-              }
-              _ => unreachable!(),
-            };
-
-            overrides.push(quote! {
-              let #ident = unsafe {
-                #buf_expr
-                #return_type
-              };
-            });
-
-            input_idents.push(ident);
-          }
-          // TODO
-          _ => {
-            let ident = format_ident!("arg{}", c_index.to_string());
-            let ty = syn::Type::from(parameter);
-            params.push(quote! { #ident: #ty });
-            input_idents.push(ident);
-          }
-        };
-
-        c_index += 1;
-      }
+      transform_params(
+        symbol.parameters,
+        &mut params,
+        &mut overrides,
+        &mut input_idents,
+        &mut c_index,
+      );
 
       let (result, transformer) = match symbol.result {
         Type::Buffer

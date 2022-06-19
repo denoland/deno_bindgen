@@ -24,6 +24,8 @@ async function generate() {
   let conf;
   try {
     conf = JSON.parse(await Deno.readTextFile("bindings.json"));
+    console.log(conf);
+    Deno.exit();
   } catch (_) {
     // Nothing to update.
     return;
