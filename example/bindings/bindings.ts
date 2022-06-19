@@ -24,6 +24,17 @@ const opts = {
 const _lib = await prepare(opts, {
   add: { parameters: ["i32", "i32"], result: "i32", nonblocking: false },
   add2: { parameters: ["pointer", "usize"], result: "i32", nonblocking: false },
+  callback: {
+    parameters: [{
+      "function": {
+        "parameters": ["i32", "i32"],
+        "result": "void",
+        "nonBlocking": false,
+      },
+    }],
+    result: "void",
+    nonblocking: false,
+  },
   sleep: { parameters: ["u64"], result: "void", nonblocking: true },
   test_buf: {
     parameters: ["pointer", "usize"],
@@ -94,8 +105,13 @@ const _lib = await prepare(opts, {
 export type OptionStruct = {
   maybe: string | undefined | null
 }
-export type TestLifetimes = {
-  text: string
+export type TestLifetimeWrap = {
+  _a: TestLifetimeEnums
+}
+export type TestLifetimeEnums = {
+  Text: {
+    _text: string
+  }
 }
 export type MyStruct = {
   arr: Array<string>
@@ -108,18 +124,6 @@ export type PlainEnum =
   }
   | "b"
   | "c"
-export type WithRecord = {
-  my_map: Record<string, string>
-}
-export type TestLifetimeEnums = {
-  Text: {
-    _text: string
-  }
-}
-export type TestReservedField = {
-  type: number
-  ref: number
-}
 /**
  * Doc comment for `Input` struct.
  * ...testing multiline
@@ -136,8 +140,15 @@ export type Input = {
 export type TagAndContent =
   | { key: "A"; value: { b: number } }
   | { key: "C"; value: { d: number } }
-export type TestLifetimeWrap = {
-  _a: TestLifetimeEnums
+export type WithRecord = {
+  my_map: Record<string, string>
+}
+export type TestLifetimes = {
+  text: string
+}
+export type TestReservedField = {
+  type: number
+  ref: number
 }
 export function add(a0: number, a1: number) {
   let rawResult = _lib.symbols.add(a0, a1)
@@ -147,6 +158,13 @@ export function add(a0: number, a1: number) {
 export function add2(a0: Input) {
   const a0_buf = encode(JSON.stringify(a0))
   let rawResult = _lib.symbols.add2(a0_buf, a0_buf.byteLength)
+  const result = rawResult
+  return result
+}
+export function callback(a0: any) {
+  let rawResult = _lib.symbols.callback(
+    new Deno.UnsafeCallback({ parameters: ["i32", "i32"], result: "void" }, a0),
+  )
   const result = rawResult
   return result
 }

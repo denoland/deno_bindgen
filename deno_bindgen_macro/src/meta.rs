@@ -24,7 +24,11 @@ pub enum Type {
   Usize,
   Isize,
   Void,
-  Function(Box<Symbol>),
+  Function {
+    symbol: Box<Symbol>,
+    #[serde(skip)]
+    inner: Option<syn::TypeBareFn>,
+  },
 
   /// buffers <3
   Buffer,

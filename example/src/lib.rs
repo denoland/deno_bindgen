@@ -9,7 +9,7 @@ fn add(a: i32, b: i32) -> i32 {
 
 #[deno_bindgen]
 fn callback(cb: fn (a: i32, b: i32)) {
-  cb(1, 2)
+  cb(1, 2);
 }
 
 // Test Structs

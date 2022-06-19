@@ -1,5 +1,6 @@
 // Copyright 2020-2021 the Deno authors. All rights reserved. MIT license.
 
+use meta::Symbol;
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use quote::format_ident;
@@ -37,15 +38,24 @@ fn transform_params(
   overrides: &mut Vec<TokenStream2>,
   input_idents: &mut Vec<syn::Ident>,
   c_index: &mut usize,
+  ident_prefix: Option<&str>,
 ) {
+  let mkident = |c_index: &mut usize| {
+    format_ident!(
+      "{}_arg{}",
+      ident_prefix.unwrap_or("default"),
+      c_index.to_string()
+    )
+  };
+
   for parameter in parameters {
     match parameter {
       Type::StructEnum { .. } => {
-        let ident = format_ident!("arg{}", c_index.to_string());
+        let ident = mkident(c_index);
         params.push(quote! { #ident: *const u8 });
 
         *c_index += 1;
-        let len_ident = format_ident!("arg{}", c_index.to_string());
+        let len_ident = mkident(c_index);
         params.push(quote! { #len_ident: usize });
 
         overrides.push(quote! {
@@ -58,7 +68,7 @@ fn transform_params(
         input_idents.push(ident);
       }
       Type::Str | Type::Buffer | Type::BufferMut => {
-        let ident = format_ident!("arg{}", c_index.to_string());
+        let ident = mkident(c_index);
         match parameter {
           Type::Str | Type::Buffer => params.push(quote! { #ident: *const u8 }),
           Type::BufferMut => params.push(quote! { #ident: *mut u8 }),
@@ -66,7 +76,7 @@ fn transform_params(
         };
 
         *c_index += 1;
-        let len_ident = format_ident!("arg{}", c_index.to_string());
+        let len_ident = mkident(c_index);
         params.push(quote! { #len_ident: usize });
 
         let return_type = match parameter {
@@ -97,13 +107,58 @@ fn transform_params(
 
         input_idents.push(ident);
       }
-      Type::Function(symbol) => {
-        let ident = format_ident!("arg{}", c_index.to_string());
-        todo!();
+      Type::Function { symbol, inner } => {
+        let syn::TypeBareFn { inputs, output, .. } =
+          inner.expect("unreachable");
+        let ident = mkident(c_index);
+
+        let mut p_params = vec![];
+        let mut p_overrides = vec![];
+        let mut p_input_idents = vec![];
+        let mut p_c_index = 0;
+
+        let ident_prefix = format!("arg{}", c_index.to_string());
+        let (result, transformer) = make_fn(
+          *symbol,
+          &mut p_params,
+          &mut p_overrides,
+          &mut p_input_idents,
+          &mut p_c_index,
+          Some(&ident_prefix),
+        );
+
+        let p_overrides = p_overrides
+          .iter()
+          .fold(quote! {}, |acc, new| quote! { #acc #new });
+
+        let inputs = inputs
+          .iter()
+          .enumerate()
+          .map(|(idx, arg)| {
+            let ident = format_ident!("{}_arg{}", ident_prefix, idx);
+            let ty = &arg.ty;
+            quote! { #ident: #ty, }
+          })
+          .fold(quote! {}, |acc, new| quote! { #acc #new });
+
+        let inner_ident = format_ident!("{}_inner", ident);
+        let static_ident = format_ident!("{}_static", ident);
+        let ty = quote! { extern "C" fn (#(#p_params,) *) -> #result };
+        overrides.push(quote! {
+          static mut #static_ident: Option<#ty> = None;
+          fn #inner_ident <'sym> (#inputs) #output {
+            #p_overrides
+            let result = unsafe { #static_ident .unwrap() (#(#p_input_idents, ) *) };
+            #transformer
+          };
+          unsafe { #static_ident = Some(#ident) };
+        });
+        params.push(quote! { #ident: #ty });
+        input_idents.push(inner_ident);
       }
       // TODO
       _ => {
-        let ident = format_ident!("arg{}", c_index.to_string());
+        let ident = mkident(c_index);
         let ty = syn::Type::from(parameter);
         params.push(quote! { #ident: #ty });
         input_idents.push(ident);
@@ -111,6 +166,71 @@ fn transform_params(
     };
 
     *c_index += 1;
+  }
+}
+
+fn make_fn(
+  symbol: Symbol,
+  params: &mut Vec<TokenStream2>,
+  overrides: &mut Vec<TokenStream2>,
+  input_idents: &mut Vec<syn::Ident>,
+  c_index: &mut usize,
+  ident_prefix: Option<&str>,
+) -> (syn::Type, TokenStream2) {
+  transform_params(
+    symbol.parameters,
+    params,
+    overrides,
+    input_idents,
+    c_index,
+    ident_prefix,
+  );
+
+  match symbol.result {
+    Type::Buffer
+    // Note that this refers to an owned String
+    // and not a `&str`
+    | Type::Str => {
+      let ty = parse_quote! { *const u8 };
+      let slice = match symbol.result {
+        Type::Str => quote! {
+          result.as_bytes()
+        },
+        _ => quote! { result }
+      };
+      let transformer = quote! {
+        let length = (result.len() as u32).to_be_bytes();
+        let mut v = length.to_vec();
+        v.extend_from_slice(#slice);
+
+        ::std::mem::forget(result);
+        let result = v.as_ptr();
+        // Leak the result to JS land.
+        ::std::mem::forget(v);
+        result
+      };
+
+      (ty, transformer)
+    }
+    Type::StructEnum { .. } => {
+      let ty = parse_quote! { *const u8 };
+      let transformer = quote! {
+        let json = deno_bindgen::serde_json::to_string(&result).expect("Failed to serialize as JSON");
+        let encoded = json.into_bytes();
+        let length = (encoded.len() as u32).to_be_bytes();
+        let mut v = length.to_vec();
+        v.extend(encoded.clone());
+
+        let ret = v.as_ptr();
+        // Leak the result to JS land.
+        ::std::mem::forget(v);
+        ret
+      };
+
+      (ty, transformer)
+    }
+    Type::Ptr => (parse_quote! { *const u8 }, quote! { result }),
+    _ => (syn::Type::from(symbol.result), quote! { result }),
   }
 }
 
@@ -141,66 +261,22 @@ pub fn deno_bindgen(attr: TokenStream, input: TokenStream) -> TokenStream {
     Ok(func) => {
       let attr = parse_macro_input!(attr as syn::AttributeArgs);
       let symbol = process_function(func.clone(), attr, &mut metadata).unwrap();
-
       let mut params = vec![];
       let mut overrides = vec![];
       let mut input_idents = vec![];
       let mut c_index = 0;
 
-      transform_params(
-        symbol.parameters,
+      let (result, transformer) = make_fn(
+        symbol,
         &mut params,
         &mut overrides,
         &mut input_idents,
         &mut c_index,
+        None,
       );
-
-      let (result, transformer) = match symbol.result {
-        Type::Buffer
-        // Note that this refers to an owned String
-        // and not a `&str`
-        | Type::Str => {
-          let ty = parse_quote! { *const u8 };
-          let slice = match symbol.result {
-            Type::Str => quote! {
-              result.as_bytes()
-            },
-            _ => quote! { result }
-          };
-          let transformer = quote! {
-            let length = (result.len() as u32).to_be_bytes();
-            let mut v = length.to_vec();
-            v.extend_from_slice(#slice);
-
-            ::std::mem::forget(result);
-            let result = v.as_ptr();
-            // Leak the result to JS land.
-            ::std::mem::forget(v);
-            result
-          };
-
-          (ty, transformer)
-        }
-        Type::StructEnum { .. } => {
-          let ty = parse_quote! { *const u8 };
-          let transformer = quote! {
-            let json = deno_bindgen::serde_json::to_string(&result).expect("Failed to serialize as JSON");
-            let encoded = json.into_bytes();
-            let length = (encoded.len() as u32).to_be_bytes();
-            let mut v = length.to_vec();
-            v.extend(encoded.clone());
-
-            let ret = v.as_ptr();
-            // Leak the result to JS land.
-            ::std::mem::forget(v);
-            ret
-          };
-
-          (ty, transformer)
-        }
-        Type::Ptr => (parse_quote! { *const u8 }, quote! { result }),
-        _ => (syn::Type::from(symbol.result), quote! { result }),
-      };
+      metafile
+        .write_all(&serde_json::to_vec(&metadata).unwrap())
+        .unwrap();
 
       let name = &func.sig.ident;
       let fn_inputs = &func.sig.inputs;
@@ -211,10 +287,6 @@ pub fn deno_bindgen(attr: TokenStream, input: TokenStream) -> TokenStream {
       let overrides = overrides
         .iter()
         .fold(quote! {}, |acc, new| quote! { #acc #new });
-
-      metafile
-        .write_all(&serde_json::to_vec(&metadata).unwrap())
-        .unwrap();
 
       TokenStream::from(quote! {
         #[no_mangle]

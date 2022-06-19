@@ -50,7 +50,10 @@ fn make_args(ty: &syn::Type, metadata: &mut Glue) -> Type {
         result,
         non_blocking: false,
       };
-      Type::Function(Box::new(symbol))
+      Type::Function {
+        symbol: Box::new(symbol),
+        inner: Some(ty.clone()),
+      }
     }
     syn::Type::Reference(ref ty) => match *ty.elem {
       syn::Type::Path(ref ty) => {
