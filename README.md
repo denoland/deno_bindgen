@@ -136,6 +136,26 @@ export function greet(name: string) {
 }
 ```
 
+### Callbacks
+
+Since Deno [TBD](TBD), JS functions can be passed as parameters to symbols.
+Example:
+
+```rust
+#[deno_bindgen]
+fn run_callback(add: fn(a: i32, b: i32) -> i32) {
+  println!("{}", add(20, 30));
+}
+```
+
+```typescript
+import { run_callback } from "./bindings/bindings.ts";
+
+run_callback((a: string, b: string) => {
+  return a + b;
+});
+```
+
 Notes
 
 - Use `#[deno_bindgen(non_blocking)]` attribute to call symbol without blocking

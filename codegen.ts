@@ -62,7 +62,9 @@ const BufferTypeEncoders: Record<keyof typeof BufferTypes, Encoder> = {
 type TypeDef = Record<string, Record<string, string>>;
 
 function resolveType(typeDefs: TypeDef, type: any): string {
-  const t = typeof type == "string" ? type : type.structenum.ident;
+  const t = typeof type == "string"
+    ? type
+    : (type.structenum?.ident || type.function?.symbol);
   if (Type[t] !== undefined) return Type[t];
   if (BufferTypes[t] !== undefined) return BufferTypes[t];
   if (Object.keys(typeDefs).find((f) => f == t) !== undefined) {
@@ -72,13 +74,17 @@ function resolveType(typeDefs: TypeDef, type: any): string {
 }
 
 function resolveDlopenParameter(typeDefs: TypeDef, type: any): string {
-  const t = typeof type == "string" ? type : type.structenum.ident;
-  if (Type[t] !== undefined) return t;
+  const t = typeof type == "string" ? type : type.structenum?.ident;
+  if (Type[t] !== undefined) return `"${t}"`;
+  if (!t) {
+    // callback
+    return JSON.stringify({ function: type.function.symbol });
+  }
   if (
     BufferTypes[t] !== undefined ||
     Object.keys(typeDefs).find((f) => f == t) !== undefined
   ) {
-    return "pointer";
+    return `"pointer"`;
   }
   throw new TypeError(`Type not supported: ${t}`);
 }
@@ -99,7 +105,8 @@ function isTypeDef(p: any) {
 }
 
 function isBufferType(p: any) {
-  return isTypeDef(p) || BufferTypes[p] !== undefined;
+  return isTypeDef(p) && p.function == undefined ||
+    BufferTypes[p] !== undefined;
 }
 
 // TODO(@littledivy): factor out options in an interface
@@ -155,12 +162,12 @@ const _lib = await prepare(opts, {
           signature[sig].parameters.map((p) => {
             const ffiParam = resolveDlopenParameter(decl, p);
             // FIXME: Dupe logic here.
-            return `"${ffiParam}"${isBufferType(p) ? `, "usize"` : ""}`;
+            return `${ffiParam}${isBufferType(p) ? `, "usize"` : ""}`;
           })
             .join(", ")
-        } ], result: "${
+        } ], result: ${
           resolveDlopenParameter(decl, signature[sig].result)
-        }", nonblocking: ${String(!!signature[sig].nonBlocking)} }`
+        }, nonblocking: ${String(!!signature[sig].nonBlocking)} }`
       ).join(", ")
     } });
 ${Object.keys(decl).map((def) => typescript[def]).join("\n")}
@@ -182,7 +189,20 @@ ${
         }
   let rawResult = _lib.symbols.${sig}(${
           parameters.map((p, i) =>
-            isBufferType(p) ? `a${i}_buf, a${i}_buf.byteLength` : `a${i}`
+            isBufferType(p)
+              ? `a${i}_buf, a${i}_buf.byteLength`
+              : (p.function
+                ? `new Deno.UnsafeCallback({ parameters: [ ${
+                  p.function.symbol.parameters.map((p2) => {
+                    const ffiParam = resolveDlopenParameter(decl, p2);
+                    // FIXME: Dupe logic here.
+                    return `${ffiParam}${isBufferType(p2) ? `, "usize"` : ""}`;
+                  })
+                    .join(", ")
+                } ], result: ${
+                  resolveDlopenParameter(decl, p.function.symbol.result)
+                } }, a${i})`
+                : `a${i}`)
           ).join(", ")
         });
   ${
