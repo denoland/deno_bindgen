@@ -48,6 +48,10 @@ pub fn process_function(
               }
             }
           }
+          // eg: fn(usize) -> bool
+          syn::Type::BareFn(ref ty) => {
+            
+          }
           syn::Type::Reference(ref ty) => match *ty.elem {
             syn::Type::Path(ref ty) => {
               let segment = ty.path.segments.first().unwrap();

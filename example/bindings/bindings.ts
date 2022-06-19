@@ -91,8 +91,34 @@ const _lib = await prepare(opts, {
     nonblocking: false,
   },
 })
+export type OptionStruct = {
+  maybe: string | undefined | null
+}
 export type TestLifetimes = {
   text: string
+}
+export type MyStruct = {
+  arr: Array<string>
+}
+export type PlainEnum =
+  | {
+    a: {
+      _a: string
+    }
+  }
+  | "b"
+  | "c"
+export type WithRecord = {
+  my_map: Record<string, string>
+}
+export type TestLifetimeEnums = {
+  Text: {
+    _text: string
+  }
+}
+export type TestReservedField = {
+  type: number
+  ref: number
 }
 /**
  * Doc comment for `Input` struct.
@@ -110,34 +136,8 @@ export type Input = {
 export type TagAndContent =
   | { key: "A"; value: { b: number } }
   | { key: "C"; value: { d: number } }
-export type WithRecord = {
-  my_map: Record<string, string>
-}
-export type TestReservedField = {
-  type: number
-  ref: number
-}
-export type MyStruct = {
-  arr: Array<string>
-}
 export type TestLifetimeWrap = {
   _a: TestLifetimeEnums
-}
-export type PlainEnum =
-  | {
-    a: {
-      _a: string
-    }
-  }
-  | "b"
-  | "c"
-export type TestLifetimeEnums = {
-  Text: {
-    _text: string
-  }
-}
-export type OptionStruct = {
-  maybe: string | undefined | null
 }
 export function add(a0: number, a1: number) {
   let rawResult = _lib.symbols.add(a0, a1)
