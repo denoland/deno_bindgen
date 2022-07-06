@@ -101,7 +101,7 @@ Deno.test({
   name: "test_lifetime_struct#test",
   fn: () => {
     const TEXT = "Hello, World!";
-    assertEquals(test_lifetime({ text: TEXT }), TEXT.length);
+    assertEquals(test_lifetime({ text: TEXT }), BigInt(TEXT.length));
   },
 });
 
