@@ -7,6 +7,7 @@ use std::env;
 use std::fs::OpenOptions;
 use std::io::Read;
 use std::io::Write;
+use std::path::Path;
 use syn::parse_macro_input;
 use syn::parse_quote;
 use syn::ItemFn;
@@ -22,8 +23,6 @@ use crate::derive_struct::process_struct;
 use crate::meta::Glue;
 use crate::meta::Type;
 
-const METAFILE: &str = "bindings.json";
-
 #[cfg(target_endian = "little")]
 const ENDIANNESS: bool = true;
 
@@ -32,7 +31,13 @@ const ENDIANNESS: bool = false;
 
 #[proc_macro_attribute]
 pub fn deno_bindgen(attr: TokenStream, input: TokenStream) -> TokenStream {
-  let mut metadata: Glue = match OpenOptions::new().read(true).open(METAFILE) {
+
+  let metafile_path: String = match env::var("OUT_DIR") {
+    Ok(out_dir) => Path::new(&out_dir).join("bindings.json").into_os_string().into_string().unwrap(),
+    Err(_e) => String::from("bindings.json")
+  };
+
+  let mut metadata: Glue = match OpenOptions::new().read(true).open(metafile_path.as_str()) {
     Ok(mut fd) => {
       let mut meta = String::new();
       fd.read_to_string(&mut meta)
@@ -50,7 +55,7 @@ pub fn deno_bindgen(attr: TokenStream, input: TokenStream) -> TokenStream {
   let mut metafile = OpenOptions::new()
     .write(true)
     .create(true)
-    .open(METAFILE)
+    .open(metafile_path.as_str())
     .expect("Error opening meta file");
 
   match syn::parse::<ItemFn>(input.clone()) {
