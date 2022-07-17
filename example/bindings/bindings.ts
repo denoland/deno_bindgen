@@ -8,7 +8,7 @@ function decode(v: Uint8Array): string {
   return new TextDecoder().decode(v)
 }
 function readPointer(v: any): Uint8Array {
-  const ptr = new Deno.UnsafePointerView(v as Deno.UnsafePointer)
+  const ptr = new Deno.UnsafePointerView(v as bigint)
   const lengthBe = new Uint8Array(4)
   const view = new DataView(lengthBe.buffer)
   ptr.copyInto(lengthBe, 0)
@@ -91,8 +91,26 @@ const _lib = await prepare(opts, {
     nonblocking: false,
   },
 })
-export type TestLifetimes = {
-  text: string
+export type WithRecord = {
+  my_map: Record<string, string>
+}
+export type TagAndContent =
+  | { key: "A"; value: { b: number } }
+  | { key: "C"; value: { d: number } }
+export type TestReservedField = {
+  type: number
+  ref: number
+}
+export type TestLifetimeEnums = {
+  Text: {
+    _text: string
+  }
+}
+export type OptionStruct = {
+  maybe: string | undefined | null
+}
+export type MyStruct = {
+  arr: Array<string>
 }
 /**
  * Doc comment for `Input` struct.
@@ -107,18 +125,8 @@ export type Input = {
   a: number
   b: number
 }
-export type TagAndContent =
-  | { key: "A"; value: { b: number } }
-  | { key: "C"; value: { d: number } }
-export type WithRecord = {
-  my_map: Record<string, string>
-}
-export type TestReservedField = {
-  type: number
-  ref: number
-}
-export type MyStruct = {
-  arr: Array<string>
+export type TestLifetimes = {
+  text: string
 }
 export type TestLifetimeWrap = {
   _a: TestLifetimeEnums
@@ -131,14 +139,6 @@ export type PlainEnum =
   }
   | "b"
   | "c"
-export type TestLifetimeEnums = {
-  Text: {
-    _text: string
-  }
-}
-export type OptionStruct = {
-  maybe: string | undefined | null
-}
 export function add(a0: number, a1: number) {
   let rawResult = _lib.symbols.add(a0, a1)
   const result = rawResult

@@ -32,10 +32,10 @@ const Type: Record<string, string> = {
   u16: "number",
   i32: "number",
   u32: "number",
-  i64: "number",
-  u64: "number",
-  usize: "number",
-  isize: "number",
+  i64: "bigint",
+  u64: "bigint",
+  usize: "bigint",
+  isize: "bigint",
   f32: "number",
   f64: "number",
 };
@@ -135,7 +135,7 @@ function decode(v: Uint8Array): string {
   return new TextDecoder().decode(v);
 }
 function readPointer(v: any): Uint8Array {
-  const ptr = new Deno.UnsafePointerView(v as Deno.UnsafePointer)
+  const ptr = new Deno.UnsafePointerView(v as bigint)
   const lengthBe = new Uint8Array(4);
   const view = new DataView(lengthBe.buffer);
   ptr.copyInto(lengthBe, 0);
