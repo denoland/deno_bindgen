@@ -75,4 +75,5 @@ pub struct Glue {
   pub symbols: HashMap<String, Symbol>,
   pub type_defs: HashMap<String, HashMap<String, String>>,
   pub ts_types: HashMap<String, String>,
+  pub classes: HashMap<String, HashMap<String, Symbol>>,
 }

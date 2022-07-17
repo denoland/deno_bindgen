@@ -41,6 +41,7 @@ async function generate() {
     conf.typeDefs,
     conf.tsTypes,
     conf.symbols,
+    conf.classes,
     {
       le: conf.littleEndian,
       release,

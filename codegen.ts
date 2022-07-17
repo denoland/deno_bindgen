@@ -109,6 +109,7 @@ export function codegen(
   decl: TypeDef,
   typescript: Record<string, string>,
   signature: Sig,
+  classes: TypeDef = {}, 
   options?: Options,
 ) {
   signature = Object.keys(signature)
@@ -164,6 +165,17 @@ const _lib = await prepare(opts, {
       ).join(", ")
     } });
 ${Object.keys(decl).map((def) => typescript[def]).join("\n")}
+${Object.keys(classes).map(name => `
+export class ${name} {
+  #ptr = Deno.UnsafePointer;
+  ${Object.keys(classes[name]).map(sig => {
+    const { parameters, result, nonBlocking } = classes[name][sig];
+    return `${sig}(${ parameters.map((p, i) => `a${i}: ${resolveType(decl, p)}`).join(",") }) {
+
+    }`
+  }).join("\n")}
+}
+`).join("\n")}
 ${
       Object.keys(signature).map((sig) => {
         const { parameters, result, nonBlocking } = signature[sig];
