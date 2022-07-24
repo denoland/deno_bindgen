@@ -127,13 +127,16 @@ export function codegen(
   return tsFormatter.formatText(
     "bindings.ts",
     `import { CachePolicy, prepare } from "https://deno.land/x/plug@0.5.2/plug.ts";
+
 function encode(v: string | Uint8Array): Uint8Array {
   if (typeof v !== "string") return v;
   return new TextEncoder().encode(v);
 }
+
 function decode(v: Uint8Array): string {
   return new TextDecoder().decode(v);
 }
+
 function readPointer(v: any): Uint8Array {
   const ptr = new Deno.UnsafePointerView(v as bigint)
   const lengthBe = new Uint8Array(4);
@@ -143,9 +146,29 @@ function readPointer(v: any): Uint8Array {
   ptr.copyInto(buf, 4)
   return buf
 }
+
+const url = new URL("${fetchPrefix}", import.meta.url);
+let uri = url.toString();
+if (!uri.endsWith("/")) uri += "/";
+
+let darwin: string | { aarch64: string; x86_64: string } = uri + "lib${name}.dylib";
+
+if (url.protocol !== "file:") {
+  // Assume that remote assets follow naming scheme
+  // for each macOS artifact.
+  darwin = {
+    aarch64: uri + "lib${name}_arm64.dylib",
+    x86_64: uri + "lib${name}_x86_64.dylib",
+  }
+}
+
 const opts = {
   name: "${name}",
-  url: (new URL("${fetchPrefix}", import.meta.url)).toString(),
+  urls: {
+    darwin,
+    windows: uri + "${name}.dll",
+    linux: uri + "lib${name}.so",
+  },
   policy: ${!!options?.release ? "undefined" : "CachePolicy.NONE"},
 };
 const _lib = await prepare(opts, {

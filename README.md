@@ -177,6 +177,15 @@ The `deno_bindgen` CLI tool provides the following flags:
   Under the hood this uses [`x/plug`](https://deno.land/x/plug) to fetch and
   cache the artifact.
 
+  Artifacts must be following the remote asset naming scheme, as follows:
+
+  | OS      | Arch   | Naming               |
+  | ------- | ------ | -------------------- |
+  | Windows | x86_64 | name.dll             |
+  | Linux   | x86_64 | libname.so           |
+  | MacOS   | x86_64 | libname_x86_64.dylib |
+  | MacOS   | arm64  | libname_arm64.dylib  |
+
 - Flags after `--` will be passed to `cargo build`. Example:
   ```shell
   deno_bindgen -- --features "cool_stuff"

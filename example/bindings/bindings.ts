@@ -1,12 +1,15 @@
 // Auto-generated with deno_bindgen
 import { CachePolicy, prepare } from "https://deno.land/x/plug@0.5.2/plug.ts"
+
 function encode(v: string | Uint8Array): Uint8Array {
   if (typeof v !== "string") return v
   return new TextEncoder().encode(v)
 }
+
 function decode(v: Uint8Array): string {
   return new TextDecoder().decode(v)
 }
+
 function readPointer(v: any): Uint8Array {
   const ptr = new Deno.UnsafePointerView(v as bigint)
   const lengthBe = new Uint8Array(4)
@@ -16,9 +19,30 @@ function readPointer(v: any): Uint8Array {
   ptr.copyInto(buf, 4)
   return buf
 }
+
+const url = new URL("../target/debug", import.meta.url)
+let uri = url.toString()
+if (!uri.endsWith("/")) uri += "/"
+
+let darwin: string | { aarch64: string; x86_64: string } = uri
+  + "libdeno_bindgen_test.dylib"
+
+if (url.protocol !== "file:") {
+  // Assume that remote assets follow naming scheme
+  // for each macOS artifact.
+  darwin = {
+    aarch64: uri + "libdeno_bindgen_test_arm64.dylib",
+    x86_64: uri + "libdeno_bindgen_test_x86_64.dylib",
+  }
+}
+
 const opts = {
   name: "deno_bindgen_test",
-  url: (new URL("../target/debug", import.meta.url)).toString(),
+  urls: {
+    darwin,
+    windows: uri + "deno_bindgen_test.dll",
+    linux: uri + "libdeno_bindgen_test.so",
+  },
   policy: CachePolicy.NONE,
 }
 const _lib = await prepare(opts, {
@@ -91,41 +115,20 @@ const _lib = await prepare(opts, {
     nonblocking: false,
   },
 })
+export type OptionStruct = {
+  maybe: string | undefined | null
+}
 export type TestLifetimeEnums = {
   Text: {
     _text: string
   }
 }
-export type OptionStruct = {
-  maybe: string | undefined | null
+export type WithRecord = {
+  my_map: Record<string, string>
 }
 export type MyStruct = {
   arr: Array<string>
 }
-export type TestLifetimeWrap = {
-  _a: TestLifetimeEnums
-}
-export type PlainEnum =
-  | {
-    a: {
-      _a: string
-    }
-  }
-  | "b"
-  | "c"
-export type TestLifetimes = {
-  text: string
-}
-export type WithRecord = {
-  my_map: Record<string, string>
-}
-export type TestReservedField = {
-  type: number
-  ref: number
-}
-export type TagAndContent =
-  | { key: "A"; value: { b: number } }
-  | { key: "C"; value: { d: number } }
 /**
  * Doc comment for `Input` struct.
  * ...testing multiline
@@ -139,6 +142,27 @@ export type Input = {
   a: number
   b: number
 }
+export type TestReservedField = {
+  type: number
+  ref: number
+}
+export type TestLifetimeWrap = {
+  _a: TestLifetimeEnums
+}
+export type TestLifetimes = {
+  text: string
+}
+export type PlainEnum =
+  | {
+    a: {
+      _a: string
+    }
+  }
+  | "b"
+  | "c"
+export type TagAndContent =
+  | { key: "A"; value: { b: number } }
+  | { key: "C"; value: { d: number } }
 export function add(a0: number, a1: number) {
   let rawResult = _lib.symbols.add(a0, a1)
   const result = rawResult
