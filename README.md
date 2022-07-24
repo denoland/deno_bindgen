@@ -179,12 +179,12 @@ The `deno_bindgen` CLI tool provides the following flags:
 
   Artifacts must be following the remote asset naming scheme, as follows:
 
-  | OS      | Arch   | Naming               |
-  | ------- | ------ | -------------------- |
-  | Windows | x86_64 | name.dll             |
-  | Linux   | x86_64 | libname.so           |
-  | MacOS   | x86_64 | libname_x86_64.dylib |
-  | MacOS   | arm64  | libname_arm64.dylib  |
+  | OS      | Arch   | Naming              |
+  | ------- | ------ | ------------------- |
+  | Windows | x86_64 | name.dll            |
+  | Linux   | x86_64 | libname.so          |
+  | MacOS   | x86_64 | libname.dylib       |
+  | MacOS   | arm64  | libname_arm64.dylib |
 
 - Flags after `--` will be passed to `cargo build`. Example:
   ```shell

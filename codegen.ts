@@ -158,7 +158,7 @@ if (url.protocol !== "file:") {
   // for each macOS artifact.
   darwin = {
     aarch64: uri + "lib${name}_arm64.dylib",
-    x86_64: uri + "lib${name}_x86_64.dylib",
+    x86_64: uri + "lib${name}.dylib",
   }
 }
 

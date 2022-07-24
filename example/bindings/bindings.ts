@@ -32,7 +32,7 @@ if (url.protocol !== "file:") {
   // for each macOS artifact.
   darwin = {
     aarch64: uri + "libdeno_bindgen_test_arm64.dylib",
-    x86_64: uri + "libdeno_bindgen_test_x86_64.dylib",
+    x86_64: uri + "libdeno_bindgen_test.dylib",
   }
 }
 
@@ -115,20 +115,14 @@ const _lib = await prepare(opts, {
     nonblocking: false,
   },
 })
-export type OptionStruct = {
-  maybe: string | undefined | null
-}
-export type TestLifetimeEnums = {
-  Text: {
-    _text: string
+export type PlainEnum =
+  | {
+    a: {
+      _a: string
+    }
   }
-}
-export type WithRecord = {
-  my_map: Record<string, string>
-}
-export type MyStruct = {
-  arr: Array<string>
-}
+  | "b"
+  | "c"
 /**
  * Doc comment for `Input` struct.
  * ...testing multiline
@@ -142,27 +136,33 @@ export type Input = {
   a: number
   b: number
 }
+export type TestLifetimes = {
+  text: string
+}
+export type MyStruct = {
+  arr: Array<string>
+}
+export type OptionStruct = {
+  maybe: string | undefined | null
+}
 export type TestReservedField = {
   type: number
   ref: number
 }
-export type TestLifetimeWrap = {
-  _a: TestLifetimeEnums
-}
-export type TestLifetimes = {
-  text: string
-}
-export type PlainEnum =
-  | {
-    a: {
-      _a: string
-    }
-  }
-  | "b"
-  | "c"
 export type TagAndContent =
   | { key: "A"; value: { b: number } }
   | { key: "C"; value: { d: number } }
+export type WithRecord = {
+  my_map: Record<string, string>
+}
+export type TestLifetimeWrap = {
+  _a: TestLifetimeEnums
+}
+export type TestLifetimeEnums = {
+  Text: {
+    _text: string
+  }
+}
 export function add(a0: number, a1: number) {
   let rawResult = _lib.symbols.add(a0, a1)
   const result = rawResult
