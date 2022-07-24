@@ -43,7 +43,7 @@ Deno.test({
 Deno.test({
   name: "test_mixed#test",
   fn: () => {
-    assertEquals(test_mixed(10, { a: 10, b: 20 }), 20);
+    assertEquals(test_mixed(10n, { a: 10, b: 20 }), 20);
   },
 });
 

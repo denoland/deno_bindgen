@@ -1,5 +1,5 @@
 // Auto-generated with deno_bindgen
-import { CachePolicy, prepare } from "https://deno.land/x/plug@0.5.1/plug.ts"
+import { CachePolicy, prepare } from "https://deno.land/x/plug@0.5.2/plug.ts"
 function encode(v: string | Uint8Array): Uint8Array {
   if (typeof v !== "string") return v
   return new TextEncoder().encode(v)
@@ -91,16 +91,6 @@ const _lib = await prepare(opts, {
     nonblocking: false,
   },
 })
-export type WithRecord = {
-  my_map: Record<string, string>
-}
-export type TagAndContent =
-  | { key: "A"; value: { b: number } }
-  | { key: "C"; value: { d: number } }
-export type TestReservedField = {
-  type: number
-  ref: number
-}
 export type TestLifetimeEnums = {
   Text: {
     _text: string
@@ -112,6 +102,30 @@ export type OptionStruct = {
 export type MyStruct = {
   arr: Array<string>
 }
+export type TestLifetimeWrap = {
+  _a: TestLifetimeEnums
+}
+export type PlainEnum =
+  | {
+    a: {
+      _a: string
+    }
+  }
+  | "b"
+  | "c"
+export type TestLifetimes = {
+  text: string
+}
+export type WithRecord = {
+  my_map: Record<string, string>
+}
+export type TestReservedField = {
+  type: number
+  ref: number
+}
+export type TagAndContent =
+  | { key: "A"; value: { b: number } }
+  | { key: "C"; value: { d: number } }
 /**
  * Doc comment for `Input` struct.
  * ...testing multiline
@@ -125,20 +139,6 @@ export type Input = {
   a: number
   b: number
 }
-export type TestLifetimes = {
-  text: string
-}
-export type TestLifetimeWrap = {
-  _a: TestLifetimeEnums
-}
-export type PlainEnum =
-  | {
-    a: {
-      _a: string
-    }
-  }
-  | "b"
-  | "c"
 export function add(a0: number, a1: number) {
   let rawResult = _lib.symbols.add(a0, a1)
   const result = rawResult
@@ -150,7 +150,7 @@ export function add2(a0: Input) {
   const result = rawResult
   return result
 }
-export function sleep(a0: number) {
+export function sleep(a0: bigint) {
   let rawResult = _lib.symbols.sleep(a0)
   const result = rawResult
   return result
@@ -197,7 +197,7 @@ export function test_manual_ptr_async() {
   const result = rawResult.then(readPointer)
   return result
 }
-export function test_mixed(a0: number, a1: Input) {
+export function test_mixed(a0: bigint, a1: Input) {
   const a1_buf = encode(JSON.stringify(a1))
   let rawResult = _lib.symbols.test_mixed(a0, a1_buf, a1_buf.byteLength)
   const result = rawResult
