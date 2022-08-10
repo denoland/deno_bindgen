@@ -101,7 +101,7 @@ Deno.test({
   name: "test_lifetime_struct#test",
   fn: () => {
     const TEXT = "Hello, World!";
-    assertEquals(test_lifetime({ text: TEXT }), BigInt(TEXT.length));
+    assertEquals(test_lifetime({ text: TEXT }), TEXT.length);
   },
 });
 
@@ -118,9 +118,7 @@ Deno.test({
 Deno.test({
   name: "test_buffer_return#test",
   fn: () => {
-    const buf = test_buffer_return(
-      new Uint8Array([1, 2, 3]),
-    );
+    const buf = test_buffer_return(new Uint8Array([1, 2, 3]));
 
     assertEquals(buf.byteLength, 3);
     assertEquals(buf[0], 1);
@@ -132,9 +130,7 @@ Deno.test({
 Deno.test({
   name: "test_buffer_return_async#test",
   fn: async () => {
-    const buf = await test_buffer_return_async(
-      new Uint8Array([1, 2, 3]),
-    );
+    const buf = await test_buffer_return_async(new Uint8Array([1, 2, 3]));
 
     assertEquals(buf.byteLength, 3);
     assertEquals(buf[0], 1);
@@ -203,6 +199,6 @@ Deno.test({
 Deno.test({
   name: "test_hashmap#test",
   fn: () => {
-    assertEquals(test_hashmap(), { my_map: { "key": "value" } } as WithRecord);
+    assertEquals(test_hashmap(), { my_map: { key: "value" } } as WithRecord);
   },
 });

@@ -83,11 +83,14 @@ function resolveDlopenParameter(typeDefs: TypeDef, type: any): string {
   throw new TypeError(`Type not supported: ${t}`);
 }
 
-type Sig = Record<string, {
-  parameters: any[];
-  result: string;
-  nonBlocking?: boolean;
-}>;
+type Sig = Record<
+  string,
+  {
+    parameters: any[];
+    result: string;
+    nonBlocking?: boolean;
+  }
+>;
 
 type Options = {
   le?: boolean;
@@ -113,16 +116,13 @@ export function codegen(
 ) {
   signature = Object.keys(signature)
     .sort()
-    .reduce((acc, key) => ({
-      ...acc,
-      [key]: signature[key],
-    }), {});
-  typescript = Object.keys(typescript)
-    .sort()
-    .reduce((acc, key) => ({
-      ...acc,
-      [key]: typescript[key],
-    }), {});
+    .reduce(
+      (acc, key) => ({
+        ...acc,
+        [key]: signature[key],
+      }),
+      {},
+    );
 
   return tsFormatter.formatText(
     "bindings.ts",
@@ -173,65 +173,89 @@ const opts = {
 };
 const _lib = await prepare(opts, {
   ${
-      Object.keys(signature).map((sig) =>
-        `${sig}: { parameters: [ ${
-          signature[sig].parameters.map((p) => {
-            const ffiParam = resolveDlopenParameter(decl, p);
-            // FIXME: Dupe logic here.
-            return `"${ffiParam}"${isBufferType(p) ? `, "usize"` : ""}`;
-          })
-            .join(", ")
-        } ], result: "${
-          resolveDlopenParameter(decl, signature[sig].result)
-        }", nonblocking: ${String(!!signature[sig].nonBlocking)} }`
-      ).join(", ")
+      Object.keys(signature)
+        .map(
+          (sig) =>
+            `${sig}: { parameters: [ ${
+              signature[sig].parameters
+                .map((p) => {
+                  const ffiParam = resolveDlopenParameter(decl, p);
+                  // FIXME: Dupe logic here.
+                  return `"${ffiParam}"${isBufferType(p) ? `, "usize"` : ""}`;
+                })
+                .join(", ")
+            } ], result: "${
+              resolveDlopenParameter(
+                decl,
+                signature[sig].result,
+              )
+            }", nonblocking: ${String(!!signature[sig].nonBlocking)} }`,
+        )
+        .join(", ")
     } });
-${Object.keys(decl).map((def) => typescript[def]).join("\n")}
 ${
-      Object.keys(signature).map((sig) => {
-        const { parameters, result, nonBlocking } = signature[sig];
+      Object.keys(decl)
+        .sort()
+        .map((def) => typescript[def])
+        .join("\n")
+    }
+${
+      Object.keys(signature)
+        .map((sig) => {
+          const { parameters, result, nonBlocking } = signature[sig];
 
-        return `export function ${sig}(${
-          parameters.map((p, i) => `a${i}: ${resolveType(decl, p)}`).join(",")
-        }) {
+          return `export function ${sig}(${
+            parameters
+              .map((p, i) => `a${i}: ${resolveType(decl, p)}`)
+              .join(",")
+          }) {
   ${
-          parameters.map((p, i) =>
-            isBufferType(p)
-              ? `const a${i}_buf = encode(${
-                BufferTypeEncoders[p] ?? Encoder.JsonStringify
-              }(a${i}));`
-              : null
-          ).filter((c) => c !== null).join("\n")
-        }
+            parameters
+              .map((p, i) =>
+                isBufferType(p)
+                  ? `const a${i}_buf = encode(${
+                    BufferTypeEncoders[p] ?? Encoder.JsonStringify
+                  }(a${i}));`
+                  : null
+              )
+              .filter((c) => c !== null)
+              .join("\n")
+          }
   let rawResult = _lib.symbols.${sig}(${
-          parameters.map((p, i) =>
-            isBufferType(p) ? `a${i}_buf, a${i}_buf.byteLength` : `a${i}`
-          ).join(", ")
-        });
+            parameters
+              .map((p, i) =>
+                isBufferType(p) ? `a${i}_buf, a${i}_buf.byteLength` : `a${i}`
+              )
+              .join(", ")
+          });
   ${
-          isBufferType(result)
-            ? nonBlocking
-              ? `const result = rawResult.then(readPointer);`
-              : `const result = readPointer(rawResult);`
-            : "const result = rawResult;"
-        };
+            isBufferType(result)
+              ? nonBlocking
+                ? `const result = rawResult.then(readPointer);`
+                : `const result = readPointer(rawResult);`
+              : "const result = rawResult;"
+          };
   ${
-          isTypeDef(result)
-            ? nonBlocking
-              ? `return result.then(r => JSON.parse(decode(r))) as Promise<${
-                resolveType(decl, result)
-              }>;`
-              : `return JSON.parse(decode(result)) as ${
-                resolveType(decl, result)
-              };`
-            : result == "str"
-            ? nonBlocking
-              ? "return result.then(decode);"
-              : "return decode(result);"
-            : "return result;"
-        };
+            isTypeDef(result)
+              ? nonBlocking
+                ? `return result.then(r => JSON.parse(decode(r))) as Promise<${
+                  resolveType(
+                    decl,
+                    result,
+                  )
+                }>;`
+                : `return JSON.parse(decode(result)) as ${
+                  resolveType(decl, result)
+                };`
+              : result == "str"
+              ? nonBlocking
+                ? "return result.then(decode);"
+                : "return decode(result);"
+              : "return result;"
+          };
 }`;
-      }).join("\n")
+        })
+        .join("\n")
     }
  `,
   );
