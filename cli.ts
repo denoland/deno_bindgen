@@ -39,7 +39,7 @@ async function generate() {
   }
 
   const pkgName = conf.name;
-  const fetchPrefix = join(
+  const fetchPrefix = release ? flags.release : join(
     await findRelativeTarget(),
     "../target",
     release ? "release" : "debug",
