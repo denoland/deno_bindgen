@@ -74,6 +74,9 @@ function resolveType(typeDefs: TypeDef, type: any): string {
 function resolveDlopenParameter(typeDefs: TypeDef, type: any): string {
   const t = typeof type == "string" ? type : type.structenum.ident;
   if (Type[t] !== undefined) return t;
+  if (t === "buffer" || t === "buffermut") {
+    return "buffer";
+  }
   if (
     BufferTypes[t] !== undefined ||
     Object.keys(typeDefs).find((f) => f == t) !== undefined
@@ -223,8 +226,9 @@ ${
           }
   let rawResult = _lib.symbols.${sig}(${
             parameters
-              .map((p, i) =>
-                isBufferType(p) ? `a${i}_buf, a${i}_buf.byteLength` : `a${i}`
+              .map((p, i) => (isBufferType(p)
+                ? `a${i}_buf, a${i}_buf.byteLength`
+                : `a${i}`)
               )
               .join(", ")
           });
