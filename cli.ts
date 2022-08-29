@@ -39,11 +39,14 @@ async function generate() {
   }
 
   const pkgName = conf.name;
-  const fetchPrefix = release ? flags.release : join(
-    await findRelativeTarget(),
-    "../target",
-    release ? "release" : "debug",
-  );
+  const fetchPrefix =
+    typeof flags.release == "string"
+      ? flags.release
+      : join(
+          await findRelativeTarget(),
+          "../target",
+          release ? "release" : "debug"
+        );
 
   source = "// Auto-generated with deno_bindgen\n";
   source += codegen(
@@ -55,7 +58,7 @@ async function generate() {
     {
       le: conf.littleEndian,
       release,
-    },
+    }
   );
 
   await Deno.remove(metafile);
