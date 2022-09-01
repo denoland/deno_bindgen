@@ -170,7 +170,8 @@ export function add(a0: number, a1: number) {
 }
 export function add2(a0: Input) {
   const a0_buf = encode(JSON.stringify(a0))
-  let rawResult = _lib.symbols.add2(a0_buf, a0_buf.byteLength)
+  const a0_ptr = Deno.UnsafePointer.of(a0_buf)
+  let rawResult = _lib.symbols.add2(a0_ptr, a0_buf.byteLength)
   const result = rawResult
   return result
 }
@@ -181,18 +182,21 @@ export function sleep(a0: bigint) {
 }
 export function test_buf(a0: Uint8Array) {
   const a0_buf = encode(a0)
+
   let rawResult = _lib.symbols.test_buf(a0_buf, a0_buf.byteLength)
   const result = rawResult
   return result
 }
 export function test_buffer_return(a0: Uint8Array) {
   const a0_buf = encode(a0)
+
   let rawResult = _lib.symbols.test_buffer_return(a0_buf, a0_buf.byteLength)
   const result = readPointer(rawResult)
   return result
 }
 export function test_buffer_return_async(a0: Uint8Array) {
   const a0_buf = encode(a0)
+
   let rawResult = _lib.symbols.test_buffer_return_async(
     a0_buf,
     a0_buf.byteLength,
@@ -207,7 +211,8 @@ export function test_hashmap() {
 }
 export function test_lifetime(a0: TestLifetimes) {
   const a0_buf = encode(JSON.stringify(a0))
-  let rawResult = _lib.symbols.test_lifetime(a0_buf, a0_buf.byteLength)
+  const a0_ptr = Deno.UnsafePointer.of(a0_buf)
+  let rawResult = _lib.symbols.test_lifetime(a0_ptr, a0_buf.byteLength)
   const result = rawResult
   return result
 }
@@ -223,15 +228,17 @@ export function test_manual_ptr_async() {
 }
 export function test_mixed(a0: bigint, a1: Input) {
   const a1_buf = encode(JSON.stringify(a1))
-  let rawResult = _lib.symbols.test_mixed(a0, a1_buf, a1_buf.byteLength)
+  const a1_ptr = Deno.UnsafePointer.of(a1_buf)
+  let rawResult = _lib.symbols.test_mixed(a0, a1_ptr, a1_buf.byteLength)
   const result = rawResult
   return result
 }
 export function test_mixed_order(a0: number, a1: Input, a2: number) {
   const a1_buf = encode(JSON.stringify(a1))
+  const a1_ptr = Deno.UnsafePointer.of(a1_buf)
   let rawResult = _lib.symbols.test_mixed_order(
     a0,
-    a1_buf,
+    a1_ptr,
     a1_buf.byteLength,
     a2,
   )
@@ -240,6 +247,7 @@ export function test_mixed_order(a0: number, a1: Input, a2: number) {
 }
 export function test_mut_buf(a0: Uint8Array) {
   const a0_buf = encode(a0)
+
   let rawResult = _lib.symbols.test_mut_buf(a0_buf, a0_buf.byteLength)
   const result = rawResult
   return result
@@ -261,13 +269,15 @@ export function test_reserved_field() {
 }
 export function test_serde(a0: MyStruct) {
   const a0_buf = encode(JSON.stringify(a0))
-  let rawResult = _lib.symbols.test_serde(a0_buf, a0_buf.byteLength)
+  const a0_ptr = Deno.UnsafePointer.of(a0_buf)
+  let rawResult = _lib.symbols.test_serde(a0_ptr, a0_buf.byteLength)
   const result = rawResult
   return result
 }
 export function test_str(a0: string) {
   const a0_buf = encode(a0)
-  let rawResult = _lib.symbols.test_str(a0_buf, a0_buf.byteLength)
+  const a0_ptr = Deno.UnsafePointer.of(a0_buf)
+  let rawResult = _lib.symbols.test_str(a0_ptr, a0_buf.byteLength)
   const result = rawResult
   return result
 }
@@ -278,7 +288,8 @@ export function test_str_ret() {
 }
 export function test_tag_and_content(a0: TagAndContent) {
   const a0_buf = encode(JSON.stringify(a0))
-  let rawResult = _lib.symbols.test_tag_and_content(a0_buf, a0_buf.byteLength)
+  const a0_ptr = Deno.UnsafePointer.of(a0_buf)
+  let rawResult = _lib.symbols.test_tag_and_content(a0_ptr, a0_buf.byteLength)
   const result = rawResult
   return result
 }

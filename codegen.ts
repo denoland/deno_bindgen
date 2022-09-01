@@ -108,6 +108,10 @@ function isBufferType(p: any) {
   return isTypeDef(p) || BufferTypes[p] !== undefined;
 }
 
+function needsPointer(p: any) {
+  return isBufferType(p) && p !== 'buffer' && p !== 'buffermut';
+}
+
 // TODO(@littledivy): factor out options in an interface
 export function codegen(
   fetchPrefix: string,
@@ -207,56 +211,52 @@ ${
         .map((sig) => {
           const { parameters, result, nonBlocking } = signature[sig];
 
-          return `export function ${sig}(${
-            parameters
-              .map((p, i) => `a${i}: ${resolveType(decl, p)}`)
-              .join(",")
-          }) {
+          return `export function ${sig}(${parameters
+				.map((p, i) => `a${i}: ${resolveType(decl, p)}`)
+				.join(',')}) {
+  ${parameters
+		.map((p, i) =>
+			isBufferType(p)
+				? `const a${i}_buf = encode(${
+						BufferTypeEncoders[p] ?? Encoder.JsonStringify
+				  }(a${i}));`
+				: null
+		)
+		.filter((c) => c !== null)
+		.join('\n')}
+  ${parameters
+		.map((p, i) =>
+      // dont get pointer for buffer/buffermut
+			needsPointer(p)
+				? `const a${i}_ptr = Deno.UnsafePointer.of(a${i}_buf);`
+				: null
+		)
+		.filter((c) => c !== null)
+		.join('\n')}
+  let rawResult = _lib.symbols.${sig}(${parameters
+				.map((p, i) => (isBufferType(p) ? `a${i}_${needsPointer(p) ? 'ptr' : 'buf'}, a${i}_buf.byteLength` : `a${i}`))
+				.join(', ')});
   ${
-            parameters
-              .map((p, i) =>
-                isBufferType(p)
-                  ? `const a${i}_buf = encode(${
-                    BufferTypeEncoders[p] ?? Encoder.JsonStringify
-                  }(a${i}));`
-                  : null
-              )
-              .filter((c) => c !== null)
-              .join("\n")
-          }
-  let rawResult = _lib.symbols.${sig}(${
-            parameters
-              .map((p, i) => (isBufferType(p)
-                ? `a${i}_buf, a${i}_buf.byteLength`
-                : `a${i}`)
-              )
-              .join(", ")
-          });
+		isBufferType(result)
+			? nonBlocking
+				? `const result = rawResult.then(readPointer);`
+				: `const result = readPointer(rawResult);`
+			: 'const result = rawResult;'
+  };
   ${
-            isBufferType(result)
-              ? nonBlocking
-                ? `const result = rawResult.then(readPointer);`
-                : `const result = readPointer(rawResult);`
-              : "const result = rawResult;"
-          };
-  ${
-            isTypeDef(result)
-              ? nonBlocking
-                ? `return result.then(r => JSON.parse(decode(r))) as Promise<${
-                  resolveType(
-                    decl,
-                    result,
-                  )
-                }>;`
-                : `return JSON.parse(decode(result)) as ${
-                  resolveType(decl, result)
-                };`
-              : result == "str"
-              ? nonBlocking
-                ? "return result.then(decode);"
-                : "return decode(result);"
-              : "return result;"
-          };
+		isTypeDef(result)
+			? nonBlocking
+				? `return result.then(r => JSON.parse(decode(r))) as Promise<${resolveType(
+						decl,
+						result
+				  )}>;`
+				: `return JSON.parse(decode(result)) as ${resolveType(decl, result)};`
+			: result == 'str'
+			? nonBlocking
+				? 'return result.then(decode);'
+				: 'return decode(result);'
+			: 'return result;'
+  };
 }`;
         })
         .join("\n")
