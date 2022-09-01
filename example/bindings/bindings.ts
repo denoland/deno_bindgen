@@ -1,31 +1,31 @@
 // Auto-generated with deno_bindgen
-import { CachePolicy, prepare } from "https://deno.land/x/plug@0.5.2/plug.ts"
+import { CachePolicy, prepare } from "https://deno.land/x/plug@0.5.2/plug.ts";
 
 function encode(v: string | Uint8Array): Uint8Array {
-  if (typeof v !== "string") return v
-  return new TextEncoder().encode(v)
+  if (typeof v !== "string") return v;
+  return new TextEncoder().encode(v);
 }
 
 function decode(v: Uint8Array): string {
-  return new TextDecoder().decode(v)
+  return new TextDecoder().decode(v);
 }
 
 function readPointer(v: any): Uint8Array {
-  const ptr = new Deno.UnsafePointerView(v as bigint)
-  const lengthBe = new Uint8Array(4)
-  const view = new DataView(lengthBe.buffer)
-  ptr.copyInto(lengthBe, 0)
-  const buf = new Uint8Array(view.getUint32(0))
-  ptr.copyInto(buf, 4)
-  return buf
+  const ptr = new Deno.UnsafePointerView(v as bigint);
+  const lengthBe = new Uint8Array(4);
+  const view = new DataView(lengthBe.buffer);
+  ptr.copyInto(lengthBe, 0);
+  const buf = new Uint8Array(view.getUint32(0));
+  ptr.copyInto(buf, 4);
+  return buf;
 }
 
-const url = new URL("../target/debug", import.meta.url)
-let uri = url.toString()
-if (!uri.endsWith("/")) uri += "/"
+const url = new URL("../target/debug", import.meta.url);
+let uri = url.toString();
+if (!uri.endsWith("/")) uri += "/";
 
-let darwin: string | { aarch64: string; x86_64: string } = uri
-  + "libdeno_bindgen_test.dylib"
+let darwin: string | { aarch64: string; x86_64: string } = uri +
+  "libdeno_bindgen_test.dylib";
 
 if (url.protocol !== "file:") {
   // Assume that remote assets follow naming scheme
@@ -33,7 +33,7 @@ if (url.protocol !== "file:") {
   darwin = {
     aarch64: uri + "libdeno_bindgen_test_arm64.dylib",
     x86_64: uri + "libdeno_bindgen_test.dylib",
-  }
+  };
 }
 
 const opts = {
@@ -44,7 +44,7 @@ const opts = {
     linux: uri + "libdeno_bindgen_test.so",
   },
   policy: CachePolicy.NONE,
-}
+};
 const _lib = await prepare(opts, {
   add: { parameters: ["i32", "i32"], result: "i32", nonblocking: false },
   add2: { parameters: ["pointer", "usize"], result: "i32", nonblocking: false },
@@ -114,7 +114,7 @@ const _lib = await prepare(opts, {
     result: "i32",
     nonblocking: false,
   },
-})
+});
 /**
  * Doc comment for `Input` struct.
  * ...testing multiline
@@ -125,171 +125,171 @@ export type Input = {
    * transformed to JS doc
    * comments.
    */
-  a: number
-  b: number
-}
+  a: number;
+  b: number;
+};
 export type MyStruct = {
-  arr: Array<string>
-}
+  arr: Array<string>;
+};
 export type OptionStruct = {
-  maybe: string | undefined | null
-}
+  maybe: string | undefined | null;
+};
 export type PlainEnum =
   | {
     a: {
-      _a: string
-    }
+      _a: string;
+    };
   }
   | "b"
-  | "c"
+  | "c";
 export type TagAndContent =
   | { key: "A"; value: { b: number } }
-  | { key: "C"; value: { d: number } }
+  | { key: "C"; value: { d: number } };
 export type TestLifetimeEnums = {
   Text: {
-    _text: string
-  }
-}
+    _text: string;
+  };
+};
 export type TestLifetimeWrap = {
-  _a: TestLifetimeEnums
-}
+  _a: TestLifetimeEnums;
+};
 export type TestLifetimes = {
-  text: string
-}
+  text: string;
+};
 export type TestReservedField = {
-  type: number
-  ref: number
-}
+  type: number;
+  ref: number;
+};
 export type WithRecord = {
-  my_map: Record<string, string>
-}
+  my_map: Record<string, string>;
+};
 export function add(a0: number, a1: number) {
-  let rawResult = _lib.symbols.add(a0, a1)
-  const result = rawResult
-  return result
+  let rawResult = _lib.symbols.add(a0, a1);
+  const result = rawResult;
+  return result;
 }
 export function add2(a0: Input) {
-  const a0_buf = encode(JSON.stringify(a0))
-  const a0_ptr = Deno.UnsafePointer.of(a0_buf)
-  let rawResult = _lib.symbols.add2(a0_ptr, a0_buf.byteLength)
-  const result = rawResult
-  return result
+  const a0_buf = encode(JSON.stringify(a0));
+  const a0_ptr = Deno.UnsafePointer.of(a0_buf);
+  let rawResult = _lib.symbols.add2(a0_ptr, a0_buf.byteLength);
+  const result = rawResult;
+  return result;
 }
 export function sleep(a0: bigint) {
-  let rawResult = _lib.symbols.sleep(a0)
-  const result = rawResult
-  return result
+  let rawResult = _lib.symbols.sleep(a0);
+  const result = rawResult;
+  return result;
 }
 export function test_buf(a0: Uint8Array) {
-  const a0_buf = encode(a0)
+  const a0_buf = encode(a0);
 
-  let rawResult = _lib.symbols.test_buf(a0_buf, a0_buf.byteLength)
-  const result = rawResult
-  return result
+  let rawResult = _lib.symbols.test_buf(a0_buf, a0_buf.byteLength);
+  const result = rawResult;
+  return result;
 }
 export function test_buffer_return(a0: Uint8Array) {
-  const a0_buf = encode(a0)
+  const a0_buf = encode(a0);
 
-  let rawResult = _lib.symbols.test_buffer_return(a0_buf, a0_buf.byteLength)
-  const result = readPointer(rawResult)
-  return result
+  let rawResult = _lib.symbols.test_buffer_return(a0_buf, a0_buf.byteLength);
+  const result = readPointer(rawResult);
+  return result;
 }
 export function test_buffer_return_async(a0: Uint8Array) {
-  const a0_buf = encode(a0)
+  const a0_buf = encode(a0);
 
   let rawResult = _lib.symbols.test_buffer_return_async(
     a0_buf,
     a0_buf.byteLength,
-  )
-  const result = rawResult.then(readPointer)
-  return result
+  );
+  const result = rawResult.then(readPointer);
+  return result;
 }
 export function test_hashmap() {
-  let rawResult = _lib.symbols.test_hashmap()
-  const result = readPointer(rawResult)
-  return JSON.parse(decode(result)) as WithRecord
+  let rawResult = _lib.symbols.test_hashmap();
+  const result = readPointer(rawResult);
+  return JSON.parse(decode(result)) as WithRecord;
 }
 export function test_lifetime(a0: TestLifetimes) {
-  const a0_buf = encode(JSON.stringify(a0))
-  const a0_ptr = Deno.UnsafePointer.of(a0_buf)
-  let rawResult = _lib.symbols.test_lifetime(a0_ptr, a0_buf.byteLength)
-  const result = rawResult
-  return result
+  const a0_buf = encode(JSON.stringify(a0));
+  const a0_ptr = Deno.UnsafePointer.of(a0_buf);
+  let rawResult = _lib.symbols.test_lifetime(a0_ptr, a0_buf.byteLength);
+  const result = rawResult;
+  return result;
 }
 export function test_manual_ptr() {
-  let rawResult = _lib.symbols.test_manual_ptr()
-  const result = readPointer(rawResult)
-  return result
+  let rawResult = _lib.symbols.test_manual_ptr();
+  const result = readPointer(rawResult);
+  return result;
 }
 export function test_manual_ptr_async() {
-  let rawResult = _lib.symbols.test_manual_ptr_async()
-  const result = rawResult.then(readPointer)
-  return result
+  let rawResult = _lib.symbols.test_manual_ptr_async();
+  const result = rawResult.then(readPointer);
+  return result;
 }
 export function test_mixed(a0: bigint, a1: Input) {
-  const a1_buf = encode(JSON.stringify(a1))
-  const a1_ptr = Deno.UnsafePointer.of(a1_buf)
-  let rawResult = _lib.symbols.test_mixed(a0, a1_ptr, a1_buf.byteLength)
-  const result = rawResult
-  return result
+  const a1_buf = encode(JSON.stringify(a1));
+  const a1_ptr = Deno.UnsafePointer.of(a1_buf);
+  let rawResult = _lib.symbols.test_mixed(a0, a1_ptr, a1_buf.byteLength);
+  const result = rawResult;
+  return result;
 }
 export function test_mixed_order(a0: number, a1: Input, a2: number) {
-  const a1_buf = encode(JSON.stringify(a1))
-  const a1_ptr = Deno.UnsafePointer.of(a1_buf)
+  const a1_buf = encode(JSON.stringify(a1));
+  const a1_ptr = Deno.UnsafePointer.of(a1_buf);
   let rawResult = _lib.symbols.test_mixed_order(
     a0,
     a1_ptr,
     a1_buf.byteLength,
     a2,
-  )
-  const result = rawResult
-  return result
+  );
+  const result = rawResult;
+  return result;
 }
 export function test_mut_buf(a0: Uint8Array) {
-  const a0_buf = encode(a0)
+  const a0_buf = encode(a0);
 
-  let rawResult = _lib.symbols.test_mut_buf(a0_buf, a0_buf.byteLength)
-  const result = rawResult
-  return result
+  let rawResult = _lib.symbols.test_mut_buf(a0_buf, a0_buf.byteLength);
+  const result = rawResult;
+  return result;
 }
 export function test_output() {
-  let rawResult = _lib.symbols.test_output()
-  const result = readPointer(rawResult)
-  return JSON.parse(decode(result)) as Input
+  let rawResult = _lib.symbols.test_output();
+  const result = readPointer(rawResult);
+  return JSON.parse(decode(result)) as Input;
 }
 export function test_output_async() {
-  let rawResult = _lib.symbols.test_output_async()
-  const result = rawResult.then(readPointer)
-  return result.then(r => JSON.parse(decode(r))) as Promise<Input>
+  let rawResult = _lib.symbols.test_output_async();
+  const result = rawResult.then(readPointer);
+  return result.then((r) => JSON.parse(decode(r))) as Promise<Input>;
 }
 export function test_reserved_field() {
-  let rawResult = _lib.symbols.test_reserved_field()
-  const result = readPointer(rawResult)
-  return JSON.parse(decode(result)) as TestReservedField
+  let rawResult = _lib.symbols.test_reserved_field();
+  const result = readPointer(rawResult);
+  return JSON.parse(decode(result)) as TestReservedField;
 }
 export function test_serde(a0: MyStruct) {
-  const a0_buf = encode(JSON.stringify(a0))
-  const a0_ptr = Deno.UnsafePointer.of(a0_buf)
-  let rawResult = _lib.symbols.test_serde(a0_ptr, a0_buf.byteLength)
-  const result = rawResult
-  return result
+  const a0_buf = encode(JSON.stringify(a0));
+  const a0_ptr = Deno.UnsafePointer.of(a0_buf);
+  let rawResult = _lib.symbols.test_serde(a0_ptr, a0_buf.byteLength);
+  const result = rawResult;
+  return result;
 }
 export function test_str(a0: string) {
-  const a0_buf = encode(a0)
-  const a0_ptr = Deno.UnsafePointer.of(a0_buf)
-  let rawResult = _lib.symbols.test_str(a0_ptr, a0_buf.byteLength)
-  const result = rawResult
-  return result
+  const a0_buf = encode(a0);
+  const a0_ptr = Deno.UnsafePointer.of(a0_buf);
+  let rawResult = _lib.symbols.test_str(a0_ptr, a0_buf.byteLength);
+  const result = rawResult;
+  return result;
 }
 export function test_str_ret() {
-  let rawResult = _lib.symbols.test_str_ret()
-  const result = readPointer(rawResult)
-  return decode(result)
+  let rawResult = _lib.symbols.test_str_ret();
+  const result = readPointer(rawResult);
+  return decode(result);
 }
 export function test_tag_and_content(a0: TagAndContent) {
-  const a0_buf = encode(JSON.stringify(a0))
-  const a0_ptr = Deno.UnsafePointer.of(a0_buf)
-  let rawResult = _lib.symbols.test_tag_and_content(a0_ptr, a0_buf.byteLength)
-  const result = rawResult
-  return result
+  const a0_buf = encode(JSON.stringify(a0));
+  const a0_ptr = Deno.UnsafePointer.of(a0_buf);
+  let rawResult = _lib.symbols.test_tag_and_content(a0_ptr, a0_buf.byteLength);
+  const result = rawResult;
+  return result;
 }
