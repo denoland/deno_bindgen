@@ -9,7 +9,7 @@ import { codegen } from "./codegen.ts";
 const flags = parse(Deno.args, { "--": true });
 const release = !!flags.release;
 
-const metafile = join(Deno.env.get("OUT_DIR") || "", "bindings.json");
+const metafile = join(Deno.env.get("OUT_DIR") || await findRelativeTarget(), "bindings.json");
 
 function build() {
   const cmd = ["cargo", "build"];
