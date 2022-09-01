@@ -50,18 +50,18 @@ const _lib = await prepare(opts, {
   add2: { parameters: ["pointer", "usize"], result: "i32", nonblocking: false },
   sleep: { parameters: ["u64"], result: "void", nonblocking: true },
   test_buf: {
-    parameters: ["pointer", "usize"],
+    parameters: ["buffer", "usize"],
     result: "u8",
     nonblocking: false,
   },
   test_buffer_return: {
-    parameters: ["pointer", "usize"],
-    result: "pointer",
+    parameters: ["buffer", "usize"],
+    result: "buffer",
     nonblocking: false,
   },
   test_buffer_return_async: {
-    parameters: ["pointer", "usize"],
-    result: "pointer",
+    parameters: ["buffer", "usize"],
+    result: "buffer",
     nonblocking: true,
   },
   test_hashmap: { parameters: [], result: "pointer", nonblocking: false },
@@ -87,7 +87,7 @@ const _lib = await prepare(opts, {
     nonblocking: false,
   },
   test_mut_buf: {
-    parameters: ["pointer", "usize"],
+    parameters: ["buffer", "usize"],
     result: "void",
     nonblocking: false,
   },
