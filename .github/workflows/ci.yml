@@ -4,28 +4,32 @@ on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-
+    strategy:
+      matrix:
+        os: [ windows-latest, macos-latest,  ubuntu-latest ]
+        toolchain: [nightly]
+        deno_version: [1.25.0]
+    runs-on: ${{ matrix.os }}
     steps:
-      - name: Clone repository
-        uses: actions/checkout@v3
-
+      - uses: actions/checkout@v2
+      - name: Cache toolchain
+        uses: Swatinem/rust-cache@v1
+      - name: Setup Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+            toolchain: ${{ matrix.toolchain }}
+            override: true
       - uses: denoland/setup-deno@v1
         with:
-          deno-version: 1.25.0
-
-      - name: Install rust
-        uses: hecrj/setup-rust-action@v1
+          deno-version: ${{ matrix.deno_version }}
+      - name: Setup Rust toolchain
+        uses: actions-rs/toolchain@v1
         with:
-          rust-version: nightly
-
-      - name: Install clippy and rustfmt
-        run: |
-          rustup component add clippy
-          rustup component add rustfmt
+            toolchain: ${{ matrix.toolchain }}
+            override: true
+            components: rustfmt, clippy
       - name: Build
         run: cargo build --locked --release
-
       - name: Build Example
         run: |
           cd example
