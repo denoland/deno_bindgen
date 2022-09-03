@@ -74,6 +74,9 @@ function resolveType(typeDefs: TypeDef, type: any): string {
 function resolveDlopenParameter(typeDefs: TypeDef, type: any): string {
   const t = typeof type == "string" ? type : type.structenum.ident;
   if (Type[t] !== undefined) return t;
+  if (t === "buffer" || t === "buffermut") {
+    return "buffer";
+  }
   if (
     BufferTypes[t] !== undefined ||
     Object.keys(typeDefs).find((f) => f == t) !== undefined
@@ -103,6 +106,10 @@ function isTypeDef(p: any) {
 
 function isBufferType(p: any) {
   return isTypeDef(p) || BufferTypes[p] !== undefined;
+}
+
+function needsPointer(p: any) {
+  return isBufferType(p) && p !== "buffer" && p !== "buffermut";
 }
 
 // TODO(@littledivy): factor out options in an interface
@@ -221,10 +228,24 @@ ${
               .filter((c) => c !== null)
               .join("\n")
           }
-  let rawResult = _lib.symbols.${sig}(${
+  ${
             parameters
               .map((p, i) =>
-                isBufferType(p) ? `a${i}_buf, a${i}_buf.byteLength` : `a${i}`
+                // dont get pointer for buffer/buffermut
+                needsPointer(p)
+                  ? `const a${i}_ptr = Deno.UnsafePointer.of(a${i}_buf);`
+                  : null
+              )
+              .filter((c) => c !== null)
+              .join("\n")
+          }
+  let rawResult = _lib.symbols.${sig}(${
+            parameters
+              .map((p, i) => (isBufferType(p)
+                ? `a${i}_${
+                  needsPointer(p) ? "ptr" : "buf"
+                }, a${i}_buf.byteLength`
+                : `a${i}`)
               )
               .join(", ")
           });
