@@ -165,6 +165,8 @@ Notes
 
 The `deno_bindgen` CLI tool provides the following flags:
 
+- Pass `--force` or `-f` to force rebuild, regardless of cargo cache.
+
 - Pass `--release` to create a release build.
 
 - `--release=URL` will load library artifacts from a remote location. This is

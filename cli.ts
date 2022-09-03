@@ -6,12 +6,18 @@ import { join } from "https://deno.land/std@0.132.0/path/mod.ts";
 import { relative } from "https://deno.land/std@0.132.0/path/mod.ts";
 import { codegen } from "./codegen.ts";
 
-const flags = parse(Deno.args, { "--": true });
+const flags = parse(Deno.args, { "--": true, alias: { f: "force" } });
 const release = !!flags.release;
+const force = !!flags.force;
 
 const metafile = join(Deno.env.get("OUT_DIR") || "", "bindings.json");
 
-function build() {
+async function build() {
+  if (force) {
+		await Deno.run({
+			cmd: ['cargo', 'clean'],
+		}).status();
+  }
   const cmd = ["cargo", "build"];
   if (release) cmd.push("--release");
   cmd.push(...flags["--"]);
@@ -35,7 +41,7 @@ async function generate() {
     conf = JSON.parse(await Deno.readTextFile(metafile));
   } catch (_) {
     // Nothing to update.
-    return;
+    return console.log("No changes to rust code. Run with --force or -f to force an update.");
   }
 
   const pkgName = conf.name;
