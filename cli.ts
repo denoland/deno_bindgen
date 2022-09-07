@@ -10,13 +10,16 @@ const flags = parse(Deno.args, { "--": true, alias: { f: "force" } });
 const release = !!flags.release;
 const force = !!flags.force;
 
-const metafile = join(Deno.env.get("OUT_DIR") || await findRelativeTarget(), "bindings.json");
+const metafile = join(
+  Deno.env.get("OUT_DIR") || await findRelativeTarget(),
+  "bindings.json",
+);
 
 async function build() {
   if (force) {
-		await Deno.run({
-			cmd: ['cargo', 'clean'],
-		}).status();
+    await Deno.run({
+      cmd: ["cargo", "clean"],
+    }).status();
   }
   const cmd = ["cargo", "build"];
   if (release) cmd.push("--release");
@@ -41,18 +44,17 @@ async function generate() {
     conf = JSON.parse(await Deno.readTextFile(metafile));
   } catch (_) {
     // Nothing to update.
-    return console.log("No changes to rust code. Run with --force or -f to force an update.");
+    return console.log(
+      "No changes to rust code. Run with --force or -f to force an update.",
+    );
   }
 
   const pkgName = conf.name;
-  const fetchPrefix =
-    typeof flags.release == "string"
-      ? flags.release
-      : join(
-          await findRelativeTarget(),
-          "../target",
-          release ? "release" : "debug"
-        );
+  const fetchPrefix = typeof flags.release == "string" ? flags.release : join(
+    await findRelativeTarget(),
+    "../target",
+    release ? "release" : "debug",
+  );
 
   source = "// Auto-generated with deno_bindgen\n";
   source += codegen(
@@ -64,7 +66,7 @@ async function generate() {
     {
       le: conf.littleEndian,
       release,
-    }
+    },
   );
 
   await Deno.remove(metafile);
