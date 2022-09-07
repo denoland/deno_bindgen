@@ -10,7 +10,7 @@ const flags = parse(Deno.args, { "--": true, alias: { f: "force" } });
 const release = !!flags.release;
 const force = !!flags.force;
 
-const metafile = join(Deno.env.get("OUT_DIR") || "", "bindings.json");
+const metafile = join(Deno.env.get("OUT_DIR") || await findRelativeTarget(), "bindings.json");
 
 async function build() {
   if (force) {
@@ -45,11 +45,14 @@ async function generate() {
   }
 
   const pkgName = conf.name;
-  const fetchPrefix = release ? flags.release : join(
-    await findRelativeTarget(),
-    "../target",
-    release ? "release" : "debug",
-  );
+  const fetchPrefix =
+    typeof flags.release == "string"
+      ? flags.release
+      : join(
+          await findRelativeTarget(),
+          "../target",
+          release ? "release" : "debug"
+        );
 
   source = "// Auto-generated with deno_bindgen\n";
   source += codegen(
@@ -61,7 +64,7 @@ async function generate() {
     {
       le: conf.littleEndian,
       release,
-    },
+    }
   );
 
   await Deno.remove(metafile);
