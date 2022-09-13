@@ -23,7 +23,7 @@ dependencies = [
 
 [[package]]
 name = "deno_bindgen"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "deno_bindgen_macro",
  "serde",
@@ -32,7 +32,7 @@ dependencies = [
 
 [[package]]
 name = "deno_bindgen_macro"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "Inflector",
  "proc-macro2",
