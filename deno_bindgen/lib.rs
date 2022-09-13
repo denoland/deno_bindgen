@@ -41,7 +41,7 @@
 //!   // ... <glue code for symbol here>
 //! }
 //! ```
-//! These bindings contain nessecary code to open the shared library,
+//! These bindings contain necessary code to open the shared library,
 //! define symbols and expose type definitions.
 //! They can be simply imported into Deno code:
 //! ```
