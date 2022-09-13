@@ -9,7 +9,10 @@ import { codegen } from "./codegen.ts";
 const flags = parse(Deno.args, { "--": true });
 const release = !!flags.release;
 
-const metafile = join(Deno.env.get("OUT_DIR") || await findRelativeTarget(), "bindings.json");
+const metafile = join(
+  Deno.env.get("OUT_DIR") || await findRelativeTarget(),
+  "bindings.json",
+);
 
 function build() {
   const cmd = ["cargo", "build"];
@@ -39,14 +42,10 @@ async function generate() {
   }
 
   const pkgName = conf.name;
-  const fetchPrefix =
-    typeof flags.release == "string"
-      ? flags.release
-      : join(
-          await findRelativeTarget(),
-          "../target",
-          release ? "release" : "debug"
-        );
+  const fetchPrefix = typeof flags.release == "string"
+    ? flags.release
+    : await findRelativeTarget() + ["../target", release ? "release" : "debug"]
+      .join("/");
 
   source = "// Auto-generated with deno_bindgen\n";
   source += codegen(
@@ -58,7 +57,7 @@ async function generate() {
     {
       le: conf.littleEndian,
       release,
-    }
+    },
   );
 
   await Deno.remove(metafile);
