@@ -5,7 +5,7 @@ use std::collections::HashMap;
 #[deno_bindgen]
 fn add(a: i32, b: i32) -> i32 {
   a + b
-} 
+}
 
 // Test Structs
 #[deno_bindgen]
@@ -22,6 +22,16 @@ pub struct Input {
 #[deno_bindgen]
 fn add2(input: Input) -> i32 {
   input.a + input.b
+}
+
+#[deno_bindgen]
+fn add3(a: f32, b: f32) -> f32 {
+  a + b
+}
+
+#[deno_bindgen]
+fn add4(a: f64, b: f64) -> f64 {
+  a + b
 }
 
 // Test mixed types
@@ -84,7 +94,7 @@ enum PlainEnum {
 // Test mut buffer
 #[deno_bindgen]
 fn test_mut_buf(buf: &mut [u8]) {
-    buf[0] = 69;
+  buf[0] = 69;
 }
 
 // Test mut buffer prevent return
@@ -96,7 +106,7 @@ fn test_mut_buf(buf: &mut [u8]) {
 // Test mut buffer musn't outlive symbol call
 // #[deno_bindgen]
 // fn test_mut_buf_outlive(_: &'static mut [u8]) {
-//  
+//
 // }
 
 #[deno_bindgen]
@@ -106,13 +116,13 @@ struct TestLifetimes<'l> {
 
 #[deno_bindgen]
 enum TestLifetimeEnums<'a> {
-  Text { _text: &'a str }
+  Text { _text: &'a str },
 }
 
 #[deno_bindgen]
 struct TestLifetimeWrap<'a> {
   #[serde(borrow)]
-  _a: TestLifetimeEnums<'a>
+  _a: TestLifetimeEnums<'a>,
 }
 
 #[deno_bindgen]
@@ -124,9 +134,8 @@ fn test_lifetime<'l>(s: TestLifetimes<'l>) -> usize {
 #[serde(tag = "key", content = "value")]
 pub enum TagAndContent {
   A { b: i32 },
-  C { d: i32 }
+  C { d: i32 },
 }
-
 
 #[deno_bindgen]
 fn test_tag_and_content(arg: TagAndContent) -> i32 {
@@ -175,18 +184,12 @@ fn test_manual_ptr_async() -> *const u8 {
 
 #[deno_bindgen]
 fn test_output() -> Input {
-  Input {
-    a: 1,
-    b: 2
-  }
+  Input { a: 1, b: 2 }
 }
 
 #[deno_bindgen(non_blocking)]
 fn test_output_async() -> Input {
-  Input {
-    a: 3,
-    b: 4
-  }
+  Input { a: 3, b: 4 }
 }
 
 #[deno_bindgen]
@@ -206,7 +209,7 @@ fn test_reserved_field() -> TestReservedField {
 #[deno_bindgen]
 fn test_str_ret() -> String {
   String::from("🦕")
-} 
+}
 
 #[deno_bindgen]
 pub struct WithRecord {
@@ -217,7 +220,5 @@ pub struct WithRecord {
 fn test_hashmap() -> WithRecord {
   let mut map = HashMap::new();
   map.insert("key".to_string(), "value".to_string());
-  WithRecord {
-    my_map: map,
-  }
+  WithRecord { my_map: map }
 }

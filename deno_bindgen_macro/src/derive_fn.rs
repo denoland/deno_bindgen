@@ -38,6 +38,8 @@ pub fn process_function(
               "u64" => Type::U64,
               "usize" => Type::Usize,
               "isize" => Type::Isize,
+              "f32" => Type::F32,
+              "f64" => Type::F64,
               _ => {
                 metadata.type_defs.get(&ident).expect(&format!(
                   "Type definition not found for `{}` identifier",

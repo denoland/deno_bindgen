@@ -161,6 +161,10 @@ Notes
   };
   ```
 
+- If the argument type of Rust is f32, the calculation result may be different.  
+  Number in Java Script is float64, when data is passed to Rust, it becomes float32, so the number may change.  
+  e.g: `1.3 + 1.5` will be `2.799999952316284`
+
 ### CLI
 
 The `deno_bindgen` CLI tool provides the following flags:
