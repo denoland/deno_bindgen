@@ -2,17 +2,13 @@
 
 import { ensureDir } from "https://deno.land/std@0.132.0/fs/ensure_dir.ts";
 import { parse } from "https://deno.land/std@0.132.0/flags/mod.ts";
-import { join } from "https://deno.land/std@0.132.0/path/mod.ts";
 import { relative } from "https://deno.land/std@0.132.0/path/mod.ts";
 import { codegen } from "./codegen.ts";
 
 const flags = parse(Deno.args, { "--": true });
 const release = !!flags.release;
 
-const metafile = join(
-  Deno.env.get("OUT_DIR") || await findRelativeTarget(),
-  "bindings.json",
-);
+const metafile = "bindings.json";
 
 function build() {
   const cmd = ["cargo", "build"];
