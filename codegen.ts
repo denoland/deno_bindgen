@@ -82,6 +82,8 @@ function resolveDlopenParameter(typeDefs: TypeDef, type: any): string {
   ) {
     return "buffer";
   } else {
+    return "buffer";
+  } else {
     return "pointer";
   }
   throw new TypeError(`Type not supported: ${t}`);
