@@ -14,9 +14,9 @@ edition = "2018"
 [lib]
 proc-macro = true
 
-[package.metadata.docs.rs]
+[features]
 # Disable generation of bindings.json metafile i.e. a no-op
-features = ["disable_metafile_generation"]
+disable_metafile_generation = []
 
 [dependencies]
 proc-macro2 = "1"
