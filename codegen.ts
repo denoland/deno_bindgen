@@ -74,13 +74,14 @@ function resolveType(typeDefs: TypeDef, type: any): string {
 function resolveDlopenParameter(typeDefs: TypeDef, type: any): string {
   const t = typeof type == "string" ? type : type.structenum.ident;
   if (Type[t] !== undefined) return t;
-  if (t === "buffer" || t === "buffermut") {
+  if (BufferTypes[t] !== undefined) {
     return "buffer";
   }
   if (
-    BufferTypes[t] !== undefined ||
     Object.keys(typeDefs).find((f) => f == t) !== undefined
   ) {
+    return "buffer";
+  } else {
     return "pointer";
   }
   throw new TypeError(`Type not supported: ${t}`);
@@ -178,7 +179,7 @@ const opts = {
   },
   policy: ${!!options?.release ? "undefined" : "CachePolicy.NONE"},
 };
-const _lib = await prepare(opts, {
+const { symbols } = await prepare(opts, {
   ${
       Object.keys(signature)
         .map(
@@ -228,23 +229,11 @@ ${
               .filter((c) => c !== null)
               .join("\n")
           }
-  ${
-            parameters
-              .map((p, i) =>
-                // dont get pointer for buffer/buffermut
-                needsPointer(p)
-                  ? `const a${i}_ptr = Deno.UnsafePointer.of(a${i}_buf);`
-                  : null
-              )
-              .filter((c) => c !== null)
-              .join("\n")
-          }
-  let rawResult = _lib.symbols.${sig}(${
+
+  let rawResult = symbols.${sig}(${
             parameters
               .map((p, i) => (isBufferType(p)
-                ? `a${i}_${
-                  needsPointer(p) ? "ptr" : "buf"
-                }, a${i}_buf.byteLength`
+                ? `a${i}_buf, a${i}_buf.byteLength`
                 : `a${i}`)
               )
               .join(", ")
