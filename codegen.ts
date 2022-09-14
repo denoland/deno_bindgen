@@ -189,9 +189,9 @@ const { symbols } = await prepare(opts, {
 let uri = url.pathname;
 if (!uri.endsWith("/")) uri += "/";
 
-// Get path on Windows
+// https://docs.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-loadlibrarya#parameters
 if (Deno.build.os === "windows") {
-  uri = uri.replace(/\//g, "\\\\");
+  uri = uri.replace(/\\//g, "\\\\");
 }
 
 const { symbols } = Deno.dlopen({
