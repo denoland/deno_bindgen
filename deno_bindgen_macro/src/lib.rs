@@ -32,7 +32,7 @@ const ENDIANNESS: bool = false;
 
 #[proc_macro_attribute]
 pub fn deno_bindgen(attr: TokenStream, input: TokenStream) -> TokenStream {
-  if cfg!(disable_metafile_generation) {
+  if !cfg!(generate_bindings_metafile) {
     return input;
   }
   let mut metadata: Glue = match OpenOptions::new().read(true).open(METAFILE) {

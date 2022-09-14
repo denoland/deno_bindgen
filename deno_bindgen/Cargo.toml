@@ -14,6 +14,10 @@ edition = "2018"
 [lib]
 path = "./lib.rs"
 
+[features]
+default = ["generate_bindings_metafile"]
+generate_bindings_metafile = ["deno_bindgen_macro/generate_bindings_metafile"]
+
 [dependencies]
 deno_bindgen_macro = { path = "../deno_bindgen_macro", version = "0.7.0" }
 serde = { version = "1", features = ["derive"] }

@@ -15,8 +15,7 @@ edition = "2018"
 proc-macro = true
 
 [features]
-# Disable generation of bindings.json metafile i.e. a no-op
-disable_metafile_generation = []
+generate_bindings_metafile = []
 
 [dependencies]
 proc-macro2 = "1"
