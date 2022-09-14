@@ -18,7 +18,7 @@ const file = await cache.cache(
   "https://plugins.dprint.dev/typescript-0.57.0.wasm",
 );
 
-const tsFormatter = createFromBuffer(await Deno.readFile(file.path));
+const tsFormatter = createFromBuffer(Deno.readFileSync(file.path));
 
 tsFormatter.setConfig(globalConfig, {
   semiColons: "asi",
@@ -99,6 +99,7 @@ type Sig = Record<
 type Options = {
   le?: boolean;
   release?: boolean;
+  releaseURL: string | undefined;
 };
 
 function isTypeDef(p: any) {
@@ -134,8 +135,7 @@ export function codegen(
 
   return tsFormatter.formatText(
     "bindings.ts",
-    `import { CachePolicy, prepare } from "https://deno.land/x/plug@0.5.2/plug.ts";
-
+    `
 function encode(v: string | Uint8Array): Uint8Array {
   if (typeof v !== "string") return v;
   return new TextEncoder().encode(v);
@@ -156,6 +156,10 @@ function readPointer(v: any): Uint8Array {
 }
 
 const url = new URL("${fetchPrefix}", import.meta.url);
+${
+      typeof options?.releaseURL === "string"
+        ? `
+import { CachePolicy, prepare } from "https://deno.land/x/plug@0.5.2/plug.ts";
 let uri = url.toString();
 if (!uri.endsWith("/")) uri += "/";
 
@@ -180,6 +184,15 @@ const opts = {
   policy: ${!!options?.release ? "undefined" : "CachePolicy.NONE"},
 };
 const { symbols } = await prepare(opts, {
+  `
+        : `
+let uri = url.pathname;
+const { symbols } = Deno.dlopen({
+  darwin: uri + "/lib${name}.dylib",
+  windows: uri + "/${name}.dll",
+  linux: uri + "/lib${name}.so",
+}[Deno.build.os], {`
+    }
   ${
       Object.keys(signature)
         .map(

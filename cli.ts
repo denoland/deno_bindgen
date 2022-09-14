@@ -57,6 +57,7 @@ async function generate() {
     {
       le: conf.littleEndian,
       release,
+      releaseURL: flags.release,
     },
   );
 
