@@ -187,10 +187,22 @@ const { symbols } = await prepare(opts, {
   `
         : `
 let uri = url.pathname;
+if (!uri.endsWith("/")) uri += "/";
+
+// https://docs.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-loadlibrarya#parameters
+if (Deno.build.os === "windows") {
+  uri = uri.replace(/\\//g, "\\\\");
+  // Remove leading slash
+  if (uri.startsWith("\\\\")) {
+    uri = uri.slice(1);
+  }
+}
+console.log(uri)
+
 const { symbols } = Deno.dlopen({
-  darwin: uri + "/lib${name}.dylib",
-  windows: uri + "/${name}.dll",
-  linux: uri + "/lib${name}.so",
+  darwin: uri + "lib${name}.dylib",
+  windows: uri + "${name}.dll",
+  linux: uri + "lib${name}.so",
 }[Deno.build.os], {`
     }
   ${

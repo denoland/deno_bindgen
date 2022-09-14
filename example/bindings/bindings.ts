@@ -21,11 +21,18 @@ function readPointer(v: any): Uint8Array {
 const url = new URL("../target/debug", import.meta.url)
 
 let uri = url.pathname
+if (!uri.endsWith("/")) uri += "/"
+
+// https://docs.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-loadlibrarya#parameters
+if (Deno.build.os === "windows") {
+  uri = uri.replace(/\//g, "\\")
+}
+
 const { symbols } = Deno.dlopen(
   {
-    darwin: uri + "/libdeno_bindgen_test.dylib",
-    windows: uri + "/deno_bindgen_test.dll",
-    linux: uri + "/libdeno_bindgen_test.so",
+    darwin: uri + "libdeno_bindgen_test.dylib",
+    windows: uri + "deno_bindgen_test.dll",
+    linux: uri + "libdeno_bindgen_test.so",
   }[Deno.build.os],
   {
     add: { parameters: ["i32", "i32"], result: "i32", nonblocking: false },
