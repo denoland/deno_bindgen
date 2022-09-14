@@ -188,6 +188,7 @@ const { symbols } = await prepare(opts, {
         : `
 let uri = url.pathname;
 if (!uri.endsWith("/")) uri += "/";
+console.log(uri)
 const { symbols } = Deno.dlopen({
   darwin: uri + "lib${name}.dylib",
   windows: uri + "${name}.dll",
