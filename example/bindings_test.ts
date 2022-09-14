@@ -1,6 +1,8 @@
 import {
   add,
   add2,
+  add3,
+  add4,
   OptionStruct,
   sleep,
   test_buf,
@@ -37,6 +39,23 @@ Deno.test({
   name: "add2#test",
   fn: () => {
     assertEquals(add2({ a: 1, b: 2 }), 3);
+  },
+});
+
+Deno.test({
+  name: "add#test3",
+  fn: () => {
+    // If the argument type of Rust is f32, the calculation result may be different.
+    // Number in Java Script is float64, when data is passed to Rust, it becomes float32, so the number may change.
+    // e.g: `1.3 + 1.5` will be `2.799999952316284`
+    assertEquals(add3(1.5, 1.5), 3.0);
+  },
+});
+
+Deno.test({
+  name: "add#test4",
+  fn: () => {
+    assertEquals(add4(1.5, 1.3), 2.8);
   },
 });
 

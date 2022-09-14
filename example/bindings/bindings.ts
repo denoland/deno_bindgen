@@ -48,6 +48,8 @@ const opts = {
 const _lib = await prepare(opts, {
   add: { parameters: ["i32", "i32"], result: "i32", nonblocking: false },
   add2: { parameters: ["pointer", "usize"], result: "i32", nonblocking: false },
+  add3: { parameters: ["f32", "f32"], result: "f32", nonblocking: false },
+  add4: { parameters: ["f64", "f64"], result: "f64", nonblocking: false },
   sleep: { parameters: ["u64"], result: "void", nonblocking: true },
   test_buf: {
     parameters: ["buffer", "usize"],
@@ -172,6 +174,16 @@ export function add2(a0: Input) {
   const a0_buf = encode(JSON.stringify(a0))
   const a0_ptr = Deno.UnsafePointer.of(a0_buf)
   let rawResult = _lib.symbols.add2(a0_ptr, a0_buf.byteLength)
+  const result = rawResult
+  return result
+}
+export function add3(a0: number, a1: number) {
+  let rawResult = _lib.symbols.add3(a0, a1)
+  const result = rawResult
+  return result
+}
+export function add4(a0: number, a1: number) {
+  let rawResult = _lib.symbols.add4(a0, a1)
   const result = rawResult
   return result
 }
