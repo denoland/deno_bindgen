@@ -1,5 +1,7 @@
 ## `deno_bindgen`
 
+<img src="./assets/illustration.png" width=200>
+
 This tool aims to simplify glue code generation for Deno FFI libraries written
 in Rust.
 
