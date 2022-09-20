@@ -18,7 +18,7 @@ const file = await cache.cache(
   "https://plugins.dprint.dev/typescript-0.57.0.wasm",
 );
 
-const tsFormatter = createFromBuffer(await Deno.readFile(file.path));
+const tsFormatter = createFromBuffer(Deno.readFileSync(file.path));
 
 tsFormatter.setConfig(globalConfig, {
   semiColons: "asi",
@@ -74,13 +74,14 @@ function resolveType(typeDefs: TypeDef, type: any): string {
 function resolveDlopenParameter(typeDefs: TypeDef, type: any): string {
   const t = typeof type == "string" ? type : type.structenum.ident;
   if (Type[t] !== undefined) return t;
-  if (t === "buffer" || t === "buffermut") {
+  if (BufferTypes[t] !== undefined) {
     return "buffer";
   }
   if (
-    BufferTypes[t] !== undefined ||
     Object.keys(typeDefs).find((f) => f == t) !== undefined
   ) {
+    return "buffer";
+  } else {
     return "pointer";
   }
   throw new TypeError(`Type not supported: ${t}`);
@@ -98,6 +99,7 @@ type Sig = Record<
 type Options = {
   le?: boolean;
   release?: boolean;
+  releaseURL: string | undefined;
 };
 
 function isTypeDef(p: any) {
@@ -133,8 +135,7 @@ export function codegen(
 
   return tsFormatter.formatText(
     "bindings.ts",
-    `import { CachePolicy, prepare } from "https://deno.land/x/plug@0.5.2/plug.ts";
-
+    `
 function encode(v: string | Uint8Array): Uint8Array {
   if (typeof v !== "string") return v;
   return new TextEncoder().encode(v);
@@ -155,6 +156,10 @@ function readPointer(v: any): Uint8Array {
 }
 
 const url = new URL("${fetchPrefix}", import.meta.url);
+${
+      typeof options?.releaseURL === "string"
+        ? `
+import { CachePolicy, prepare } from "https://deno.land/x/plug@0.5.2/plug.ts";
 let uri = url.toString();
 if (!uri.endsWith("/")) uri += "/";
 
@@ -178,7 +183,28 @@ const opts = {
   },
   policy: ${!!options?.release ? "undefined" : "CachePolicy.NONE"},
 };
-const _lib = await prepare(opts, {
+const { symbols } = await prepare(opts, {
+  `
+        : `
+let uri = url.pathname;
+if (!uri.endsWith("/")) uri += "/";
+
+// https://docs.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-loadlibrarya#parameters
+if (Deno.build.os === "windows") {
+  uri = uri.replace(/\\//g, "\\\\");
+  // Remove leading slash
+  if (uri.startsWith("\\\\")) {
+    uri = uri.slice(1);
+  }
+}
+console.log(uri)
+
+const { symbols } = Deno.dlopen({
+  darwin: uri + "lib${name}.dylib",
+  windows: uri + "${name}.dll",
+  linux: uri + "lib${name}.so",
+}[Deno.build.os], {`
+    }
   ${
       Object.keys(signature)
         .map(
@@ -228,23 +254,11 @@ ${
               .filter((c) => c !== null)
               .join("\n")
           }
-  ${
-            parameters
-              .map((p, i) =>
-                // dont get pointer for buffer/buffermut
-                needsPointer(p)
-                  ? `const a${i}_ptr = Deno.UnsafePointer.of(a${i}_buf);`
-                  : null
-              )
-              .filter((c) => c !== null)
-              .join("\n")
-          }
-  let rawResult = _lib.symbols.${sig}(${
+
+  let rawResult = symbols.${sig}(${
             parameters
               .map((p, i) => (isBufferType(p)
-                ? `a${i}_${
-                  needsPointer(p) ? "ptr" : "buf"
-                }, a${i}_buf.byteLength`
+                ? `a${i}_buf, a${i}_buf.byteLength`
                 : `a${i}`)
               )
               .join(", ")
