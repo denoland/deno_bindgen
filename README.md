@@ -7,7 +7,7 @@ in Rust.
 
 ### QuickStart
 
-Annotate on top of Rust `fn`, `struct` and `enum` to make them avaiable to Deno.
+Annotate on top of Rust `fn`, `struct` and `enum` to make them available to Deno.
 
 ```rust
 // add.rs
