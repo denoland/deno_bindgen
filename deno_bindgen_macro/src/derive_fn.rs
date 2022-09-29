@@ -8,6 +8,7 @@ use syn::FnArg;
 use syn::ItemFn;
 use syn::Meta;
 use syn::NestedMeta;
+use syn::PathArguments;
 use syn::ReturnType;
 
 pub fn process_function(
@@ -26,7 +27,6 @@ pub fn process_function(
           syn::Type::Path(ref ty) => {
             let segment = ty.path.segments.first().unwrap();
             let ident = segment.ident.to_string();
-
             match ident.as_str() {
               "i8" => Type::I8,
               "u8" => Type::U8,
@@ -113,6 +113,50 @@ pub fn process_function(
           // This isn't a &str but i really but
           // don't want to add another type for just owned strings.
           "String" => Type::Str,
+          "Box" => {
+            let mut buf = false;
+            let mut gn = String::default();
+            if let PathArguments::AngleBracketed(args) = &segment.arguments {
+              if let Some(syn::GenericArgument::Type(syn::Type::Slice(args))) =
+                &args.args.first()
+              {
+                if let syn::Type::Path(args) = &*args.elem {
+                  if let Some(args) = args.path.segments.first() {
+                    gn = args.ident.to_string();
+                    if gn == "u8" {
+                      buf = true;
+                    }
+                  }
+                }
+              }
+            }
+            if buf {
+              Type::Buffer
+            } else {
+              panic!("{}<{}> return type not supported by Deno FFI", ident, gn)
+            }
+          }
+          "Vec" => {
+            let mut buf = false;
+            let mut gn = String::default();
+            if let PathArguments::AngleBracketed(args) = &segment.arguments {
+              if let Some(syn::GenericArgument::Type(syn::Type::Path(args))) =
+                &args.args.first()
+              {
+                if let Some(args) = &args.path.segments.first() {
+                  gn = args.ident.to_string();
+                  if gn == "u8" {
+                    buf = true;
+                  }
+                }
+              }
+            }
+            if buf {
+              Type::Buffer
+            } else {
+              panic!("{}<{}> return type not supported by Deno FFI", ident, gn)
+            }
+          }
           _ => match metadata.type_defs.get(&ident) {
             Some(_) => Type::StructEnum { ident },
             None => panic!("{} return type not supported by Deno FFI", ident),

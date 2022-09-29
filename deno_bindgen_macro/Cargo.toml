@@ -9,7 +9,7 @@ keywords = ["deno", "ffi", "bindgen", "bindings", "macro"]
 categories = ["development-tools::ffi", "development-tools"]
 readme = "../README.md"
 license = "MIT"
-edition = "2018"
+edition = "2021"
 
 [lib]
 proc-macro = true

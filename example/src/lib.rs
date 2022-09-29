@@ -34,6 +34,16 @@ fn add4(a: f64, b: f64) -> f64 {
   a + b
 }
 
+#[deno_bindgen]
+fn add5(a: &[u8], b: &[u8]) -> Vec<u8> {
+  [a, b].concat()
+}
+
+#[deno_bindgen]
+fn add6(a: &[u8], b: &[u8]) -> Box<[u8]> {
+  [a, b].concat().into()
+}
+
 // Test mixed types
 #[deno_bindgen]
 fn test_mixed(a: isize, b: Input) -> i32 {
