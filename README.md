@@ -45,7 +45,7 @@ add({ a: 1, b: 2 }); // 3
 - Install the `deno_bindgen` CLI with Deno.
 
 ```shell
-deno install -Afq -n deno_bindgen https://deno.land/x/deno_bindgen/cli.ts
+deno install -Afrq -n deno_bindgen https://deno.land/x/deno_bindgen/cli.ts
 ```
 
 Add the following dependencies to your crate.
