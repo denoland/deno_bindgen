@@ -3,6 +3,11 @@ import { basename } from "https://deno.land/std@0.145.0/path/mod.ts";
 const libPath = Deno.args[0];
 
 // 1- Create cargo fixture
+try {
+  Deno.statSync(libPath);
+  console.error("Path already exists: ", libPath);
+  Deno.exit(1);
+} catch { /**/ }
 Deno.mkdirSync(libPath + "/src", { recursive: true });
 
 // 2- Create lib.rs
