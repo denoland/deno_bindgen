@@ -197,7 +197,6 @@ if (Deno.build.os === "windows") {
     uri = uri.slice(1);
   }
 }
-console.log(uri)
 
 const { symbols } = Deno.dlopen({
   darwin: uri + "lib${name}.dylib",
