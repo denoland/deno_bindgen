@@ -10,7 +10,7 @@ in Rust.
 If you want to create a scaffold automatically you can run:
 
 ```sh
-deno run -A https://deno.land/x/deno_bindgen/scaffold.ts my_project_name
+deno run --allow-read=. --allow-write=. https://deno.land/x/deno_bindgen/scaffold.ts my_project_name
 ```
 
 Annotate on top of Rust `fn`, `struct` and `enum` to make them available to Deno.
