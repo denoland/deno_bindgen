@@ -3,6 +3,8 @@ import {
   add2,
   add3,
   add4,
+  add5,
+  add6,
   OptionStruct,
   sleep,
   test_buf,
@@ -56,6 +58,35 @@ Deno.test({
   name: "add#test4",
   fn: () => {
     assertEquals(add4(1.5, 1.3), 2.8);
+  },
+});
+
+Deno.test({
+  name: "add#test5",
+  fn: () => {
+    assertEquals(
+      add5(new Uint8Array([1, 2]), new Uint8Array([3, 4])),
+      new Uint8Array([1, 2, 3, 4]),
+    );
+  },
+});
+
+Deno.test({
+  name: "add#test6",
+  fn: () => {
+    assertEquals(
+      add6(new Uint8Array([1, 2]), new Uint8Array([3, 4])),
+      new Uint8Array([1, 2, 3, 4]),
+    );
+  },
+});
+
+Deno.test({
+  name: "sleep#test",
+  fn: async () => {
+    const now = performance.now();
+    await sleep(50n);
+    assert(performance.now() - now > 50);
   },
 });
 
