@@ -41,10 +41,13 @@ async function generate() {
     return;
   }
 
+  let cargoTarget = Deno.env.get("CARGO_TARGET_DIR");
+  if (!cargoTarget) cargoTarget = "../target";
+
   const pkgName = conf.name;
   const fetchPrefix = typeof flags.release == "string"
     ? flags.release
-    : await findRelativeTarget() + ["../target", release ? "release" : "debug"]
+    : await findRelativeTarget() + [cargoTarget, release ? "release" : "debug"]
       .join("/");
 
   source = "// Auto-generated with deno_bindgen\n";
