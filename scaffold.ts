@@ -89,10 +89,10 @@ jobs:
     - uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
-
-    - uses: goto-bus-stop/setup-zig@v1
-      with:
-        version: 0.9.0
+    #uncomment to build for macos arm
+    #- uses: goto-bus-stop/setup-zig@v1
+    #  with:
+    #    version: 0.9.0
 
     - name: Build
       uses: actions-rs/cargo@v1
@@ -113,13 +113,14 @@ jobs:
         tag: \${{ github.event.inputs.tag }}
         overwrite: true
 
-    - name: Build MacOS aarch64 lib
-      if: runner.os == 'Linux'
-      run: |
-        rustup target add aarch64-apple-darwin
-        cargo install cargo-zigbuild
-        cargo zigbuild --release --target aarch64-apple-darwin
-        mv target/aarch64-apple-darwin/release/lib${libName}.dylib lib${libName}_aarch64.dylib
+    #uncomment to build for macos arm
+    #- name: Build MacOS aarch64 lib
+    #  if: runner.os == 'Linux'
+    #  run: |
+    #    rustup target add aarch64-apple-darwin
+    #    cargo install cargo-zigbuild
+    #    cargo zigbuild --release --target aarch64-apple-darwin
+    #    mv target/aarch64-apple-darwin/release/lib${libName}.dylib lib${libName}_aarch64.dylib
 
     - name: Upload MacOS aarch64
       if: runner.os == 'Linux'
