@@ -65,16 +65,12 @@ console.log(
 Deno.mkdirSync(libPath + "/.github/workflows", { recursive: true });
 const githubAction = await fetch(
   import.meta.resolve("./action.yml"),
-).then((r) => r.text());
+).then((r) => r.text()).then((a) => a.replaceAll("$NAME_HERE", libName));
 Deno.writeTextFileSync(
   libPath + "/.github/workflows/release.yml",
   githubAction,
 );
 
 console.log("1- cd ", libPath);
-console.log(
-  "2- If you're developing locally run deno_bindgen\n" +
-    "If you want to create release bindings, you can trigger a github action build manually in {github_repo}/actions\n" +
-    "Then use deno_bindgen --release={github_repo}/releases/download/{tag_name}",
-);
-console.log("3- Run deno run --unstable lib.ts");
+console.log("2- Run deno_bindgen to develop locally");
+console.log("3- Run deno run --unstable mod.ts");
