@@ -1,0 +1,112 @@
+name: Release libs
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "tag name"
+        required: true
+
+jobs:
+  build:
+    name: Release libs
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        persist-credentials: false # otherwise, the token used is the GITHUB_TOKEN, instead of your personal access token.
+        fetch-depth: 0 # otherwise, there would be errors pushing refs to the destination repository.
+
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+
+    - name: Build
+      uses: actions-rs/cargo@v1
+      with:
+        command: build
+        args: --release
+
+    - name: Build MacOS x86_64
+      if: runner.os == 'MacOS'
+      run: |
+        mv target/release/libg.dylib libg_x86_64.dylib
+
+    - name: Upload MacOS x86_64
+      if: runner.os == 'MacOS'
+      uses: svenstaro/upload-release-action@v2
+      with:
+        file: libg_x86_64.dylib
+        tag: ${{ github.event.inputs.tag }}
+        overwrite: true
+
+    - name: Release Linux lib
+      if: runner.os == 'Linux'
+      uses: svenstaro/upload-release-action@v2
+      with:
+        file: target/release/libg.so
+        tag: ${{ github.event.inputs.tag }}
+        overwrite: true
+
+    - name: Release Windows lib
+      if: runner.os == 'Windows'
+      uses: svenstaro/upload-release-action@v2
+      with:
+        file: target/release/g.dll
+        tag: ${{ github.event.inputs.tag }}
+        overwrite: true
+
+    #uncomment to build for macos arm
+    #- uses: goto-bus-stop/setup-zig@v1
+    #  with:
+    #    version: 0.9.0
+
+    #- name: Build MacOS aarch64 lib
+    #  if: runner.os == 'Linux'
+    #  run: |
+    #    rustup target add aarch64-apple-darwin
+    #    cargo install cargo-zigbuild
+    #    cargo zigbuild --release --target aarch64-apple-darwin
+    #    mv target/aarch64-apple-darwin/release/libg.dylib libg_aarch64.dylib
+
+    # - name: Upload MacOS aarch64
+    #   if: runner.os == 'Linux'
+    #   uses: svenstaro/upload-release-action@v2
+    #   with:
+    #     file: libg_aarch64.dylib
+    #     tag: ${{ github.event.inputs.tag }}
+    #     overwrite: true
+
+
+    #uncomment to automaticly generate bindings
+    # - name: Setup Deno
+    #   if: runner.os == 'Linux'
+    #   uses: denoland/setup-deno@v1
+
+    # - name: Generate bindings
+    #   if: runner.os == 'Linux'
+    #   run: |
+    #     libUrl=https://github.com/$GITHUB_REPOSITORY/releases/download/${{ github.event.inputs.tag }}
+    #     touch src/lib.rs # Required to trigger cargo build correctly (to generate bindings.json)
+    #     deno run -A -r https://deno.land/x/deno_bindgen/cli.ts --release=$libUrl
+
+    # - name: Commit bindings
+    #   if: runner.os == 'Linux'
+    #   run: |
+    #     git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+    #     git config --local user.name "github-actions[bot]"
+    #     git add bindings/bindings.ts
+    #     git commit -m "update bindings to ${{ github.event.inputs.tag }}"
+
+    # - name: Push changes
+    #   if: runner.os == 'Linux'
+    #   uses: ad-m/github-push-action@master
+    #   with:
+    #     github_token: ${{ secrets.GITHUB_TOKEN }}
+    #     branch: ${{ github.ref }}
+
+
