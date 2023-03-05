@@ -77,14 +77,11 @@ function resolveDlopenParameter(typeDefs: TypeDef, type: any): string {
   if (BufferTypes[t] !== undefined) {
     return "buffer";
   }
-  if (
-    Object.keys(typeDefs).find((f) => f == t) !== undefined
-  ) {
+  if (Object.keys(typeDefs).find((f) => f == t) !== undefined) {
     return "buffer";
   } else {
     return "pointer";
   }
-  throw new TypeError(`Type not supported: ${t}`);
 }
 
 type Sig = Record<
@@ -108,10 +105,6 @@ function isTypeDef(p: any) {
 
 function isBufferType(p: any) {
   return isTypeDef(p) || BufferTypes[p] !== undefined;
-}
-
-function needsPointer(p: any) {
-  return isBufferType(p) && p !== "buffer" && p !== "buffermut";
 }
 
 // TODO(@littledivy): factor out options in an interface
@@ -146,7 +139,7 @@ function decode(v: Uint8Array): string {
 }
 
 function readPointer(v: any): Uint8Array {
-  const ptr = new Deno.UnsafePointerView(v as bigint)
+  const ptr = new Deno.UnsafePointerView(v as NonNullable<Deno.PointerValue>)
   const lengthBe = new Uint8Array(4);
   const view = new DataView(lengthBe.buffer);
   ptr.copyInto(lengthBe, 0);
@@ -159,7 +152,7 @@ const url = new URL("${fetchPrefix}", import.meta.url);
 ${
       typeof options?.releaseURL === "string"
         ? `
-import { CachePolicy, prepare } from "https://deno.land/x/plug@0.5.2/plug.ts";
+import { CachePolicy, dlopen } from "https://deno.land/x/plug@1.0.1/plug.ts";
 let uri = url.toString();
 if (!uri.endsWith("/")) uri += "/";
 
@@ -176,14 +169,14 @@ if (url.protocol !== "file:") {
 
 const opts = {
   name: "${name}",
-  urls: {
+  url: {
     darwin,
     windows: uri + "${name}.dll",
     linux: uri + "lib${name}.so",
   },
   policy: ${!!options?.release ? "undefined" : "CachePolicy.NONE"},
 };
-const { symbols } = await prepare(opts, {
+const { symbols } = await dlopen(opts, {
   `
         : `
 let uri = url.pathname;
@@ -202,6 +195,11 @@ const { symbols } = Deno.dlopen({
   darwin: uri + "lib${name}.dylib",
   windows: uri + "${name}.dll",
   linux: uri + "lib${name}.so",
+  solaris: uri + "lib${name}.so",
+  freebsd: uri + "lib${name}.so",
+  aix: uri + "lib${name}.so",
+  illumos: uri + "lib${name}.so",
+  netbsd: uri + "lib${name}.so",
 }[Deno.build.os], {`
     }
   ${
@@ -256,9 +254,8 @@ ${
 
   let rawResult = symbols.${sig}(${
             parameters
-              .map((p, i) => (isBufferType(p)
-                ? `a${i}_buf, a${i}_buf.byteLength`
-                : `a${i}`)
+              .map((p, i) =>
+                isBufferType(p) ? `a${i}_buf, a${i}_buf.byteLength` : `a${i}`
               )
               .join(", ")
           });
