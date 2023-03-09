@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-explicit-any
 // Copyright 2020-2021 the Deno authors. All rights reserved. MIT license.
 
 import {
@@ -84,6 +85,7 @@ function resolveDlopenParameter(typeDefs: TypeDef, type: any): string {
   } else {
     return "pointer";
   }
+  // deno-lint-ignore no-unreachable
   throw new TypeError(`Type not supported: ${t}`);
 }
 
@@ -145,14 +147,15 @@ function decode(v: Uint8Array): string {
   return new TextDecoder().decode(v);
 }
 
+// deno-lint-ignore no-explicit-any
 function readPointer(v: any): Uint8Array {
-  const ptr = new Deno.UnsafePointerView(v as bigint)
+  const ptr = new Deno.UnsafePointerView(v);
   const lengthBe = new Uint8Array(4);
   const view = new DataView(lengthBe.buffer);
   ptr.copyInto(lengthBe, 0);
   const buf = new Uint8Array(view.getUint32(0));
-  ptr.copyInto(buf, 4)
-  return buf
+  ptr.copyInto(buf, 4);
+  return buf;
 }
 
 const url = new URL("${fetchPrefix}", import.meta.url);

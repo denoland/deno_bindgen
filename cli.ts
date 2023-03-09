@@ -69,7 +69,7 @@ async function generate() {
 
 try {
   await Deno.remove(metafile);
-} catch (e) {
+} catch (_e) {
   // no op
 }
 
