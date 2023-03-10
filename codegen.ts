@@ -162,7 +162,7 @@ const url = new URL("${fetchPrefix}", import.meta.url);
 ${
       typeof options?.releaseURL === "string"
         ? `
-import { CachePolicy, prepare } from "https://deno.land/x/plug@0.5.2/plug.ts";
+import { dlopen, FetchOptions } from "https://deno.land/x/plug@1.0.1/mod.ts";
 let uri = url.toString();
 if (!uri.endsWith("/")) uri += "/";
 
@@ -177,16 +177,16 @@ if (url.protocol !== "file:") {
   }
 }
 
-const opts = {
+const opts: FetchOptions = {
   name: "${name}",
-  urls: {
+  url: {
     darwin,
     windows: uri + "${name}.dll",
     linux: uri + "lib${name}.so",
   },
-  policy: ${!!options?.release ? "undefined" : "CachePolicy.NONE"},
+  cache: ${!!options?.release ? '"use"' : '"reloadAll"'},
 };
-const { symbols } = await prepare(opts, {
+const { symbols } = await dlopen(opts, {
   `
         : `
 let uri = url.pathname;
@@ -205,6 +205,11 @@ const { symbols } = Deno.dlopen({
   darwin: uri + "lib${name}.dylib",
   windows: uri + "${name}.dll",
   linux: uri + "lib${name}.so",
+  freebsd: uri + "lib${name}.so",
+  netbsd: uri + "lib${name}.so",
+  aix: uri + "lib${name}.so",
+  solaris: uri + "lib${name}.so",
+  illumos: uri + "lib${name}.so",
 }[Deno.build.os], {`
     }
   ${
@@ -257,7 +262,7 @@ ${
               .join("\n")
           }
 
-  let rawResult = symbols.${sig}(${
+  const rawResult = symbols.${sig}(${
             parameters
               .map((p, i) => (isBufferType(p)
                 ? `a${i}_buf, a${i}_buf.byteLength`
