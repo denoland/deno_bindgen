@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-explicit-any
 // Copyright 2020-2021 the Deno authors. All rights reserved. MIT license.
 
 import {
@@ -84,6 +85,7 @@ function resolveDlopenParameter(typeDefs: TypeDef, type: any): string {
   } else {
     return "pointer";
   }
+  // deno-lint-ignore no-unreachable
   throw new TypeError(`Type not supported: ${t}`);
 }
 
@@ -145,21 +147,22 @@ function decode(v: Uint8Array): string {
   return new TextDecoder().decode(v);
 }
 
+// deno-lint-ignore no-explicit-any
 function readPointer(v: any): Uint8Array {
-  const ptr = new Deno.UnsafePointerView(v as bigint)
+  const ptr = new Deno.UnsafePointerView(v);
   const lengthBe = new Uint8Array(4);
   const view = new DataView(lengthBe.buffer);
   ptr.copyInto(lengthBe, 0);
   const buf = new Uint8Array(view.getUint32(0));
-  ptr.copyInto(buf, 4)
-  return buf
+  ptr.copyInto(buf, 4);
+  return buf;
 }
 
 const url = new URL("${fetchPrefix}", import.meta.url);
 ${
       typeof options?.releaseURL === "string"
         ? `
-import { CachePolicy, prepare } from "https://deno.land/x/plug@0.5.2/plug.ts";
+import { dlopen, FetchOptions } from "https://deno.land/x/plug@1.0.1/mod.ts";
 let uri = url.toString();
 if (!uri.endsWith("/")) uri += "/";
 
@@ -174,16 +177,16 @@ if (url.protocol !== "file:") {
   }
 }
 
-const opts = {
+const opts: FetchOptions = {
   name: "${name}",
-  urls: {
+  url: {
     darwin,
     windows: uri + "${name}.dll",
     linux: uri + "lib${name}.so",
   },
-  policy: ${!!options?.release ? "undefined" : "CachePolicy.NONE"},
+  cache: ${!!options?.release ? '"use"' : '"reloadAll"'},
 };
-const { symbols } = await prepare(opts, {
+const { symbols } = await dlopen(opts, {
   `
         : `
 let uri = url.pathname;
@@ -202,6 +205,11 @@ const { symbols } = Deno.dlopen({
   darwin: uri + "lib${name}.dylib",
   windows: uri + "${name}.dll",
   linux: uri + "lib${name}.so",
+  freebsd: uri + "lib${name}.so",
+  netbsd: uri + "lib${name}.so",
+  aix: uri + "lib${name}.so",
+  solaris: uri + "lib${name}.so",
+  illumos: uri + "lib${name}.so",
 }[Deno.build.os], {`
     }
   ${
@@ -254,7 +262,7 @@ ${
               .join("\n")
           }
 
-  let rawResult = symbols.${sig}(${
+  const rawResult = symbols.${sig}(${
             parameters
               .map((p, i) => (isBufferType(p)
                 ? `a${i}_buf, a${i}_buf.byteLength`
