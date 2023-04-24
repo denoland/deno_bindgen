@@ -19,30 +19,20 @@ function readPointer(v: any): Uint8Array {
   return buf
 }
 
-const url = new URL("../target/debug", import.meta.url)
+const url = new URL("../target/release", import.meta.url)
 
 import { dlopen, FetchOptions } from "https://deno.land/x/plug@1.0.1/mod.ts"
 let uri = url.toString()
 if (!uri.endsWith("/")) uri += "/"
 
 let darwin: string | { aarch64: string; x86_64: string } = uri
-  + "libdeno_bindgen_test.dylib"
-
-if (url.protocol !== "file:") {
-  // Assume that remote assets follow naming scheme
-  // for each macOS artifact.
-  darwin = {
-    aarch64: uri + "libdeno_bindgen_test_arm64.dylib",
-    x86_64: uri + "libdeno_bindgen_test.dylib",
-  }
-}
 
 const opts: FetchOptions = {
   name: "deno_bindgen_test",
   url: {
     darwin,
-    windows: uri + "deno_bindgen_test.dll",
-    linux: uri + "libdeno_bindgen_test.so",
+    windows: uri,
+    linux: uri,
   },
   cache: "use",
 }

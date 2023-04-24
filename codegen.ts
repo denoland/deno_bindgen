@@ -166,23 +166,14 @@ import { dlopen, FetchOptions } from "https://deno.land/x/plug@1.0.1/mod.ts";
 let uri = url.toString();
 if (!uri.endsWith("/")) uri += "/";
 
-let darwin: string | { aarch64: string; x86_64: string } = uri + "lib${name}.dylib";
-
-if (url.protocol !== "file:") {
-  // Assume that remote assets follow naming scheme
-  // for each macOS artifact.
-  darwin = {
-    aarch64: uri + "lib${name}_arm64.dylib",
-    x86_64: uri + "lib${name}.dylib",
-  }
-}
+let darwin: string | { aarch64: string; x86_64: string } = uri;
 
 const opts: FetchOptions = {
   name: "${name}",
   url: {
     darwin,
-    windows: uri + "${name}.dll",
-    linux: uri + "lib${name}.so",
+    windows: uri,
+    linux: uri,
   },
   cache: ${!!options?.release ? '"use"' : '"reloadAll"'},
 };
