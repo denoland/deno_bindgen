@@ -30,8 +30,15 @@ jobs:
             components: rustfmt, clippy
       - name: Build
         run: cargo build --locked --release
-      - name: Build Example
+      - name: Build Example (debug)
+        working-directory: ./example
         run: |
-          cd example
           deno run -A ../cli.ts
-          deno test --no-check -A --unstable
+          deno test -A --unstable
+      - name: Build Example (release)
+        working-directory: ./example
+        shell: bash
+        run: |
+          rm -rf target
+          deno run -A ../cli.ts --release=../target/release
+          deno test -A --unstable
