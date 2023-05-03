@@ -15,19 +15,20 @@ const metafile = join(
 );
 
 function build() {
-  const cmd = ["cargo", "build"];
-  if (release) cmd.push("--release");
-  cmd.push(...flags["--"]);
-  const proc = Deno.run({ cmd });
-  return proc.status();
+  const args = ["build"];
+  if (release) args.push("--release");
+  args.push(...flags["--"]);
+  const proc = new Deno.Command("cargo", { args });
+  return proc.output();
 }
 
 async function findRelativeTarget() {
-  const p = Deno.run({
-    cmd: ["cargo", "metadata", "--format-version", "1"],
+  const p = new Deno.Command("cargo", {
+    args: ["metadata", "--format-version", "1"],
     stdout: "piped",
   });
-  const metadata = JSON.parse(new TextDecoder().decode(await p.output()));
+  const output = await p.output();
+  const metadata = JSON.parse(new TextDecoder().decode(output.stdout));
   return relative(Deno.cwd(), metadata.workspace_root);
 }
 
