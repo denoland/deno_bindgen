@@ -8,7 +8,7 @@ jobs:
       matrix:
         os: [ windows-latest, macos-latest,  ubuntu-latest ]
         toolchain: [nightly]
-        deno_version: [1.25.0]
+        deno_version: [1.33.1]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
