@@ -175,6 +175,11 @@ const opts: FetchOptions = {
     windows: uri,
     linux: uri,
   },
+  suffixes: {
+    darwin: {
+      aarch64: "_arm64",
+    },
+  },
   cache: ${!!options?.release ? '"use"' : '"reloadAll"'},
 };
 const { symbols } = await dlopen(opts, {
