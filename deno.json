@@ -1,0 +1,6 @@
+{
+  "tasks": {
+    "patch": "deno run --allow-read=. --allow-write=. https://deno.land/x/bmp@v0.2.0/cli.ts -p",
+    "minor": "deno run --allow-read=. --allow-write=. https://deno.land/x/bmp@v0.2.0/cli.ts -m"
+  }
+}
