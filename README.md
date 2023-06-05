@@ -53,7 +53,7 @@ Add the following dependencies to your crate.
 ```toml
 # Cargo.toml
 [dependencies]
-deno_bindgen = "0.8.0"
+deno_bindgen = "0.8.1"
 serde = { version = "1", features = ["derive"] }
 ```
 

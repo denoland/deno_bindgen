@@ -1,0 +1,8 @@
+version: 0.8.1
+commit: '%.%.%'
+files:
+  README.md: deno_bindgen = "%.%.%"
+  deno_bindgen/Cargo.toml:
+    - version = "%.%.%"
+    - 'deno_bindgen_macro = { path = "../deno_bindgen_macro", version = "%.%.%" }'
+  deno_bindgen_macro/Cargo.toml: version = "%.%.%"
