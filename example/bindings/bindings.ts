@@ -34,6 +34,11 @@ const opts: FetchOptions = {
     windows: uri,
     linux: uri,
   },
+  suffixes: {
+    darwin: {
+      aarch64: "_arm64",
+    },
+  },
   cache: "use",
 }
 const { symbols } = await dlopen(opts, {
