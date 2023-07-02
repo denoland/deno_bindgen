@@ -1,6 +1,7 @@
 import { basename } from "https://deno.land/std@0.145.0/path/mod.ts";
 
 const libPath = Deno.args[0];
+if (!libPath) throw new Error("no project name provided");
 const libName = basename(libPath);
 
 // 1- Create cargo fixture
