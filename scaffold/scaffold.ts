@@ -42,7 +42,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-deno_bindgen = "0.7.0"
+deno_bindgen = "0.8.1"
 serde = { version = "1", features = ["derive"] }
 
 [lib]
