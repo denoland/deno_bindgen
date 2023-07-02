@@ -167,7 +167,7 @@ import { dlopen, FetchOptions } from "https://deno.land/x/plug@1.0.2/mod.ts";
 let uri = url.toString();
 if (!uri.endsWith("/")) uri += "/";
 
-let darwin: string | { aarch64: string; x86_64: string } = uri;
+const darwin: string | { aarch64: string; x86_64: string } = uri;
 
 const opts: FetchOptions = {
   name: "${name}",
