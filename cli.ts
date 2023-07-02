@@ -1,9 +1,9 @@
-// Copyright 2020-2021 the Deno authors. All rights reserved. MIT license.
+// Copyright 2020-2023 the Deno authors. All rights reserved. MIT license.
 
-import { ensureDir } from "https://deno.land/std@0.132.0/fs/ensure_dir.ts";
-import { parse } from "https://deno.land/std@0.132.0/flags/mod.ts";
-import { join } from "https://deno.land/std@0.132.0/path/mod.ts";
-import { relative } from "https://deno.land/std@0.132.0/path/mod.ts";
+import { ensureDir } from "https://deno.land/std@0.192.0/fs/ensure_dir.ts";
+import { parse } from "https://deno.land/std@0.192.0/flags/mod.ts";
+import { join } from "https://deno.land/std@0.192.0/path/mod.ts";
+import { relative } from "https://deno.land/std@0.192.0/path/mod.ts";
 import { codegen } from "./codegen.ts";
 
 const flags = parse(Deno.args, { "--": true });

@@ -1,5 +1,5 @@
-// deno-lint-ignore-file no-explicit-any
-// Copyright 2020-2021 the Deno authors. All rights reserved. MIT license.
+// Copyright 2020-2023 the Deno authors. All rights reserved. MIT license.
+// deno-lint-ignore-file no-explicit-any no-extra-boolean-cast
 
 import {
   createFromBuffer,
@@ -112,6 +112,7 @@ function isBufferType(p: any) {
   return isTypeDef(p) || BufferTypes[p] !== undefined;
 }
 
+// deno-lint-ignore no-unused-vars
 function needsPointer(p: any) {
   return isBufferType(p) && p !== "buffer" && p !== "buffermut";
 }
@@ -162,7 +163,7 @@ const url = new URL("${fetchPrefix}", import.meta.url);
 ${
       typeof options?.releaseURL === "string"
         ? `
-import { dlopen, FetchOptions } from "https://deno.land/x/plug@1.0.1/mod.ts";
+import { dlopen, FetchOptions } from "https://deno.land/x/plug@1.0.2/mod.ts";
 let uri = url.toString();
 if (!uri.endsWith("/")) uri += "/";
 
