@@ -1,8 +1,6 @@
 // Copyright 2020-2021 the Deno authors. All rights reserved. MIT license.
 
-use syn::Attribute;
-use syn::Lit;
-use syn::Meta;
+use syn::{Attribute, Lit, Meta};
 
 pub fn get_docs(attrs: &Vec<Attribute>) -> String {
   let mut doc: Vec<String> = vec![];

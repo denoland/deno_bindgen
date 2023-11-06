@@ -1,16 +1,14 @@
 // Copyright 2020-2021 the Deno authors. All rights reserved. MIT license.
 
-use crate::attrs::get_serde_attrs;
-use crate::attrs::SerdeAttr;
-use crate::docs::get_docs;
-use crate::meta::Glue;
-
 use std::collections::HashMap;
-use syn::ext::IdentExt;
-use syn::Data;
-use syn::DataStruct;
-use syn::DeriveInput;
-use syn::Fields;
+
+use syn::{ext::IdentExt, Data, DataStruct, DeriveInput, Fields};
+
+use crate::{
+  attrs::{get_serde_attrs, SerdeAttr},
+  docs::get_docs,
+  meta::Glue,
+};
 
 macro_rules! variant_instance {
   ( $variant:path, $iterator:expr ) => {

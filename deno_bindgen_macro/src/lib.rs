@@ -1,16 +1,15 @@
 // Copyright 2020-2021 the Deno authors. All rights reserved. MIT license.
 
-use proc_macro::TokenStream;
-use quote::format_ident;
-use quote::quote;
-use std::env;
-use std::fs::OpenOptions;
-use std::io::Read;
-use std::io::Write;
-use std::path::Path;
-use syn::parse_macro_input;
-use syn::parse_quote;
-use syn::ItemFn;
+use std::{
+  env,
+  fs::OpenOptions,
+  io::{Read, Write},
+  path::Path,
+};
+
+use proc_macro::{TokenStream};
+use quote::{format_ident,quote};
+use syn::{parse_macro_input, parse_quote, ItemFn};
 
 mod attrs;
 mod derive_fn;
@@ -18,10 +17,11 @@ mod derive_struct;
 mod docs;
 mod meta;
 
-use crate::derive_fn::process_function;
-use crate::derive_struct::process_struct;
-use crate::meta::Glue;
-use crate::meta::Type;
+use crate::{
+  derive_fn::process_function,
+  derive_struct::process_struct,
+  meta::{Glue, Type},
+};
 
 #[cfg(target_endian = "little")]
 const ENDIANNESS: bool = true;
@@ -72,7 +72,7 @@ pub fn deno_bindgen(attr: TokenStream, input: TokenStream) -> TokenStream {
       let mut input_idents = vec![];
       let mut c_index = 0;
 
-      for parameter in symbol.parameters {
+      for parameter in &symbol.parameters {
         match parameter {
           Type::StructEnum { .. } => {
             let ident = format_ident!("arg{}", c_index.to_string());
@@ -136,7 +136,7 @@ pub fn deno_bindgen(attr: TokenStream, input: TokenStream) -> TokenStream {
           // TODO
           _ => {
             let ident = format_ident!("arg{}", c_index.to_string());
-            let ty = syn::Type::from(parameter);
+            let ty = syn::Type::from(parameter.clone());
             params.push(quote! { #ident: #ty });
             input_idents.push(ident);
           }
@@ -189,7 +189,7 @@ pub fn deno_bindgen(attr: TokenStream, input: TokenStream) -> TokenStream {
           (ty, transformer)
         }
         Type::Ptr => (parse_quote! { *const u8 }, quote! { result }),
-        _ => (syn::Type::from(symbol.result), quote! { result }),
+        _ => (syn::Type::from(symbol.result.clone()), quote! { result }),
       };
 
       let name = &func.sig.ident;
@@ -205,7 +205,9 @@ pub fn deno_bindgen(attr: TokenStream, input: TokenStream) -> TokenStream {
       metafile
         .write_all(&serde_json::to_vec(&metadata).unwrap())
         .unwrap();
-
+      let xname = format_ident!("__de90_{}", name.to_string());
+      let xparams = symbol.parameters.iter().map(|p| meta::CType::from(p) as u8).map(|p| quote!(#p)).collect::<Vec<_>>();
+      let xresult = meta::CType::from(&symbol.result) as u8;
       TokenStream::from(quote! {
         #[no_mangle]
         pub extern "C" fn #name <'sym> (#(#params,) *) -> #result {
@@ -213,6 +215,21 @@ pub fn deno_bindgen(attr: TokenStream, input: TokenStream) -> TokenStream {
           #overrides
           let result = __inner_impl(#(#input_idents, ) *);
           #transformer
+        }
+
+        #[no_mangle]
+        pub unsafe extern "C" fn #xname (
+          params: *mut u8,
+          result: *mut u8,
+        ) -> *const u8 {
+          let mut idx = 0;
+          let params = ::std::slice::from_raw_parts_mut(params, 200);
+          #(
+            params[idx] = #xparams;
+            idx += 1;
+          )*;
+          *result = #xresult;
+          concat!(stringify!(#name), "\0").as_ptr()
         }
       })
     }

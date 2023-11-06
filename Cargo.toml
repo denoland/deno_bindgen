@@ -1,4 +1,5 @@
 [workspace]
+resolver = "2"
 members = [
   "deno_bindgen_macro",
   "deno_bindgen",

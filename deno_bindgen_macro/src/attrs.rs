@@ -1,11 +1,7 @@
 // Copyright 2020-2021 the Deno authors. All rights reserved. MIT license.
 
-use syn::Attribute;
-use syn::Lit;
-use syn::Meta;
-use syn::NestedMeta;
-
 use inflector::Inflector;
+use syn::{Attribute, Lit, Meta, NestedMeta};
 
 #[derive(Debug)]
 pub enum SerdeAttr {

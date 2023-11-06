@@ -1,8 +1,8 @@
 // Copyright 2020-2021 the Deno authors. All rights reserved. MIT license.
 
-use serde::Deserialize;
-use serde::Serialize;
 use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
 use syn::parse_quote;
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -36,6 +36,54 @@ pub enum Type {
   StructEnum {
     ident: String,
   },
+}
+
+#[repr(u8)]
+pub enum CType {
+  /// Straight forward types supported
+  /// by Deno's FFI
+  I8,
+  U8,
+  I16,
+  U16,
+  I32,
+  U32,
+  I64,
+  U64,
+  F32,
+  F64,
+  Usize,
+  Isize,
+  Void,
+  Buffer,
+  BufferMut,
+  Str,
+  Ptr,
+}
+
+impl From<&Type> for CType {
+  fn from(ty: &Type) -> Self {
+    match ty {
+      Type::I8 => CType::I8,
+      Type::U8 => CType::U8,
+      Type::I16 => CType::I16,
+      Type::U16 => CType::U16,
+      Type::I32 => CType::I32,
+      Type::U32 => CType::U32,
+      Type::I64 => CType::I64,
+      Type::U64 => CType::U64,
+      Type::F32 => CType::F32,
+      Type::F64 => CType::F64,
+      Type::Usize => CType::Usize,
+      Type::Isize => CType::Isize,
+      Type::Void => CType::Void,
+      Type::Buffer => CType::Buffer,
+      Type::BufferMut => CType::BufferMut,
+      Type::Str => CType::Str,
+      Type::Ptr => CType::Ptr,
+      Type::StructEnum { .. } => CType::Ptr,
+    }
+  }
 }
 
 impl From<Type> for syn::Type {

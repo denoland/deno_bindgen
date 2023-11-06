@@ -1,15 +1,10 @@
 // Copyright 2020-2021 the Deno authors. All rights reserved. MIT license.
 
-use crate::meta::Glue;
-use crate::meta::Symbol;
-use crate::meta::Type;
-use syn::AttributeArgs;
-use syn::FnArg;
-use syn::ItemFn;
-use syn::Meta;
-use syn::NestedMeta;
-use syn::PathArguments;
-use syn::ReturnType;
+use syn::{
+  AttributeArgs, FnArg, ItemFn, Meta, NestedMeta, PathArguments, ReturnType,
+};
+
+use crate::meta::{Glue, Symbol, Type};
 
 pub fn process_function(
   function: ItemFn,
