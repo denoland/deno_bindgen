@@ -1,5 +1,5 @@
-// deno-lint-ignore-file no-explicit-any
-// Copyright 2020-2021 the Deno authors. All rights reserved. MIT license.
+// Copyright 2020-2023 the Deno authors. All rights reserved. MIT license.
+// deno-lint-ignore-file no-explicit-any no-extra-boolean-cast
 
 import {
   createFromBuffer,
@@ -112,6 +112,7 @@ function isBufferType(p: any) {
   return isTypeDef(p) || BufferTypes[p] !== undefined;
 }
 
+// deno-lint-ignore no-unused-vars
 function needsPointer(p: any) {
   return isBufferType(p) && p !== "buffer" && p !== "buffermut";
 }
@@ -135,38 +136,24 @@ export function codegen(
       {},
     );
 
+  const functions = {
+    encode: false,
+    decode: false,
+    readPointer: false,
+  };
+
   return tsFormatter.formatText(
     "bindings.ts",
     `
-function encode(v: string | Uint8Array): Uint8Array {
-  if (typeof v !== "string") return v;
-  return new TextEncoder().encode(v);
-}
-
-function decode(v: Uint8Array): string {
-  return new TextDecoder().decode(v);
-}
-
-// deno-lint-ignore no-explicit-any
-function readPointer(v: any): Uint8Array {
-  const ptr = new Deno.UnsafePointerView(v);
-  const lengthBe = new Uint8Array(4);
-  const view = new DataView(lengthBe.buffer);
-  ptr.copyInto(lengthBe, 0);
-  const buf = new Uint8Array(view.getUint32(0));
-  ptr.copyInto(buf, 4);
-  return buf;
-}
-
 const url = new URL("${fetchPrefix}", import.meta.url);
 ${
       typeof options?.releaseURL === "string"
         ? `
-import { dlopen, FetchOptions } from "https://deno.land/x/plug@1.0.1/mod.ts";
+import { dlopen, FetchOptions } from "https://deno.land/x/plug@1.0.2/mod.ts";
 let uri = url.toString();
 if (!uri.endsWith("/")) uri += "/";
 
-let darwin: string | { aarch64: string; x86_64: string } = uri;
+const darwin: string | { aarch64: string; x86_64: string } = uri;
 
 const opts: FetchOptions = {
   name: "${name}",
@@ -247,13 +234,15 @@ ${
           }) {
   ${
             parameters
-              .map((p, i) =>
-                isBufferType(p)
-                  ? `const a${i}_buf = encode(${
+              .map((p, i) => {
+                if (isBufferType(p)) {
+                  functions.encode = true;
+                  return `const a${i}_buf = encode(${
                     BufferTypeEncoders[p] ?? Encoder.JsonStringify
-                  }(a${i}));`
-                  : null
-              )
+                  }(a${i}));`;
+                }
+                return null;
+              })
               .filter((c) => c !== null)
               .join("\n")
           }
@@ -267,34 +256,80 @@ ${
               .join(", ")
           });
   ${
-            isBufferType(result)
-              ? nonBlocking
-                ? `const result = rawResult.then(readPointer);`
-                : `const result = readPointer(rawResult);`
-              : "const result = rawResult;"
+            (() => {
+              if (isBufferType(result)) {
+                functions.readPointer = true;
+                return nonBlocking
+                  ? `const result = rawResult.then(readPointer);`
+                  : `const result = readPointer(rawResult);`;
+              }
+              return "const result = rawResult;";
+            })()
           };
   ${
-            isTypeDef(result)
-              ? nonBlocking
-                ? `return result.then(r => JSON.parse(decode(r))) as Promise<${
-                  resolveType(
-                    decl,
-                    result,
-                  )
-                }>;`
-                : `return JSON.parse(decode(result)) as ${
-                  resolveType(decl, result)
-                };`
-              : result == "str"
-              ? nonBlocking
-                ? "return result.then(decode);"
-                : "return decode(result);"
-              : "return result;"
-          };
-}`;
+            (() => {
+              if (isTypeDef(result)) {
+                functions.decode = true;
+                return nonBlocking
+                  ? `return result.then(r => JSON.parse(decode(r))) as Promise<${
+                    resolveType(
+                      decl,
+                      result,
+                    )
+                  }>;`
+                  : `return JSON.parse(decode(result)) as ${
+                    resolveType(decl, result)
+                  };`;
+              }
+              if (result == "str") {
+                functions.decode = true;
+                return nonBlocking
+                  ? "return result.then(decode);"
+                  : "return decode(result);";
+              }
+              return "return result;";
+            })()
+          }`;
         })
         .join("\n")
     }
+    ${
+      functions.encode
+        ? `
+    function encode(v: string | Uint8Array): Uint8Array {
+      if (typeof v !== "string") return v;
+      return new TextEncoder().encode(v);
+    }`
+        : ""
+    }
+    
+    ${
+      functions.decode
+        ? `
+    function decode(v: Uint8Array): string {
+      return new TextDecoder().decode(v);
+    }`
+        : ""
+    }
+
+    
+    ${
+      functions.readPointer
+        ? `
+    // deno-lint-ignore no-explicit-any
+    function readPointer(v: any): Uint8Array {
+      const ptr = new Deno.UnsafePointerView(v);
+      const lengthBe = new Uint8Array(4);
+      const view = new DataView(lengthBe.buffer);
+      ptr.copyInto(lengthBe, 0);
+      const buf = new Uint8Array(view.getUint32(0));
+      ptr.copyInto(buf, 4);
+      return buf;
+    }
+    `
+        : ""
+    }
+    
  `,
   );
 }

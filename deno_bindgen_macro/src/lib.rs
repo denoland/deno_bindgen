@@ -1,16 +1,15 @@
-// Copyright 2020-2021 the Deno authors. All rights reserved. MIT license.
+// Copyright 2020-2023 the Deno authors. All rights reserved. MIT license.
+
+use std::{
+  env,
+  fs::OpenOptions,
+  io::{Read, Write},
+  path::Path,
+};
 
 use proc_macro::TokenStream;
-use quote::format_ident;
-use quote::quote;
-use std::env;
-use std::fs::OpenOptions;
-use std::io::Read;
-use std::io::Write;
-use std::path::Path;
-use syn::parse_macro_input;
-use syn::parse_quote;
-use syn::ItemFn;
+use quote::{format_ident, quote};
+use syn::{parse_macro_input, parse_quote, ItemFn};
 
 mod attrs;
 mod derive_fn;
@@ -18,10 +17,11 @@ mod derive_struct;
 mod docs;
 mod meta;
 
-use crate::derive_fn::process_function;
-use crate::derive_struct::process_struct;
-use crate::meta::Glue;
-use crate::meta::Type;
+use crate::{
+  derive_fn::process_function,
+  derive_struct::process_struct,
+  meta::{Glue, Type},
+};
 
 #[cfg(target_endian = "little")]
 const ENDIANNESS: bool = true;

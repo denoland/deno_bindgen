@@ -24,10 +24,12 @@ import {
   test_str,
   test_str_ret,
   test_tag_and_content,
-  TestReservedField,
   WithRecord,
 } from "./bindings/bindings.ts";
-import { assert, assertEquals } from "https://deno.land/std/testing/asserts.ts";
+import {
+  assert,
+  assertEquals,
+} from "https://deno.land/std@0.192.0/testing/asserts.ts";
 
 Deno.test({
   name: "add#test",
@@ -114,7 +116,7 @@ Deno.test({
 Deno.test({
   name: "test_options#test",
   fn: () => {
-    let opts: OptionStruct = { maybe: " " };
+    const opts: OptionStruct = { maybe: " " };
     opts.maybe = null;
     opts.maybe = undefined;
   },
@@ -123,7 +125,7 @@ Deno.test({
 Deno.test({
   name: "test_str#test",
   fn: () => {
-    let str = "Hello, World!";
+    const str = "Hello, World!";
     test_str(str);
   },
 });
@@ -131,7 +133,7 @@ Deno.test({
 Deno.test({
   name: "test_buf#test",
   fn: () => {
-    let buf = new Uint8Array([1, 0, 1]);
+    const buf = new Uint8Array([1, 0, 1]);
     assertEquals(test_buf(buf), 1);
   },
 });
@@ -139,7 +141,7 @@ Deno.test({
 Deno.test({
   name: "test_mut_buf#test",
   fn: () => {
-    let u8 = new Uint8Array([0, 1, 2]);
+    const u8 = new Uint8Array([0, 1, 2]);
     assertEquals(u8[0], 0);
 
     test_mut_buf(u8);

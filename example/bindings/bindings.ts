@@ -1,124 +1,116 @@
 // Auto-generated with deno_bindgen
-function encode(v: string | Uint8Array): Uint8Array {
-  if (typeof v !== "string") return v
-  return new TextEncoder().encode(v)
-}
+const url = new URL("../target/debug", import.meta.url)
 
-function decode(v: Uint8Array): string {
-  return new TextDecoder().decode(v)
-}
-
-// deno-lint-ignore no-explicit-any
-function readPointer(v: any): Uint8Array {
-  const ptr = new Deno.UnsafePointerView(v)
-  const lengthBe = new Uint8Array(4)
-  const view = new DataView(lengthBe.buffer)
-  ptr.copyInto(lengthBe, 0)
-  const buf = new Uint8Array(view.getUint32(0))
-  ptr.copyInto(buf, 4)
-  return buf
-}
-
-const url = new URL("../target/release", import.meta.url)
-
-import { dlopen, FetchOptions } from "https://deno.land/x/plug@1.0.1/mod.ts"
-let uri = url.toString()
+let uri = url.pathname
 if (!uri.endsWith("/")) uri += "/"
 
-let darwin: string | { aarch64: string; x86_64: string } = uri
+// https://docs.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-loadlibrarya#parameters
+if (Deno.build.os === "windows") {
+  uri = uri.replace(/\//g, "\\")
+  // Remove leading slash
+  if (uri.startsWith("\\")) {
+    uri = uri.slice(1)
+  }
+}
 
-const opts: FetchOptions = {
-  name: "deno_bindgen_test",
-  url: {
-    darwin,
-    windows: uri,
-    linux: uri,
-  },
-  suffixes: {
-    darwin: {
-      aarch64: "_arm64",
+const { symbols } = Deno.dlopen(
+  {
+    darwin: uri + "libdeno_bindgen_test.dylib",
+    windows: uri + "deno_bindgen_test.dll",
+    linux: uri + "libdeno_bindgen_test.so",
+    freebsd: uri + "libdeno_bindgen_test.so",
+    netbsd: uri + "libdeno_bindgen_test.so",
+    aix: uri + "libdeno_bindgen_test.so",
+    solaris: uri + "libdeno_bindgen_test.so",
+    illumos: uri + "libdeno_bindgen_test.so",
+  }[Deno.build.os],
+  {
+    add: { parameters: ["i32", "i32"], result: "i32", nonblocking: false },
+    add2: {
+      parameters: ["buffer", "usize"],
+      result: "i32",
+      nonblocking: false,
+    },
+    add3: { parameters: ["f32", "f32"], result: "f32", nonblocking: false },
+    add4: { parameters: ["f64", "f64"], result: "f64", nonblocking: false },
+    add5: {
+      parameters: ["buffer", "usize", "buffer", "usize"],
+      result: "buffer",
+      nonblocking: false,
+    },
+    add6: {
+      parameters: ["buffer", "usize", "buffer", "usize"],
+      result: "buffer",
+      nonblocking: false,
+    },
+    sleep: { parameters: ["u64"], result: "void", nonblocking: true },
+    test_buf: {
+      parameters: ["buffer", "usize"],
+      result: "u8",
+      nonblocking: false,
+    },
+    test_buffer_return: {
+      parameters: ["buffer", "usize"],
+      result: "buffer",
+      nonblocking: false,
+    },
+    test_buffer_return_async: {
+      parameters: ["buffer", "usize"],
+      result: "buffer",
+      nonblocking: true,
+    },
+    test_hashmap: { parameters: [], result: "buffer", nonblocking: false },
+    test_lifetime: {
+      parameters: ["buffer", "usize"],
+      result: "usize",
+      nonblocking: false,
+    },
+    test_manual_ptr: { parameters: [], result: "buffer", nonblocking: false },
+    test_manual_ptr_async: {
+      parameters: [],
+      result: "buffer",
+      nonblocking: true,
+    },
+    test_mixed: {
+      parameters: ["isize", "buffer", "usize"],
+      result: "i32",
+      nonblocking: false,
+    },
+    test_mixed_order: {
+      parameters: ["i32", "buffer", "usize", "i32"],
+      result: "i32",
+      nonblocking: false,
+    },
+    test_mut_buf: {
+      parameters: ["buffer", "usize"],
+      result: "void",
+      nonblocking: false,
+    },
+    test_output: { parameters: [], result: "buffer", nonblocking: false },
+    test_output_async: { parameters: [], result: "buffer", nonblocking: true },
+    test_reserved_field: {
+      parameters: [],
+      result: "buffer",
+      nonblocking: false,
+    },
+    test_serde: {
+      parameters: ["buffer", "usize"],
+      result: "u8",
+      nonblocking: false,
+    },
+    test_str: {
+      parameters: ["buffer", "usize"],
+      result: "void",
+      nonblocking: false,
+    },
+    test_str_ret: { parameters: [], result: "buffer", nonblocking: false },
+    test_tag_and_content: {
+      parameters: ["buffer", "usize"],
+      result: "i32",
+      nonblocking: false,
     },
   },
-  cache: "use",
-}
-const { symbols } = await dlopen(opts, {
-  add: { parameters: ["i32", "i32"], result: "i32", nonblocking: false },
-  add2: { parameters: ["buffer", "usize"], result: "i32", nonblocking: false },
-  add3: { parameters: ["f32", "f32"], result: "f32", nonblocking: false },
-  add4: { parameters: ["f64", "f64"], result: "f64", nonblocking: false },
-  add5: {
-    parameters: ["buffer", "usize", "buffer", "usize"],
-    result: "buffer",
-    nonblocking: false,
-  },
-  add6: {
-    parameters: ["buffer", "usize", "buffer", "usize"],
-    result: "buffer",
-    nonblocking: false,
-  },
-  sleep: { parameters: ["u64"], result: "void", nonblocking: true },
-  test_buf: {
-    parameters: ["buffer", "usize"],
-    result: "u8",
-    nonblocking: false,
-  },
-  test_buffer_return: {
-    parameters: ["buffer", "usize"],
-    result: "buffer",
-    nonblocking: false,
-  },
-  test_buffer_return_async: {
-    parameters: ["buffer", "usize"],
-    result: "buffer",
-    nonblocking: true,
-  },
-  test_hashmap: { parameters: [], result: "buffer", nonblocking: false },
-  test_lifetime: {
-    parameters: ["buffer", "usize"],
-    result: "usize",
-    nonblocking: false,
-  },
-  test_manual_ptr: { parameters: [], result: "buffer", nonblocking: false },
-  test_manual_ptr_async: {
-    parameters: [],
-    result: "buffer",
-    nonblocking: true,
-  },
-  test_mixed: {
-    parameters: ["isize", "buffer", "usize"],
-    result: "i32",
-    nonblocking: false,
-  },
-  test_mixed_order: {
-    parameters: ["i32", "buffer", "usize", "i32"],
-    result: "i32",
-    nonblocking: false,
-  },
-  test_mut_buf: {
-    parameters: ["buffer", "usize"],
-    result: "void",
-    nonblocking: false,
-  },
-  test_output: { parameters: [], result: "buffer", nonblocking: false },
-  test_output_async: { parameters: [], result: "buffer", nonblocking: true },
-  test_reserved_field: { parameters: [], result: "buffer", nonblocking: false },
-  test_serde: {
-    parameters: ["buffer", "usize"],
-    result: "u8",
-    nonblocking: false,
-  },
-  test_str: {
-    parameters: ["buffer", "usize"],
-    result: "void",
-    nonblocking: false,
-  },
-  test_str_ret: { parameters: [], result: "buffer", nonblocking: false },
-  test_tag_and_content: {
-    parameters: ["buffer", "usize"],
-    result: "i32",
-    nonblocking: false,
-  },
-})
+)
 /**
  * Doc comment for `Input` struct.
  * ...testing multiline
@@ -324,4 +316,23 @@ export function test_tag_and_content(a0: TagAndContent) {
   const rawResult = symbols.test_tag_and_content(a0_buf, a0_buf.byteLength)
   const result = rawResult
   return result
+}
+function encode(v: string | Uint8Array): Uint8Array {
+  if (typeof v !== "string") return v
+  return new TextEncoder().encode(v)
+}
+
+function decode(v: Uint8Array): string {
+  return new TextDecoder().decode(v)
+}
+
+// deno-lint-ignore no-explicit-any
+function readPointer(v: any): Uint8Array {
+  const ptr = new Deno.UnsafePointerView(v)
+  const lengthBe = new Uint8Array(4)
+  const view = new DataView(lengthBe.buffer)
+  ptr.copyInto(lengthBe, 0)
+  const buf = new Uint8Array(view.getUint32(0))
+  ptr.copyInto(buf, 4)
+  return buf
 }

@@ -1,8 +1,8 @@
-// Copyright 2020-2021 the Deno authors. All rights reserved. MIT license.
+// Copyright 2020-2023 the Deno authors. All rights reserved. MIT license.
 
-use serde::Deserialize;
-use serde::Serialize;
 use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
 use syn::parse_quote;
 
 #[derive(Serialize, Deserialize, Clone)]

@@ -1,4 +1,4 @@
-// Copyright 2020-2021 the Deno authors. All rights reserved. MIT license.
+// Copyright 2020-2023 the Deno authors. All rights reserved. MIT license.
 
 //! ## deno_bindgen
 //! This tool aims to simply types & glue code generation for FFI
