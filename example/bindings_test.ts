@@ -50,7 +50,6 @@ Deno.test({
   },
 });
 
-
 Deno.test({
   name: "non_blocking#test",
   fn: async () => {
@@ -58,3 +57,6 @@ Deno.test({
     assertEquals(result, 42);
   },
 });
+
+// struct (glorified pointers)
+// impl on struct

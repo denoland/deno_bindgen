@@ -8,7 +8,10 @@ use syn::{
   ItemFn, PatType, ReturnType, TypePath, TypePtr, TypeReference, TypeSlice,
 };
 
-use crate::{util::{Error, Result}, FnAttributes};
+use crate::{
+  util::{Error, Result},
+  FnAttributes,
+};
 
 fn parse_type(ty: &Box<syn::Type>) -> Result<Type> {
   match **ty {
@@ -168,7 +171,7 @@ pub fn handle(fn_: ItemFn, attrs: FnAttributes) -> Result<TokenStream2> {
   Ok(quote::quote! {
       const _: () = {
         #[deno_bindgen::linkme::distributed_slice(deno_bindgen::INVENTORY)]
-        pub static _A: deno_bindgen::Symbol = #symbol;
+        pub static _A: deno_bindgen::Inventory = deno_bindgen::Inventory::Symbol(#symbol);
       };
 
       #[no_mangle]

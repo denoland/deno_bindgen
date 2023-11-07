@@ -41,3 +41,15 @@ fn strlen(s: *const u8) -> u32 {
 fn non_blocking() -> i32 {
   42
 }
+
+#[deno_bindgen]
+pub struct Foo {
+  internal: i32,
+}
+
+#[deno_bindgen]
+impl Foo {
+  fn new() -> Self {
+    Self { internal: 42 }
+  }
+}

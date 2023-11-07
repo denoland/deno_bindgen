@@ -7,7 +7,11 @@ pub use linkme;
 use linkme::distributed_slice;
 
 #[distributed_slice]
-pub static INVENTORY: [Symbol];
+pub static INVENTORY: [Inventory];
+
+pub trait BindgenType {
+  fn type_name() -> &'static str;
+}
 
 #[no_mangle]
 fn init_deno_bindgen(opt: Options) {

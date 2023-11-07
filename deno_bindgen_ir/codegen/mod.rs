@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::Symbol;
+use crate::{inventory::Inventory, Symbol};
 
 mod deno;
 
@@ -18,7 +18,7 @@ pub trait Generator {
 }
 
 pub fn generate(
-  symbols: &'static [Symbol],
+  symbols: &'static [Inventory],
   opt: Options,
 ) -> std::io::Result<()> {
   let mut codegen = match opt.target {

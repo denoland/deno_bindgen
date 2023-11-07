@@ -1,8 +1,11 @@
 use proc_macro2::Ident;
-use quote::{format_ident, quote, ToTokens};
+use quote::{quote, ToTokens};
 use syn::{parse_quote, Pat};
 
 pub mod codegen;
+pub mod inventory;
+
+pub use inventory::Inventory;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, Default)]
 pub enum Type {

@@ -3,8 +3,10 @@ use std::{
   io::{Result, Write},
 };
 
+use syn::token::In;
+
 use super::Generator;
-use crate::{Symbol, Type};
+use crate::{inventory::Inventory, Symbol, Type};
 
 struct TypeScriptType<'a>(&'a str);
 
@@ -93,11 +95,11 @@ impl From<Type> for DenoFfiType {
 }
 
 pub struct Codegen<'a> {
-  symbols: &'a [Symbol],
+  symbols: &'a [Inventory],
 }
 
 impl<'a> Codegen<'a> {
-  pub fn new(symbols: &'a [Symbol]) -> Self {
+  pub fn new(symbols: &'a [Inventory]) -> Self {
     Self { symbols }
   }
 
@@ -132,21 +134,26 @@ impl<'a> Codegen<'a> {
     }
 
     for symbol in self.symbols {
-      writeln!(writer, "  {}: {{", symbol.name)?;
-      write!(writer, "    parameters: ")?;
-      format_bracket(writer, symbol.parameters, |writer, parameters| {
-        for parameter in parameters {
-          writeln!(writer, "      {},", DenoFfiType::from(*parameter))?;
+      match symbol {
+        Inventory::Symbol(symbol) => {
+          writeln!(writer, "  {}: {{", symbol.name)?;
+          write!(writer, "    parameters: ")?;
+          format_bracket(writer, symbol.parameters, |writer, parameters| {
+            for parameter in parameters {
+              writeln!(writer, "      {},", DenoFfiType::from(*parameter))?;
+            }
+            Ok(())
+          })?;
+          writeln!(
+            writer,
+            "    result: {},",
+            DenoFfiType::from(symbol.return_type)
+          )?;
+          writeln!(writer, "    nonblocking: {}", symbol.non_blocking)?;
+          writeln!(writer, "  }},")?;
         }
-        Ok(())
-      })?;
-      writeln!(
-        writer,
-        "    result: {},",
-        DenoFfiType::from(symbol.return_type)
-      )?;
-      writeln!(writer, "    nonblocking: {}", symbol.non_blocking)?;
-      writeln!(writer, "  }},")?;
+        _ => {}
+      }
     }
 
     Ok(())
@@ -166,39 +173,59 @@ impl<'a> Codegen<'a> {
         write!(writer, "{:indent$})", "", indent = nesting_spaces)?;
       } else {
         write!(writer, ")")?;
-      }      
+      }
 
       Ok(())
     }
 
     for symbol in self.symbols {
-      write!(writer, "export function {}", symbol.name)?;
-      format_paren(writer, symbol.parameters, |writer, parameters| {
-        for (i, parameter) in parameters.iter().enumerate() {
+      match symbol {
+        Inventory::Symbol(symbol) => {
+          write!(writer, "export function {}", symbol.name)?;
+          format_paren(
+            writer,
+            symbol.parameters,
+            |writer, parameters| {
+              for (i, parameter) in parameters.iter().enumerate() {
+                writeln!(
+                  writer,
+                  "  arg{}: {},",
+                  i,
+                  TypeScriptType::from(*parameter)
+                )?;
+              }
+              Ok(())
+            },
+            0,
+          )?;
           writeln!(
             writer,
-            "  arg{}: {},",
-            i,
-            TypeScriptType::from(*parameter)
+            ": {} {{",
+            TypeScriptType::from(symbol.return_type)
+              .apply_promise(symbol.non_blocking)
           )?;
-        }
-        Ok(())
-      }, 0)?;
-      writeln!(writer, ": {} {{", TypeScriptType::from(symbol.return_type).apply_promise(symbol.non_blocking))?;
-      write!(writer, "  return symbols.{}", symbol.name)?;
-        format_paren(writer, symbol.parameters, |writer, parameters| {
-            for (i, parameter) in parameters.iter().enumerate() {
-            let ident = format!("arg{}", i);
-            writeln!(
-                writer,
-                "    {},",
-                TypeScriptType::from(*parameter).into_raw(&ident)
-            )?;
-            }
-            Ok(())
-        }, 2)?;
+          write!(writer, "  return symbols.{}", symbol.name)?;
+          format_paren(
+            writer,
+            symbol.parameters,
+            |writer, parameters| {
+              for (i, parameter) in parameters.iter().enumerate() {
+                let ident = format!("arg{}", i);
+                writeln!(
+                  writer,
+                  "    {},",
+                  TypeScriptType::from(*parameter).into_raw(&ident)
+                )?;
+              }
+              Ok(())
+            },
+            2,
+          )?;
 
-      writeln!(writer, "\n}}\n")?;
+          writeln!(writer, "\n}}\n")?;
+        }
+        _ => {}
+      }
     }
 
     Ok(())

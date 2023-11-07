@@ -3,6 +3,8 @@ pub enum Error {
   Asyncness,
   Reciever,
   UnsupportedType,
+  Generics,
+  WhereClause,
 }
 
 impl std::fmt::Display for Error {
@@ -11,6 +13,8 @@ impl std::fmt::Display for Error {
       Error::Asyncness => write!(f, "async functions are not supported"),
       Error::Reciever => write!(f, "methods are not supported"),
       Error::UnsupportedType => write!(f, "unsupported type"),
+      Error::Generics => write!(f, "generics are not supported"),
+      Error::WhereClause => write!(f, "where clauses are not supported"),
     }
   }
 }
