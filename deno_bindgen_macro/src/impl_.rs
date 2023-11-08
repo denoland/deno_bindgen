@@ -1,9 +1,10 @@
 use proc_macro2::TokenStream as TokenStream2;
-use syn::{parse_quote, ImplItemFn, ItemImpl, parse, punctuated::Punctuated};
+use quote::format_ident;
+use syn::{parse, parse_quote, punctuated::Punctuated, ImplItemFn, ItemImpl};
 
 use crate::util::{self, Result};
 
-pub fn handle(impl_: ItemImpl) -> Result<TokenStream2> {
+pub fn handle(mut impl_: ItemImpl) -> Result<TokenStream2> {
   if impl_.generics.params.first().is_some() {
     return Err(util::Error::Generics);
   }
@@ -21,37 +22,79 @@ pub fn handle(impl_: ItemImpl) -> Result<TokenStream2> {
 
   let mut methods = Vec::new();
   let mut syms = Punctuated::<TokenStream2, syn::Token![,]>::new();
-  for item in impl_.items.iter() {
+  for item in impl_.items.iter_mut() {
     match item {
-      syn::ImplItem::Fn(ImplItemFn { sig, .. }) => {
-        if sig.receiver().is_some() {
-          let ref method_name = sig.ident;
-          let ref out = sig.output;
-          let inputs = sig.inputs.iter().skip(1).collect::<Vec<_>>();
-          let idents = inputs
-            .iter()
+      syn::ImplItem::Fn(ImplItemFn { sig, attrs, .. }) => {
+        let mut is_constructor = false;
+        if let Some(attr) = attrs.first() {
+          let path = attr.path();
+          is_constructor = path.is_ident("constructor");
+
+          attrs.clear();
+        }
+
+        // TODO: Add common name magling util.
+        let method_name = sig.ident.clone();
+        let mangled_name = format_ident!("__{}_{}", ty_str, method_name);
+        // ...
+        let ref out = sig.output;
+        let inputs = sig.inputs.iter();
+
+        fn idents_with_skip<'a>(
+          arg: syn::punctuated::Iter<'a, syn::FnArg>,
+          skip: usize,
+        ) -> Vec<&'a syn::Ident> {
+          arg
+            .skip(skip)
             .map(|arg| match arg {
               syn::FnArg::Receiver(_) => unreachable!(),
               syn::FnArg::Typed(pat_type) => match &*pat_type.pat {
-                syn::Pat::Ident(ident) => ident.ident.clone(),
+                syn::Pat::Ident(ident) => &ident.ident,
                 _ => unreachable!(),
               },
             })
-            .collect::<Vec<_>>();
-          let method = parse_quote! {
-            fn #method_name (self_: *mut #ty_str, #(#inputs),*) #out {
+            .collect::<Vec<_>>()
+        }
+
+        let method = if sig.receiver().is_some() {
+          let idents = idents_with_skip(inputs.clone(), 1);
+          // First argument is the receiver, we skip it.
+          let inputs = inputs.skip(1);
+
+          parse_quote! {
+            #[allow(non_snake_case)]
+            fn #mangled_name (self_: *mut #ty_str, #(#inputs),*) #out {
               let self_ = unsafe { &mut *self_ };
               self_. #method_name (#(#idents),*)
             }
-          };
-          
-          let (generated, sym) = crate::fn_::handle_inner(method, crate::FnAttributes { 
+          }
+        } else if is_constructor {
+          let idents = idents_with_skip(inputs.clone(), 1);
+          parse_quote!(
+            #[allow(non_snake_case)]
+            fn #mangled_name (#(#inputs),*) #out {
+              #ty_str:: #method_name (#(#idents),*)
+            }
+          )
+        } else {
+          return Err(util::Error::MissingReceiver);
+        };
+
+        let (generated, mut sym) = crate::fn_::handle_inner(
+          method,
+          crate::FnAttributes {
             internal: true,
+            constructor: is_constructor,
             ..Default::default()
-           })?;
-          methods.push(generated);
-          syms.push(quote::quote! { #sym });
-        }
+          },
+        )?;
+
+        // Set method name to the original name as the
+        // managed name is used for the internal symbol.
+        sym.set_name(method_name);
+
+        methods.push(generated);
+        syms.push(quote::quote! { #sym });
       }
       _ => {}
     }

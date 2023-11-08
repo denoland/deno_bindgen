@@ -6,6 +6,8 @@ import {
   cstr,
   strlen,
   non_blocking,
+  make_foo,
+  Foo,
 } from "./bindings/bindings.ts";
 import { assert, assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
@@ -58,5 +60,19 @@ Deno.test({
   },
 });
 
-// struct (glorified pointers)
-// impl on struct
+Deno.test({
+  name: "make_foo#test",
+  fn: () => {
+    const foo = make_foo();
+    assert(foo instanceof Foo);
+    assertEquals(foo.bar(1), 43);
+  },
+})
+
+Deno.test({
+  name: "Foo#constructor",
+  fn() {
+    const foo = new Foo();
+    assertEquals(foo.bar(1), 43);
+  }
+})

@@ -15,6 +15,8 @@ mod util;
 #[derive(Default)]
 pub(crate) struct FnAttributes {
   pub(crate) non_blocking: bool,
+  pub(crate) constructor: bool,
+
   pub(crate) internal: bool,
 }
 

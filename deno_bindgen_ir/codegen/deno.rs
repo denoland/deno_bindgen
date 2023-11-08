@@ -9,7 +9,8 @@ use crate::{
   Symbol, Type,
 };
 
-struct TypeScriptType<'a>(&'a str);
+// (ident, is_custom_type)
+struct TypeScriptType<'a>(&'a str, bool);
 
 impl std::fmt::Display for TypeScriptType<'_> {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -21,10 +22,17 @@ impl std::fmt::Display for TypeScriptType<'_> {
 impl TypeScriptType<'_> {
   fn into_raw<'a>(&self, ident: &'a str) -> Cow<'a, str> {
     match self {
-      Self("Uint8Array") => {
+      Self("Uint8Array", false) => {
         Cow::Owned(format!("{ident},\n    {ident}.byteLength"))
       }
       _ => Cow::Borrowed(ident),
+    }
+  }
+
+  fn from_raw<'a>(&self, ident: &'a str) -> Option<String> {
+    match self {
+      Self(ty_str, true) => Some(format!("{ty_str}.__constructor({ident})")),
+      _ => None,
     }
   }
 
@@ -39,21 +47,25 @@ impl TypeScriptType<'_> {
 
 impl From<Type> for TypeScriptType<'_> {
   fn from(value: Type) -> Self {
-    Self(match value {
-      Type::Void => "void",
-      Type::Uint8
-      | Type::Uint16
-      | Type::Uint32
-      | Type::Uint64
-      | Type::Int8
-      | Type::Int16
-      | Type::Int32
-      | Type::Int64
-      | Type::Float32
-      | Type::Float64 => "number",
-      Type::Pointer => "Deno.PointerObject | null",
-      Type::Buffer => "Uint8Array",
-    })
+    Self(
+      (match value {
+        Type::Void => "void",
+        Type::Uint8
+        | Type::Uint16
+        | Type::Uint32
+        | Type::Uint64
+        | Type::Int8
+        | Type::Int16
+        | Type::Int32
+        | Type::Int64
+        | Type::Float32
+        | Type::Float64 => "number",
+        Type::Pointer => "Deno.PointerObject | null",
+        Type::Buffer => "Uint8Array",
+        Type::CustomType(name) => name,
+      }),
+      matches!(value, Type::CustomType(_)),
+    )
   }
 }
 
@@ -80,7 +92,7 @@ impl From<Type> for DenoFfiType {
       Type::Int64 => "i64",
       Type::Float32 => "f32",
       Type::Float64 => "f64",
-      Type::Pointer => "pointer",
+      Type::CustomType(..) | Type::Pointer => "pointer",
       Type::Buffer => "buffer",
     };
 
@@ -207,13 +219,19 @@ impl<'a> Codegen<'a> {
             0,
             ('(', ')'),
           )?;
+          let ret_ty = TypeScriptType::from(symbol.return_type);
           writeln!(
             writer,
             ": {} {{",
-            TypeScriptType::from(symbol.return_type)
-              .apply_promise(symbol.non_blocking)
+            ret_ty.apply_promise(symbol.non_blocking)
           )?;
-          write!(writer, "  return symbols.{}", symbol.name)?;
+          let maybe_ret_transform = ret_ty.from_raw("ret");
+          if maybe_ret_transform.is_some() {
+            write!(writer, "  const ret = ")?;
+          } else {
+            write!(writer, "  return ")?;
+          }
+          write!(writer, "symbols.{}", symbol.name)?;
           format_paren(
             writer,
             symbol.parameters,
@@ -233,6 +251,9 @@ impl<'a> Codegen<'a> {
             ('(', ')'),
           )?;
 
+          if let Some(ret_transform) = maybe_ret_transform {
+            write!(writer, "\n  return {ret_transform};")?;
+          }
           writeln!(writer, "\n}}\n")?;
         }
         Inventory::Struct(Struct {
@@ -251,7 +272,7 @@ impl<'a> Codegen<'a> {
 
               writeln!(
                 writer,
-                "  static __constructor(ptr: Deno.PointerObject) {{"
+                "  static __constructor(ptr: Deno.PointerObject | null) {{"
               )?;
               writeln!(
                 writer,
@@ -262,12 +283,23 @@ impl<'a> Codegen<'a> {
               writeln!(writer, "  }}")?;
 
               for method in methods {
-                // Skip the first argument, which is always the pointer to the struct.
-                let parameters = &method.parameters[1..];
-                writeln!(
+                let mut parameters = method.parameters;
+
+                if !method.is_constructor {
+                  // Skip the self ptr argument.
+                  parameters = &method.parameters[1..];
+                }
+
+                let method_name = if method.is_constructor {
+                  "constructor"
+                } else {
+                  &method.name
+                };
+
+                write!(
                   writer,
-                  "\n  {name}({parameters}): {return_type} {{",
-                  name = method.name,
+                  "\n  {name}({parameters})",
+                  name = method_name,
                   parameters = parameters
                     .iter()
                     .enumerate()
@@ -276,16 +308,27 @@ impl<'a> Codegen<'a> {
                     })
                     .collect::<Vec<_>>()
                     .join(", "),
-                  return_type = TypeScriptType::from(method.return_type)
                 )?;
 
-                write!(writer, "    return {}", method.name)?;
+                if !method.is_constructor {
+                  let return_type = TypeScriptType::from(method.return_type);
+                  writeln!(writer, ": {return_type} {{")?;
+                } else {
+                  // Typescript doesn't allow constructors to have a return type.
+                  writeln!(writer, " {{")?;
+                }
+
+                // Apply name mangling.
+                write!(writer, "    return __{}_{}", name, method.name)?;
                 format_paren(
                   writer,
                   parameters,
-                  true,
+                  !method.is_constructor,
                   |writer, parameters| {
-                    writeln!(writer, "      this.ptr,",)?;
+                    if !method.is_constructor {
+                      writeln!(writer, "      this.ptr,",)?;
+                    }
+
                     for (i, parameter) in parameters.iter().enumerate() {
                       let ident = format!("arg{}", i);
                       writeln!(
@@ -294,6 +337,7 @@ impl<'a> Codegen<'a> {
                         TypeScriptType::from(*parameter).into_raw(&ident)
                       )?;
                     }
+
                     Ok(())
                   },
                   4,

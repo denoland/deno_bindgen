@@ -23,6 +23,8 @@ pub enum Type {
   Float64,
   Pointer,
   Buffer,
+
+  CustomType(&'static str),
 }
 
 pub type RawTypes = &'static [Type];
@@ -31,16 +33,19 @@ impl Type {
   pub fn raw(&self) -> RawTypes {
     match self {
       Self::Buffer => &[Self::Pointer, Self::Uint32],
-      Self::Pointer => &[Self::Pointer],
+      Self::Pointer | Self::CustomType(..) => &[Self::Pointer],
       _ => &[],
     }
   }
 
   pub fn is_number(&self) -> bool {
-    !matches!(self, Self::Void | Self::Pointer | Self::Buffer)
+    !matches!(
+      self,
+      Self::Void | Self::Pointer | Self::Buffer | Self::CustomType(_)
+    )
   }
 
-  pub fn apply_transform(
+  pub fn apply_arg_transform(
     &self,
     name: &mut Box<Pat>,
     args: &[Ident],
@@ -55,6 +60,12 @@ impl Type {
           };
         })
       }
+      Self::CustomType(_) => {
+        let pointer = &args[0];
+        Some(quote! {
+          let #name = unsafe { &mut *(#pointer as *mut _) };
+        })
+      }
       Self::Pointer => {
         let pointer = &args[0];
         Some(quote! {
@@ -65,7 +76,23 @@ impl Type {
     }
   }
 
-  pub fn to_ident(&self) -> syn::Type {
+  pub fn apply_ret_transform(
+    &self,
+    name: &mut Box<Pat>,
+    arg: Ident,
+  ) -> Option<proc_macro2::TokenStream> {
+    match self {
+      Self::Pointer => Some(quote! {
+        let #name = #arg as _;
+      }),
+      Self::CustomType(_) => Some(quote! {
+        let #name = Box::into_raw(Box::new(#arg)) as *mut _;
+      }),
+      _ => None,
+    }
+  }
+
+  pub fn to_ident(&self) -> syn::Expr {
     match self {
       Self::Void => parse_quote!(deno_bindgen::Type::Void),
       Self::Uint8 => parse_quote!(deno_bindgen::Type::Uint8),
@@ -80,6 +107,7 @@ impl Type {
       Self::Float64 => parse_quote!(deno_bindgen::Type::Float64),
       Self::Pointer => parse_quote!(deno_bindgen::Type::Pointer),
       Self::Buffer => parse_quote!(deno_bindgen::Type::Buffer),
+      Self::CustomType(s) => parse_quote!(deno_bindgen::Type::CustomType(#s)),
     }
   }
 }
@@ -98,7 +126,7 @@ impl ToTokens for Type {
       Self::Int64 => quote! { i64 },
       Self::Float32 => quote! { f32 },
       Self::Float64 => quote! { f64 },
-      Self::Pointer => quote! { *const () },
+      Self::CustomType(_) | Self::Pointer => quote! { *const () },
       Self::Buffer => quote! { *mut u8 },
     };
 
@@ -113,6 +141,7 @@ pub struct Symbol {
   pub return_type: Type,
   pub non_blocking: bool,
   pub internal: bool,
+  pub is_constructor: bool,
 }
 
 pub struct SymbolBuilder {
@@ -121,6 +150,7 @@ pub struct SymbolBuilder {
   return_type: Type,
   non_blocking: bool,
   internal: bool,
+  is_constructor: bool,
 }
 
 impl SymbolBuilder {
@@ -131,7 +161,12 @@ impl SymbolBuilder {
       return_type: Default::default(),
       non_blocking: false,
       internal: false,
+      is_constructor: false,
     }
+  }
+
+  pub fn set_name(&mut self, name: Ident) {
+    self.name = name;
   }
 
   pub fn push(&mut self, ty: Type) {
@@ -149,6 +184,10 @@ impl SymbolBuilder {
   pub fn internal(&mut self, internal: bool) {
     self.internal = internal;
   }
+
+  pub fn is_constructor(&mut self, is_constructor: bool) {
+    self.is_constructor = is_constructor;
+  }
 }
 
 impl ToTokens for SymbolBuilder {
@@ -162,6 +201,7 @@ impl ToTokens for SymbolBuilder {
     let non_blocking = &self.non_blocking;
     let name = &self.name;
     let internal = &self.internal;
+    let is_constructor = &self.is_constructor;
 
     tokens.extend(quote! {
        deno_bindgen::Symbol {
@@ -170,6 +210,7 @@ impl ToTokens for SymbolBuilder {
           return_type: #return_type,
           non_blocking: #non_blocking,
           internal: #internal,
+          is_constructor: #is_constructor,
        }
     });
   }

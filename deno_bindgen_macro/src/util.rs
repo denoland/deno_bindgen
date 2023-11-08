@@ -5,6 +5,7 @@ pub enum Error {
   UnsupportedType,
   Generics,
   WhereClause,
+  MissingReceiver,
 }
 
 impl std::fmt::Display for Error {
@@ -15,6 +16,7 @@ impl std::fmt::Display for Error {
       Error::UnsupportedType => write!(f, "unsupported type"),
       Error::Generics => write!(f, "generics are not supported"),
       Error::WhereClause => write!(f, "where clauses are not supported"),
+      Error::MissingReceiver => write!(f, "missing receiver"),
     }
   }
 }

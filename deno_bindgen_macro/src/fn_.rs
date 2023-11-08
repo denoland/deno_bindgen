@@ -30,7 +30,12 @@ fn parse_type(ty: &Box<syn::Type>) -> Result<Type> {
           "f64" => return Ok(Type::Float64),
           "usize" => return Ok(Type::Uint64),
           "isize" => return Ok(Type::Int64),
-          _ => return Err(Error::UnsupportedType),
+          ty_str => {
+            return Ok(Type::CustomType(
+              // yeah, don't worry about it.
+              Box::leak(ty_str.to_string().into_boxed_str()),
+            ))
+          }
         }
       }
 
@@ -78,6 +83,7 @@ pub fn handle_inner(
   let mut symbol = SymbolBuilder::new(fn_.sig.ident.clone());
   symbol.non_blocking(attrs.non_blocking);
   symbol.internal(attrs.internal);
+  symbol.is_constructor(attrs.constructor);
 
   // Cannot use enumerate here, there can be multiple raw args per type.
   let mut i = 0;
@@ -109,7 +115,7 @@ pub fn handle_inner(
         }
 
         // Apply the transform.
-        if let Some(transform) = ty.apply_transform(pat, &idents) {
+        if let Some(transform) = ty.apply_arg_transform(pat, &idents) {
           transforms.push(transform);
         }
 
@@ -136,7 +142,8 @@ pub fn handle_inner(
     ReturnType::Type(_, ref mut ty) => {
       let t = parse_type(ty)?;
 
-      if let Some(transform) = t.apply_transform(&mut ret, &[ret_ident.clone()])
+      if let Some(transform) =
+        t.apply_ret_transform(&mut ret, ret_ident.clone())
       {
         ret_transform = transform;
       }

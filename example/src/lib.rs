@@ -43,12 +43,22 @@ fn non_blocking() -> i32 {
 }
 
 #[deno_bindgen]
+fn make_foo() -> Foo {
+  Foo { internal: 42 }
+}
+
+#[deno_bindgen]
 pub struct Foo {
   internal: u32,
 }
 
 #[deno_bindgen]
 impl Foo {
+  #[constructor]
+  fn new() -> Foo {
+    Foo { internal: 42 }
+  }
+  
   fn foo(&self) {}
 
   fn bar(&self, a: u32) -> u32 {

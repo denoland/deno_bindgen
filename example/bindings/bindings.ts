@@ -55,14 +55,24 @@ const { symbols } = dlopen('./target/debug/libdeno_bindgen_test.dylib', {
     result: 'i32',
     nonblocking: true
   },
-  foo: {
+  make_foo: {
+    parameters: [],
+    result: 'pointer',
+    nonblocking: false
+  },
+  __Foo_new: {
+    parameters: [],
+    result: 'pointer',
+    nonblocking: false
+  },
+  __Foo_foo: {
     parameters: [
       'pointer',
     ],
     result: 'void',
     nonblocking: false
   },
-  bar: {
+  __Foo_bar: {
     parameters: [
       'pointer',
       'u32',
@@ -126,19 +136,29 @@ export function non_blocking(): Promise<number> {
   return symbols.non_blocking()
 }
 
-function foo(
+export function make_foo(): Foo {
+  const ret = symbols.make_foo()
+  return Foo.__constructor(ret);
+}
+
+function __Foo_new(): Foo {
+  const ret = symbols.__Foo_new()
+  return Foo.__constructor(ret);
+}
+
+function __Foo_foo(
   arg0: Deno.PointerObject | null,
 ): void {
-  return symbols.foo(
+  return symbols.__Foo_foo(
     arg0,
   )
 }
 
-function bar(
+function __Foo_bar(
   arg0: Deno.PointerObject | null,
   arg1: number,
 ): number {
-  return symbols.bar(
+  return symbols.__Foo_bar(
     arg0,
     arg1,
   )
@@ -147,20 +167,24 @@ function bar(
 export class Foo {
   ptr: Deno.PointerObject | null = null;
 
-  static __constructor(ptr: Deno.PointerObject) {
+  static __constructor(ptr: Deno.PointerObject | null) {
     const self = Object.create(Foo.prototype);
     self.ptr = ptr;
     return self;
   }
 
+  constructor() {
+    return __Foo_new()
+  }
+
   foo(): void {
-    return foo(
+    return __Foo_foo(
       this.ptr,
     )
   }
 
   bar(arg0: number): number {
-    return bar(
+    return __Foo_bar(
       this.ptr,
       arg0,
     )
