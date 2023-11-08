@@ -7,9 +7,10 @@ import {
   strlen,
   non_blocking,
   make_foo,
-  Foo,
+  inc_foo,
+  Foo,  
 } from "./bindings/bindings.ts";
-import { assert, assertEquals } from "https://deno.land/std/testing/asserts.ts";
+import { assert, assertEquals } from "https://deno.land/std@0.178.0/testing/asserts.ts";
 
 Deno.test({
   name: "add#test",
@@ -72,7 +73,36 @@ Deno.test({
 Deno.test({
   name: "Foo#constructor",
   fn() {
-    const foo = new Foo();
+    const foo = new Foo(42);
     assertEquals(foo.bar(1), 43);
+  }
+})
+
+Deno.test({
+  name: "Foo#using",
+  fn() {
+    using foo = new Foo(1);
+    foo.inc();
+    assertEquals(foo.bar(1), 3);
+  }
+});
+
+Deno.test({
+  name: "Foo#using explicit",
+  fn() {
+    using foo = make_foo();
+    
+    // Multiple dipose calls are nop.
+    foo[Symbol.dispose]();
+    foo[Symbol.dispose]();
+  }
+});
+
+Deno.test({
+  name: "inc_foo#test",
+  fn: () => {
+    using foo = new Foo(22);
+    inc_foo(foo);
+    assertEquals(foo.bar(0), 23);
   }
 })

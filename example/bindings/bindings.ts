@@ -60,12 +60,21 @@ const { symbols } = dlopen('./target/debug/libdeno_bindgen_test.dylib', {
     result: 'pointer',
     nonblocking: false
   },
+  inc_foo: {
+    parameters: [
+      'pointer',
+    ],
+    result: 'void',
+    nonblocking: false
+  },
   __Foo_new: {
-    parameters: [],
+    parameters: [
+      'u32',
+    ],
     result: 'pointer',
     nonblocking: false
   },
-  __Foo_foo: {
+  __Foo_inc: {
     parameters: [
       'pointer',
     ],
@@ -78,6 +87,13 @@ const { symbols } = dlopen('./target/debug/libdeno_bindgen_test.dylib', {
       'u32',
     ],
     result: 'u32',
+    nonblocking: false
+  },
+  __Foo_dealloc: {
+    parameters: [
+      'pointer',
+    ],
+    result: 'void',
     nonblocking: false
   },
 });
@@ -141,15 +157,27 @@ export function make_foo(): Foo {
   return Foo.__constructor(ret);
 }
 
-function __Foo_new(): Foo {
-  const ret = symbols.__Foo_new()
+export function inc_foo(
+  arg0: Foo,
+): void {
+  return symbols.inc_foo(
+    arg0.ptr,
+  )
+}
+
+function __Foo_new(
+  arg0: number,
+): Foo {
+  const ret = symbols.__Foo_new(
+    arg0,
+  )
   return Foo.__constructor(ret);
 }
 
-function __Foo_foo(
+function __Foo_inc(
   arg0: Deno.PointerObject | null,
 ): void {
-  return symbols.__Foo_foo(
+  return symbols.__Foo_inc(
     arg0,
   )
 }
@@ -164,6 +192,14 @@ function __Foo_bar(
   )
 }
 
+function __Foo_dealloc(
+  arg0: Deno.PointerObject | null,
+): void {
+  return symbols.__Foo_dealloc(
+    arg0,
+  )
+}
+
 export class Foo {
   ptr: Deno.PointerObject | null = null;
 
@@ -173,12 +209,19 @@ export class Foo {
     return self;
   }
 
-  constructor() {
-    return __Foo_new()
+  [Symbol.dispose]() {
+    this.dealloc();
+    this.ptr = null;
   }
 
-  foo(): void {
-    return __Foo_foo(
+  constructor(arg0: number) {
+    return __Foo_new(
+      arg0,
+    )
+  }
+
+  inc(): void {
+    return __Foo_inc(
       this.ptr,
     )
   }
@@ -187,6 +230,12 @@ export class Foo {
     return __Foo_bar(
       this.ptr,
       arg0,
+    )
+  }
+
+  dealloc(): void {
+    return __Foo_dealloc(
+      this.ptr,
     )
   }
 }

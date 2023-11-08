@@ -48,6 +48,11 @@ fn make_foo() -> Foo {
 }
 
 #[deno_bindgen]
+fn inc_foo(foo: &mut Foo) {
+  foo.internal += 1;
+}
+
+#[deno_bindgen]
 pub struct Foo {
   internal: u32,
 }
@@ -55,11 +60,13 @@ pub struct Foo {
 #[deno_bindgen]
 impl Foo {
   #[constructor]
-  fn new() -> Foo {
-    Foo { internal: 42 }
+  fn new(internal: u32) -> Foo {
+    Foo { internal }
   }
   
-  fn foo(&self) {}
+  fn inc(&mut self) {
+    self.internal += 1;
+  }
 
   fn bar(&self, a: u32) -> u32 {
     self.internal + a

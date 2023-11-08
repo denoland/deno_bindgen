@@ -25,6 +25,7 @@ impl TypeScriptType<'_> {
       Self("Uint8Array", false) => {
         Cow::Owned(format!("{ident},\n    {ident}.byteLength"))
       }
+      Self(_, true) => Cow::Owned(format!("{ident}.ptr")),
       _ => Cow::Borrowed(ident),
     }
   }
@@ -48,7 +49,7 @@ impl TypeScriptType<'_> {
 impl From<Type> for TypeScriptType<'_> {
   fn from(value: Type) -> Self {
     Self(
-      (match value {
+      match value {
         Type::Void => "void",
         Type::Uint8
         | Type::Uint16
@@ -63,7 +64,7 @@ impl From<Type> for TypeScriptType<'_> {
         Type::Pointer => "Deno.PointerObject | null",
         Type::Buffer => "Uint8Array",
         Type::CustomType(name) => name,
-      }),
+      },
       matches!(value, Type::CustomType(_)),
     )
   }
@@ -256,11 +257,7 @@ impl<'a> Codegen<'a> {
           }
           writeln!(writer, "\n}}\n")?;
         }
-        Inventory::Struct(Struct {
-          name,
-          methods,
-          constructor,
-        }) => {
+        Inventory::Struct(Struct { name, methods }) => {
           write!(writer, "export class {name} ")?;
 
           format_paren(
@@ -270,6 +267,7 @@ impl<'a> Codegen<'a> {
             |writer, methods| {
               writeln!(writer, "  ptr: Deno.PointerObject | null = null;\n")?;
 
+              // Internal constructor.
               writeln!(
                 writer,
                 "  static __constructor(ptr: Deno.PointerObject | null) {{"
@@ -280,6 +278,12 @@ impl<'a> Codegen<'a> {
               )?;
               writeln!(writer, "    self.ptr = ptr;")?;
               writeln!(writer, "    return self;")?;
+              writeln!(writer, "  }}\n")?;
+
+              // Dispose method (explicit resource management)
+              writeln!(writer, "  [Symbol.dispose]() {{")?;
+              writeln!(writer, "    this.dealloc();")?;
+              writeln!(writer, "    this.ptr = null;")?;
               writeln!(writer, "  }}")?;
 
               for method in methods {

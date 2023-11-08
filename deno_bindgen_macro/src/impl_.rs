@@ -1,6 +1,6 @@
 use proc_macro2::TokenStream as TokenStream2;
 use quote::format_ident;
-use syn::{parse, parse_quote, punctuated::Punctuated, ImplItemFn, ItemImpl};
+use syn::{parse_quote, punctuated::Punctuated, ImplItemFn, ItemImpl};
 
 use crate::util::{self, Result};
 
@@ -69,7 +69,7 @@ pub fn handle(mut impl_: ItemImpl) -> Result<TokenStream2> {
             }
           }
         } else if is_constructor {
-          let idents = idents_with_skip(inputs.clone(), 1);
+          let idents = idents_with_skip(inputs.clone(), 0);
           parse_quote!(
             #[allow(non_snake_case)]
             fn #mangled_name (#(#inputs),*) #out {
@@ -100,11 +100,31 @@ pub fn handle(mut impl_: ItemImpl) -> Result<TokenStream2> {
     }
   }
 
-  // TODO:
-  // - create a new quoted function for each method and codegen using fn_::handle
-  // where first arg is self ptr and rest are method args
-  // - constructor is a simply special case with no self ptr.
-  // - we also need to be aware of &mut self and Self types.
+  // Generate a dealloc method.
+  {
+    let ident = format_ident!("__{}_dealloc", ty_str);
+    let dispose = parse_quote! {
+      #[allow(non_snake_case)]
+      fn #ident(self_: *mut #ty_str) {
+        if self_.is_null() {
+          return;
+        }
+        unsafe { drop(Box::from_raw(self_)) }
+      }
+    };
+    let (generated, mut sym) = crate::fn_::handle_inner(
+      dispose,
+      crate::FnAttributes {
+        internal: true,
+        ..Default::default()
+      },
+    )?;
+
+    sym.set_name(format_ident!("dealloc"));
+
+    methods.push(generated);
+    syms.push(quote::quote! { #sym });
+  }
 
   Ok(quote::quote! {
     #impl_
@@ -118,7 +138,6 @@ pub fn handle(mut impl_: ItemImpl) -> Result<TokenStream2> {
       pub static _B: deno_bindgen::Inventory = deno_bindgen::Inventory::Struct(
         deno_bindgen::inventory::Struct {
           name: stringify!(#ty_str),
-          constructor: None,
           methods: &[#syms],
         }
       );

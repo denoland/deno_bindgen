@@ -63,6 +63,7 @@ impl Type {
       Self::CustomType(_) => {
         let pointer = &args[0];
         Some(quote! {
+          debug_assert!(!#pointer.is_null());
           let #name = unsafe { &mut *(#pointer as *mut _) };
         })
       }

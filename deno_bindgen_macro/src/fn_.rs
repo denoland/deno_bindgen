@@ -13,6 +13,11 @@ use crate::{
   FnAttributes,
 };
 
+fn custom_type(ty: &str) -> Type {
+  // yeah, don't worry about it.
+  Type::CustomType(Box::leak(ty.to_string().into_boxed_str()))
+}
+
 fn parse_type(ty: &Box<syn::Type>) -> Result<Type> {
   match **ty {
     syn::Type::Path(TypePath { ref path, .. }) => {
@@ -31,10 +36,7 @@ fn parse_type(ty: &Box<syn::Type>) -> Result<Type> {
           "usize" => return Ok(Type::Uint64),
           "isize" => return Ok(Type::Int64),
           ty_str => {
-            return Ok(Type::CustomType(
-              // yeah, don't worry about it.
-              Box::leak(ty_str.to_string().into_boxed_str()),
-            ))
+            return Ok(custom_type(ty_str));
           }
         }
       }
@@ -45,6 +47,13 @@ fn parse_type(ty: &Box<syn::Type>) -> Result<Type> {
       if let syn::Type::Slice(TypeSlice { ref elem, .. }) = *elem.as_ref() {
         if parse_type(elem)?.is_number() {
           return Ok(Type::Buffer);
+        }
+      }
+
+      if let syn::Type::Path(TypePath { ref path, .. }) = *elem.as_ref() {
+        if let Some(ident) = path.get_ident() {
+          let ref ty_str = ident.to_string();
+          return Ok(custom_type(ty_str));
         }
       }
 
