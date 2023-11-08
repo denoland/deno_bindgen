@@ -1,14 +1,27 @@
 use deno_bindgen::deno_bindgen;
 
-// Test "primitives"
 #[deno_bindgen]
 fn add(a: i32, b: i32) -> i32 {
   a + b
 }
 
 #[deno_bindgen]
-fn add2(a: i32, b: i32) -> i32 {
-  a + b
+struct Input {
+  a: i32,
+  b: i32,
+}
+
+#[deno_bindgen]
+impl Input {
+  #[constructor]
+  fn new(a: i32, b: i32) -> Input {
+    Input { a, b }
+  }
+}
+
+#[deno_bindgen]
+fn add2(input: &Input) -> i32 {
+  input.a + input.b
 }
 
 #[deno_bindgen]

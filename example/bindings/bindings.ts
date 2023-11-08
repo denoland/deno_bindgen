@@ -14,10 +14,24 @@ const { symbols } = dlopen('./target/debug/libdeno_bindgen_test.dylib', {
     result: 'i32',
     nonblocking: false
   },
-  add2: {
+  __Input_new: {
     parameters: [
       'i32',
       'i32',
+    ],
+    result: 'pointer',
+    nonblocking: false
+  },
+  __Input_dealloc: {
+    parameters: [
+      'pointer',
+    ],
+    result: 'void',
+    nonblocking: false
+  },
+  add2: {
+    parameters: [
+      'pointer',
     ],
     result: 'i32',
     nonblocking: false
@@ -108,13 +122,58 @@ export function add(
   )
 }
 
-export function add2(
+function __Input_new(
   arg0: number,
   arg1: number,
-): number {
-  return symbols.add2(
+): Input {
+  const ret = symbols.__Input_new(
     arg0,
     arg1,
+  )
+  return Input.__constructor(ret);
+}
+
+function __Input_dealloc(
+  arg0: Deno.PointerObject | null,
+): void {
+  return symbols.__Input_dealloc(
+    arg0,
+  )
+}
+
+export class Input {
+  ptr: Deno.PointerObject | null = null;
+
+  static __constructor(ptr: Deno.PointerObject | null) {
+    const self = Object.create(Input.prototype);
+    self.ptr = ptr;
+    return self;
+  }
+
+  [Symbol.dispose]() {
+    this.dealloc();
+    this.ptr = null;
+  }
+
+  constructor(arg0: number, arg1: number) {
+    return __Input_new(
+      arg0,
+      arg1,
+    )
+  }
+
+  dealloc(): void {
+    return __Input_dealloc(
+      this.ptr,
+    )
+  }
+}
+
+export function add2(
+  arg0: Input,
+): number {
+  return symbols.add2(
+    arg0.ptr,
   )
 }
 
@@ -239,3 +298,4 @@ export class Foo {
     )
   }
 }
+

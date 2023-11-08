@@ -1,22 +1,28 @@
 import {
   add,
   add2,
-  bytelen,
   buf_mut,
+  bytelen,
   cstr,
-  strlen,
-  non_blocking,
-  make_foo,
+  Foo,
   inc_foo,
-  Foo,  
+  Input,
+  make_foo,
+  non_blocking,
+  strlen,
 } from "./bindings/bindings.ts";
-import { assert, assertEquals } from "https://deno.land/std@0.178.0/testing/asserts.ts";
+import {
+  assert,
+  assertEquals,
+} from "https://deno.land/std@0.178.0/testing/asserts.ts";
 
 Deno.test({
   name: "add#test",
   fn: () => {
     assertEquals(add(1, 2), 3);
-    assertEquals(add2(-1, 1), 0);
+
+    using input = new Input(-1, 1);
+    assertEquals(add2(input), 0);
   },
 });
 
@@ -33,7 +39,7 @@ Deno.test({
     const buf = new Uint8Array(1);
     buf_mut(buf);
     assertEquals(buf[0], 99);
-  }
+  },
 });
 
 Deno.test({
@@ -68,15 +74,15 @@ Deno.test({
     assert(foo instanceof Foo);
     assertEquals(foo.bar(1), 43);
   },
-})
+});
 
 Deno.test({
   name: "Foo#constructor",
   fn() {
     const foo = new Foo(42);
     assertEquals(foo.bar(1), 43);
-  }
-})
+  },
+});
 
 Deno.test({
   name: "Foo#using",
@@ -84,18 +90,18 @@ Deno.test({
     using foo = new Foo(1);
     foo.inc();
     assertEquals(foo.bar(1), 3);
-  }
+  },
 });
 
 Deno.test({
   name: "Foo#using explicit",
   fn() {
     using foo = make_foo();
-    
+
     // Multiple dipose calls are nop.
     foo[Symbol.dispose]();
     foo[Symbol.dispose]();
-  }
+  },
 });
 
 Deno.test({
@@ -104,5 +110,5 @@ Deno.test({
     using foo = new Foo(22);
     inc_foo(foo);
     assertEquals(foo.bar(0), 23);
-  }
-})
+  },
+});

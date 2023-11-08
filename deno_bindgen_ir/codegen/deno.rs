@@ -180,7 +180,7 @@ impl<'a> Codegen<'a> {
       allow_empty: bool,
       callback: impl Fn(&mut W, &[T]) -> Result<()>,
       nesting_spaces: usize,
-      delim: (char, char),
+      delim: (char, &str),
     ) -> Result<()> {
       let (start, end) = delim;
       write!(writer, "{start}")?;
@@ -218,7 +218,7 @@ impl<'a> Codegen<'a> {
               Ok(())
             },
             0,
-            ('(', ')'),
+            ('(', ")"),
           )?;
           let ret_ty = TypeScriptType::from(symbol.return_type);
           writeln!(
@@ -249,7 +249,7 @@ impl<'a> Codegen<'a> {
               Ok(())
             },
             2,
-            ('(', ')'),
+            ('(', ")"),
           )?;
 
           if let Some(ret_transform) = maybe_ret_transform {
@@ -345,7 +345,7 @@ impl<'a> Codegen<'a> {
                     Ok(())
                   },
                   4,
-                  ('(', ')'),
+                  ('(', ")"),
                 )?;
 
                 writeln!(writer, "\n  }}")?;
@@ -353,7 +353,7 @@ impl<'a> Codegen<'a> {
               Ok(())
             },
             0,
-            ('{', '}'),
+            ('{', "}\n\n"),
           )?;
         }
       }
