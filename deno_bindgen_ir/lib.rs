@@ -112,6 +112,7 @@ pub struct Symbol {
   pub parameters: &'static [Type],
   pub return_type: Type,
   pub non_blocking: bool,
+  pub internal: bool,
 }
 
 pub struct SymbolBuilder {
@@ -119,6 +120,7 @@ pub struct SymbolBuilder {
   parameters: Vec<Type>,
   return_type: Type,
   non_blocking: bool,
+  internal: bool,
 }
 
 impl SymbolBuilder {
@@ -128,6 +130,7 @@ impl SymbolBuilder {
       parameters: Vec::new(),
       return_type: Default::default(),
       non_blocking: false,
+      internal: false,
     }
   }
 
@@ -142,6 +145,10 @@ impl SymbolBuilder {
   pub fn non_blocking(&mut self, non_blocking: bool) {
     self.non_blocking = non_blocking;
   }
+
+  pub fn internal(&mut self, internal: bool) {
+    self.internal = internal;
+  }
 }
 
 impl ToTokens for SymbolBuilder {
@@ -154,6 +161,7 @@ impl ToTokens for SymbolBuilder {
     let return_type = &self.return_type.to_ident();
     let non_blocking = &self.non_blocking;
     let name = &self.name;
+    let internal = &self.internal;
 
     tokens.extend(quote! {
        deno_bindgen::Symbol {
@@ -161,6 +169,7 @@ impl ToTokens for SymbolBuilder {
           parameters: &[#(#parameters),*],
           return_type: #return_type,
           non_blocking: #non_blocking,
+          internal: #internal,
        }
     });
   }

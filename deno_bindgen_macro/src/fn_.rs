@@ -51,7 +51,10 @@ fn parse_type(ty: &Box<syn::Type>) -> Result<Type> {
   }
 }
 
-pub fn handle(fn_: ItemFn, attrs: FnAttributes) -> Result<TokenStream2> {
+pub fn handle_inner(
+  fn_: ItemFn,
+  attrs: FnAttributes,
+) -> Result<(TokenStream2, SymbolBuilder)> {
   if fn_.sig.asyncness.is_some() {
     return Err(Error::Asyncness);
   }
@@ -74,6 +77,7 @@ pub fn handle(fn_: ItemFn, attrs: FnAttributes) -> Result<TokenStream2> {
 
   let mut symbol = SymbolBuilder::new(fn_.sig.ident.clone());
   symbol.non_blocking(attrs.non_blocking);
+  symbol.internal(attrs.internal);
 
   // Cannot use enumerate here, there can be multiple raw args per type.
   let mut i = 0;
@@ -168,13 +172,21 @@ pub fn handle(fn_: ItemFn, attrs: FnAttributes) -> Result<TokenStream2> {
       #ret_ident
   });
 
-  Ok(quote::quote! {
-      const _: () = {
-        #[deno_bindgen::linkme::distributed_slice(deno_bindgen::INVENTORY)]
-        pub static _A: deno_bindgen::Inventory = deno_bindgen::Inventory::Symbol(#symbol);
-      };
+  Ok((
+    quote::quote! {
+        const _: () = {
+          #[deno_bindgen::linkme::distributed_slice(deno_bindgen::INVENTORY)]
+          pub static _A: deno_bindgen::Inventory = deno_bindgen::Inventory::Symbol(#symbol);
+        };
 
-      #[no_mangle]
-      #ffi_fn
-  })
+        #[no_mangle]
+        #ffi_fn
+    },
+    symbol,
+  ))
+}
+
+pub fn handle(fn_: ItemFn, attrs: FnAttributes) -> Result<TokenStream2> {
+  let (ffi_fn, _) = handle_inner(fn_, attrs)?;
+  Ok(ffi_fn)
 }

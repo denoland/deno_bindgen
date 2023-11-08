@@ -44,12 +44,14 @@ fn non_blocking() -> i32 {
 
 #[deno_bindgen]
 pub struct Foo {
-  internal: i32,
+  internal: u32,
 }
 
 #[deno_bindgen]
 impl Foo {
-  fn new() -> Self {
-    Self { internal: 42 }
+  fn foo(&self) {}
+
+  fn bar(&self, a: u32) -> u32 {
+    self.internal + a
   }
 }

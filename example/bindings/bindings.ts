@@ -55,6 +55,21 @@ const { symbols } = dlopen('./target/debug/libdeno_bindgen_test.dylib', {
     result: 'i32',
     nonblocking: true
   },
+  foo: {
+    parameters: [
+      'pointer',
+    ],
+    result: 'void',
+    nonblocking: false
+  },
+  bar: {
+    parameters: [
+      'pointer',
+      'u32',
+    ],
+    result: 'u32',
+    nonblocking: false
+  },
 });
 
 export function add(
@@ -111,3 +126,43 @@ export function non_blocking(): Promise<number> {
   return symbols.non_blocking()
 }
 
+function foo(
+  arg0: Deno.PointerObject | null,
+): void {
+  return symbols.foo(
+    arg0,
+  )
+}
+
+function bar(
+  arg0: Deno.PointerObject | null,
+  arg1: number,
+): number {
+  return symbols.bar(
+    arg0,
+    arg1,
+  )
+}
+
+export class Foo {
+  ptr: Deno.PointerObject | null = null;
+
+  static __constructor(ptr: Deno.PointerObject) {
+    const self = Object.create(Foo.prototype);
+    self.ptr = ptr;
+    return self;
+  }
+
+  foo(): void {
+    return foo(
+      this.ptr,
+    )
+  }
+
+  bar(arg0: number): number {
+    return bar(
+      this.ptr,
+      arg0,
+    )
+  }
+}

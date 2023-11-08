@@ -3,10 +3,11 @@ use std::{
   io::{Result, Write},
 };
 
-use syn::token::In;
-
 use super::Generator;
-use crate::{inventory::Inventory, Symbol, Type};
+use crate::{
+  inventory::{Inventory, Struct},
+  Symbol, Type,
+};
 
 struct TypeScriptType<'a>(&'a str);
 
@@ -163,16 +164,19 @@ impl<'a> Codegen<'a> {
     fn format_paren<W: Write, T>(
       writer: &mut W,
       items: &[T],
+      allow_empty: bool,
       callback: impl Fn(&mut W, &[T]) -> Result<()>,
       nesting_spaces: usize,
+      delim: (char, char),
     ) -> Result<()> {
-      write!(writer, "(")?;
-      if items.len() > 0 {
+      let (start, end) = delim;
+      write!(writer, "{start}")?;
+      if items.len() > 0 || allow_empty {
         write!(writer, "\n")?;
         callback(writer, items)?;
-        write!(writer, "{:indent$})", "", indent = nesting_spaces)?;
+        write!(writer, "{:indent$}{end}", "", indent = nesting_spaces)?;
       } else {
-        write!(writer, ")")?;
+        write!(writer, "{end}")?;
       }
 
       Ok(())
@@ -181,10 +185,14 @@ impl<'a> Codegen<'a> {
     for symbol in self.symbols {
       match symbol {
         Inventory::Symbol(symbol) => {
-          write!(writer, "export function {}", symbol.name)?;
+          if !symbol.internal {
+            write!(writer, "export ")?;
+          }
+          write!(writer, "function {}", symbol.name)?;
           format_paren(
             writer,
             symbol.parameters,
+            false,
             |writer, parameters| {
               for (i, parameter) in parameters.iter().enumerate() {
                 writeln!(
@@ -197,6 +205,7 @@ impl<'a> Codegen<'a> {
               Ok(())
             },
             0,
+            ('(', ')'),
           )?;
           writeln!(
             writer,
@@ -208,6 +217,7 @@ impl<'a> Codegen<'a> {
           format_paren(
             writer,
             symbol.parameters,
+            false,
             |writer, parameters| {
               for (i, parameter) in parameters.iter().enumerate() {
                 let ident = format!("arg{}", i);
@@ -220,11 +230,84 @@ impl<'a> Codegen<'a> {
               Ok(())
             },
             2,
+            ('(', ')'),
           )?;
 
           writeln!(writer, "\n}}\n")?;
         }
-        _ => {}
+        Inventory::Struct(Struct {
+          name,
+          methods,
+          constructor,
+        }) => {
+          write!(writer, "export class {name} ")?;
+
+          format_paren(
+            writer,
+            &methods,
+            false,
+            |writer, methods| {
+              writeln!(writer, "  ptr: Deno.PointerObject | null = null;\n")?;
+
+              writeln!(
+                writer,
+                "  static __constructor(ptr: Deno.PointerObject) {{"
+              )?;
+              writeln!(
+                writer,
+                "    const self = Object.create({name}.prototype);"
+              )?;
+              writeln!(writer, "    self.ptr = ptr;")?;
+              writeln!(writer, "    return self;")?;
+              writeln!(writer, "  }}")?;
+
+              for method in methods {
+                // Skip the first argument, which is always the pointer to the struct.
+                let parameters = &method.parameters[1..];
+                writeln!(
+                  writer,
+                  "\n  {name}({parameters}): {return_type} {{",
+                  name = method.name,
+                  parameters = parameters
+                    .iter()
+                    .enumerate()
+                    .map(|(i, parameter)| {
+                      format!("arg{}: {}", i, TypeScriptType::from(*parameter))
+                    })
+                    .collect::<Vec<_>>()
+                    .join(", "),
+                  return_type = TypeScriptType::from(method.return_type)
+                )?;
+
+                write!(writer, "    return {}", method.name)?;
+                format_paren(
+                  writer,
+                  parameters,
+                  true,
+                  |writer, parameters| {
+                    writeln!(writer, "      this.ptr,",)?;
+                    for (i, parameter) in parameters.iter().enumerate() {
+                      let ident = format!("arg{}", i);
+                      writeln!(
+                        writer,
+                        "      {},",
+                        TypeScriptType::from(*parameter).into_raw(&ident)
+                      )?;
+                    }
+                    Ok(())
+                  },
+                  4,
+                  ('(', ')'),
+                )?;
+
+                writeln!(writer, "\n  }}")?;
+              }
+              Ok(())
+            },
+            0,
+            ('{', '}'),
+          )?;
+        }
       }
     }
 
