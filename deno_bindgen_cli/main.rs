@@ -24,16 +24,16 @@ fn main() -> std::io::Result<()> {
   let opt = Opt::from_args();
 
   let cwd = std::env::current_dir().unwrap();
-  let Artifact {
-    path,
-    manifest_path,
-  } = cargo::Build::new().release(opt.release).build(&cwd)?;
+  let Artifact { path, .. } =
+    cargo::Build::new().release(opt.release).build(&cwd)?;
 
-  let name = cargo::metadata(&manifest_path)?;
+  let name = cargo::metadata()?;
   println!("Initializing {name}");
 
   unsafe {
     dlfcn::load_and_init(&PathBuf::from(path), opt.out, opt.lazy_init)?
   };
+
+  println!("Ready {name}");
   Ok(())
 }

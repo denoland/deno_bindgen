@@ -41,11 +41,12 @@ impl Build {
     let output = cmd.output()?;
     if status.success() {
       let reader = std::io::BufReader::new(output.stdout.as_slice());
+      let mut artifacts = vec![];
       for message in cargo_metadata::Message::parse_stream(reader) {
         match message.unwrap() {
           cargo_metadata::Message::CompilerArtifact(artifact) => {
             if artifact.target.kind.contains(&"cdylib".to_string()) {
-              return Ok(Artifact {
+              artifacts.push(Artifact {
                 path: PathBuf::from(artifact.filenames[0].to_string()),
                 manifest_path: PathBuf::from(
                   artifact.manifest_path.to_string(),
@@ -55,6 +56,12 @@ impl Build {
           }
           _ => {}
         }
+      }
+
+      // TODO: Fix. Not an ideal way to get the artifact of the desired crate, but it
+      // works for most case.
+      if let Some(artifact) = artifacts.pop() {
+        return Ok(artifact);
       }
 
       Err(std::io::Error::new(
@@ -72,9 +79,8 @@ impl Build {
   }
 }
 
-pub fn metadata(path: &Path) -> Result<String> {
+pub fn metadata() -> Result<String> {
   let metadata = cargo_metadata::MetadataCommand::new()
-    .manifest_path(path)
     .exec()
     .map_err(|e| {
       println!("failed to execute `cargo metadata`: {}", e);

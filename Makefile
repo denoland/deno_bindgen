@@ -1,6 +1,6 @@
 fmt:
 	cargo fmt
-	deno fmt --ignore=target/,e2e_test/target/,e2e_test/bindings/
+	deno fmt --ignore=target/,e2e_test/target/,e2e_test/bindings/,example/target/
 
 build:
 	cargo build
