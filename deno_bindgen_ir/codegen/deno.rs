@@ -1,6 +1,7 @@
 use std::{
   borrow::Cow,
   io::{Result, Write},
+  path::Path,
 };
 
 use super::Generator;
@@ -110,22 +111,68 @@ impl From<Type> for DenoFfiType {
 
 pub struct Codegen<'a> {
   symbols: &'a [Inventory],
+  target: &'a Path,
+  lazy: bool,
 }
 
 impl<'a> Codegen<'a> {
-  pub fn new(symbols: &'a [Inventory]) -> Self {
-    Self { symbols }
+  pub fn new(symbols: &'a [Inventory], target: &'a Path, lazy: bool) -> Self {
+    Self {
+      symbols,
+      target,
+      lazy,
+    }
   }
 
   fn dlopen<W: Write>(&self, writer: &mut W) -> Result<()> {
+    if self.lazy {
+      return self.lazy_dlopen(writer);
+    }
     writeln!(writer, "const {{ dlopen }} = Deno;\n")?;
-
-    writeln!(
-      writer,
-      "const {{ symbols }} = dlopen('./target/debug/libdeno_bindgen_test.dylib', {{"
-    )?;
+    let target = self.target.to_string_lossy();
+    writeln!(writer, "const {{ symbols }} = dlopen('{target}', {{")?;
     self.write_symbols(writer)?;
     writeln!(writer, "}});\n")?;
+
+    Ok(())
+  }
+
+  fn lazy_dlopen<W: Write>(&self, writer: &mut W) -> Result<()> {
+    writeln!(writer, "let symbols: any;\n")?;
+    let target = self.target.to_string_lossy();
+    writeln!(writer, "export function load(path: string = '{target}') {{")?;
+    writeln!(writer, "  const {{ dlopen }} = Deno;\n")?;
+    writeln!(writer, "  const {{ symbols: symbols_ }} = dlopen(path, {{")?;
+    struct WrapperWriter<'a, W: Write> {
+      writer: &'a mut W,
+      indent: usize,
+    }
+    impl<W: Write> Write for WrapperWriter<'_, W> {
+      fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        // Find newlines and indent them.
+        for byte in buf {
+          if *byte == b'\n' {
+            self.writer.write_all(b"\n")?;
+            self.writer.write_all(&vec![b' '; self.indent])?;
+          } else {
+            self.writer.write_all(&[*byte])?;
+          }
+        }
+
+        Ok(buf.len())
+      }
+
+      fn flush(&mut self) -> std::io::Result<()> {
+        self.writer.flush()
+      }
+    }
+    write!(writer, "  ")?;
+    let mut wr = WrapperWriter { writer, indent: 2 };
+    self.write_symbols(&mut wr)?;
+    writeln!(wr, "}});\n")?;
+    write!(wr, "symbols = symbols_;")?;
+    writeln!(writer, "\n}}\n")?;
+
     Ok(())
   }
 

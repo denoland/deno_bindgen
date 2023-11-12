@@ -71,7 +71,9 @@ import { Foo } from "@ffi/example";
 }
 ```
 
-High performance. Codegen tries its best to take the fastest possible path for all bindings as-if they were written by hand to properly leverage the power of the Deno FFI JIT calls.
+High performance. Codegen tries its best to take the fastest possible path for
+all bindings as-if they were written by hand to properly leverage the power of
+the Deno FFI JIT calls.
 
 ```
 > make bench

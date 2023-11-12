@@ -7,6 +7,8 @@ mod deno;
 pub struct Options {
   pub target: Target,
   pub out: Option<PathBuf>,
+  pub local_dylib_path: PathBuf,
+  pub lazy_init: bool,
 }
 
 pub enum Target {
@@ -22,7 +24,9 @@ pub fn generate(
   opt: Options,
 ) -> std::io::Result<()> {
   let mut codegen = match opt.target {
-    Target::Deno => deno::Codegen::new(symbols),
+    Target::Deno => {
+      deno::Codegen::new(symbols, &opt.local_dylib_path, opt.lazy_init)
+    }
   };
 
   if let Some(out) = opt.out {

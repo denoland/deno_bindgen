@@ -10,6 +10,7 @@ struct Api {
 pub unsafe fn load_and_init(
   path: &Path,
   out: Option<PathBuf>,
+  lazy_init: bool,
 ) -> std::io::Result<()> {
   let cont: Container<Api> = Container::load(path).map_err(|e| {
     std::io::Error::new(
@@ -21,6 +22,8 @@ pub unsafe fn load_and_init(
   cont.init_deno_bindgen(deno_bindgen_ir::codegen::Options {
     target: deno_bindgen_ir::codegen::Target::Deno,
     out,
+    local_dylib_path: path.to_path_buf(),
+    lazy_init,
   });
 
   Ok(())
