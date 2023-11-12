@@ -1,13 +1,13 @@
 fmt:
 	cargo fmt
-	deno fmt --ignore=target/,example/target/,example/bindings/
+	deno fmt --ignore=target/,e2e_test/target/,e2e_test/bindings/
 
 build:
 	cargo build
 
 test: build
 	cargo test
-	cd example && ../target/debug/deno_bindgen -o bindings/mod.ts && deno test -A --unstable
+	cd e2e_test && ../target/debug/deno_bindgen -o bindings/mod.ts && deno test -A --unstable
 
 bench: build
-	cd example && ../target/debug/deno_bindgen -o bindings/mod.ts && deno bench -A --unstable bench.js
+	cd e2e_test && ../target/debug/deno_bindgen -o bindings/mod.ts && deno bench -A --unstable bench.js

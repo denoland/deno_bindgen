@@ -6,4 +6,4 @@ members = [
   "deno_bindgen_ir",
   "deno_bindgen_cli"
 ]
-exclude = ["example/"]
+exclude = ["e2e_test/"]

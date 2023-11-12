@@ -1,5 +1,5 @@
 [package]
-name = "deno_bindgen_test"
+name = "deno_bindgen_e2e"
 version = "0.1.0"
 edition = "2018"
 
@@ -9,5 +9,5 @@ serde = { version = "1", features = ["derive"] }
 linkme = "0.3"
 
 [lib]
-name = "deno_bindgen_test"
+name = "deno_bindgen_e2e"
 crate-type = ["cdylib"]
