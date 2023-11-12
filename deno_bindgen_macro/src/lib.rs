@@ -1,11 +1,10 @@
 // Copyright 2020-2021 the Deno authors. All rights reserved. MIT license.
 
-use deno_bindgen_ir::Symbol;
 use proc_macro::TokenStream;
-use quote::{format_ident, quote};
-use syn::{
-  meta::ParseNestedMeta, parse2, parse_macro_input, parse_quote, Item, ItemFn,
-};
+use syn::meta::ParseNestedMeta;
+use syn::parse2;
+use syn::parse_macro_input;
+use syn::Item;
 
 mod fn_;
 mod impl_;

@@ -1,8 +1,12 @@
 use proc_macro2::TokenStream as TokenStream2;
 use quote::format_ident;
-use syn::{parse_quote, punctuated::Punctuated, ImplItemFn, ItemImpl};
+use syn::parse_quote;
+use syn::punctuated::Punctuated;
+use syn::ImplItemFn;
+use syn::ItemImpl;
 
-use crate::util::{self, Result};
+use crate::util::Result;
+use crate::util::{self};
 
 pub fn handle(mut impl_: ItemImpl) -> Result<TokenStream2> {
   if impl_.generics.params.first().is_some() {

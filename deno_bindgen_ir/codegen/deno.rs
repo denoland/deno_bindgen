@@ -1,14 +1,12 @@
-use std::{
-  borrow::Cow,
-  io::{Result, Write},
-  path::Path,
-};
+use std::borrow::Cow;
+use std::io::Result;
+use std::io::Write;
+use std::path::Path;
 
 use super::Generator;
-use crate::{
-  inventory::{Inventory, Struct},
-  Symbol, Type,
-};
+use crate::inventory::Inventory;
+use crate::inventory::Struct;
+use crate::Type;
 
 // (ident, is_custom_type)
 struct TypeScriptType<'a>(&'a str, bool);

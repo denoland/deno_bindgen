@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::{inventory::Inventory, Symbol};
+use crate::inventory::Inventory;
 
 mod deno;
 

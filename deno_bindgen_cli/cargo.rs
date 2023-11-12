@@ -1,8 +1,8 @@
-use std::{
-  io::Result,
-  path::{Path, PathBuf},
-  process::{Command, Stdio},
-};
+use std::io::Result;
+use std::path::Path;
+use std::path::PathBuf;
+use std::process::Command;
+use std::process::Stdio;
 
 pub struct Artifact {
   pub path: PathBuf,

@@ -1,17 +1,24 @@
-use std::path::Path;
+use deno_bindgen_ir::SymbolBuilder;
+use deno_bindgen_ir::Type;
+use proc_macro2::Ident;
+use proc_macro2::Span;
+use proc_macro2::TokenStream as TokenStream2;
+use syn::parse_quote;
+use syn::punctuated::Punctuated;
+use syn::spanned::Spanned;
+use syn::token::Comma;
+use syn::FnArg;
+use syn::ItemFn;
+use syn::PatType;
+use syn::ReturnType;
+use syn::TypePath;
+use syn::TypePtr;
+use syn::TypeReference;
+use syn::TypeSlice;
 
-use deno_bindgen_ir::{Symbol, SymbolBuilder, Type};
-use proc_macro2::{Ident, Span, TokenStream as TokenStream2};
-use quote::quote;
-use syn::{
-  parse_quote, punctuated::Punctuated, spanned::Spanned, token::Comma, FnArg,
-  ItemFn, PatType, ReturnType, TypePath, TypePtr, TypeReference, TypeSlice,
-};
-
-use crate::{
-  util::{Error, Result},
-  FnAttributes,
-};
+use crate::util::Error;
+use crate::util::Result;
+use crate::FnAttributes;
 
 fn custom_type(ty: &str) -> Type {
   // yeah, don't worry about it.

@@ -10,7 +10,7 @@ import {
   make_foo,
   non_blocking,
   strlen,
-} from "./bindings/bindings.ts";
+} from "./bindings/mod.ts";
 import {
   assert,
   assertEquals,

@@ -86,3 +86,25 @@ benchmark      time (avg)        iter/s             (min … max)       p75     
 add             6.88 ns/iter 145,297,626.6    (6.78 ns … 13.33 ns)   6.81 ns   8.22 ns    9.4 ns
 bytelen         8.05 ns/iter 124,278,976.3     (7.81 ns … 18.1 ns)   8.09 ns  10.39 ns  11.64 ns
 ```
+
+## Publishing
+
+By default, deno_bindgen generates bindings for local development. To publish a
+cross-platform binding, you can use the `--lazy-init` flag, this gives you full
+control on how you want to host pre-built shared libraries and pull them in at
+runtime.
+
+```bash
+deno_bindgen --release --lazy-init
+```
+
+```typescript
+import { add, load } from "./example/mod.ts";
+import { cache } from "https://deno.land/x/cache/mod.ts";
+
+// Download the shared library from a CDN
+const file = await cache("https://example.com/example.so");
+load(file.path);
+
+add(1, 2);
+```

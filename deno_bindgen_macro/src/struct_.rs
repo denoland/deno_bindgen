@@ -1,7 +1,8 @@
 use proc_macro2::TokenStream as TokenStream2;
 use syn::ItemStruct;
 
-use crate::util::{self, Result};
+use crate::util::Result;
+use crate::util::{self};
 
 pub fn handle(struct_: ItemStruct) -> Result<TokenStream2> {
   if struct_.generics.params.first().is_some() {

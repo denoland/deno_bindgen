@@ -1,6 +1,8 @@
 use proc_macro2::Ident;
-use quote::{quote, ToTokens};
-use syn::{parse_quote, Pat};
+use quote::quote;
+use quote::ToTokens;
+use syn::parse_quote;
+use syn::Pat;
 
 pub mod codegen;
 pub mod inventory;
