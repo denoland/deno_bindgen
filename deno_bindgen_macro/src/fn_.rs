@@ -72,7 +72,7 @@ fn parse_type(ty: &Box<syn::Type>) -> Result<Type> {
   }
 }
 
-pub fn handle_inner(
+pub(crate) fn handle_inner(
   fn_: ItemFn,
   attrs: FnAttributes,
 ) -> Result<(TokenStream2, SymbolBuilder)> {
@@ -209,7 +209,7 @@ pub fn handle_inner(
   ))
 }
 
-pub fn handle(fn_: ItemFn, attrs: FnAttributes) -> Result<TokenStream2> {
+pub(crate) fn handle(fn_: ItemFn, attrs: FnAttributes) -> Result<TokenStream2> {
   let (ffi_fn, _) = handle_inner(fn_, attrs)?;
   Ok(ffi_fn)
 }

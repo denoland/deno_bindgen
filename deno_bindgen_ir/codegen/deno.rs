@@ -127,8 +127,7 @@ impl<'a> Codegen<'a> {
       return self.lazy_dlopen(writer);
     }
     writeln!(writer, "const {{ dlopen }} = Deno;\n")?;
-    let target = self.target.to_string_lossy();
-    writeln!(writer, "const {{ symbols }} = dlopen('{target}', {{")?;
+    writeln!(writer, "const {{ symbols }} = dlopen({:?}, {{", self.target)?;
     self.write_symbols(writer)?;
     writeln!(writer, "}});\n")?;
 
@@ -137,8 +136,11 @@ impl<'a> Codegen<'a> {
 
   fn lazy_dlopen<W: Write>(&self, writer: &mut W) -> Result<()> {
     writeln!(writer, "let symbols: any;\n")?;
-    let target = self.target.to_string_lossy();
-    writeln!(writer, "export function load(path: string = '{target}') {{")?;
+    writeln!(
+      writer,
+      "export function load(path: string = {:?}) {{",
+      self.target
+    )?;
     writeln!(writer, "  const {{ dlopen }} = Deno;\n")?;
     writeln!(writer, "  const {{ symbols: symbols_ }} = dlopen(path, {{")?;
     struct WrapperWriter<'a, W: Write> {

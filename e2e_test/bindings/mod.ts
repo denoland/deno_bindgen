@@ -5,7 +5,7 @@
 
 const { dlopen } = Deno;
 
-const { symbols } = dlopen('target/debug/libdeno_bindgen_e2e.dylib', {
+const { symbols } = dlopen("/Users/divy/gh/deno_bindgen/e2e_test/target/debug/libdeno_bindgen_e2e.dylib", {
   add: {
     parameters: [
       'i32',
