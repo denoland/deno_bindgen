@@ -30,9 +30,14 @@ fn main() -> std::io::Result<()> {
   let name = cargo::metadata()?;
   println!("Initializing {name}");
 
-  unsafe {
-    dlfcn::load_and_init(&PathBuf::from(path), opt.out, opt.lazy_init)?
-  };
+  let path = PathBuf::from(path);
+  // https://github.com/denoland/deno/issues/21172
+  #[cfg(target_os = "windows")]
+  let path = path
+    .strip_prefix(&cwd)
+    .expect("path is not a prefix of cwd");
+
+  unsafe { dlfcn::load_and_init(&path, opt.out, opt.lazy_init)? };
 
   println!("Ready {name}");
   Ok(())
