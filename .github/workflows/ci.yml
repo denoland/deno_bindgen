@@ -36,18 +36,18 @@ jobs:
       - name: Build
         run: cargo build --locked --release
       - name: Test (debug)
-        working-directory: ./e2e
+        working-directory: ./e2e_test
         run: |
           ../target/release/deno_bindgen -o bindings/mod.ts
           deno test -A --unstable
       - name: Test (release)
-        working-directory: ./e2e
+        working-directory: ./e2e_test
         shell: bash
         run: |
           rm -rf target
           ../target/release/deno_bindgen -o bindings/mod.ts --release
           deno test -A --unstable
       - name: Bench
-        working-directory: ./e2e
+        working-directory: ./e2e_test
         shell: bash
         run: deno bench -A --unstable
