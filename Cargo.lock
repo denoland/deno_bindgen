@@ -111,7 +111,7 @@ dependencies = [
 
 [[package]]
 name = "deno_bindgen"
-version = "0.8.1"
+version = "0.9.0-alpha"
 dependencies = [
  "deno_bindgen_ir",
  "deno_bindgen_macro",
@@ -142,7 +142,7 @@ dependencies = [
 
 [[package]]
 name = "deno_bindgen_macro"
-version = "0.8.1"
+version = "0.9.0-alpha"
 dependencies = [
  "Inflector",
  "deno_bindgen_ir",

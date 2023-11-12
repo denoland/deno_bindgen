@@ -2,6 +2,10 @@
 
 <img align="right" src="./assets/illustration.png" width=200>
 
+[![ci](https://github.com/denoland/deno_bindgen/workflows/ci/badge.svg?branch=main)](https://github.com/denoland/deno_bindgen/actions)
+[![crates](https://img.shields.io/crates/v/deno_bindgen.svg)](https://crates.io/crates/deno_bindgen)
+[![docs](https://docs.rs/deno_bindgen/badge.svg)](https://docs.rs/deno_bindgen)
+
 This tool aims to simplify glue code generation for Deno FFI libraries written
 in Rust.
 

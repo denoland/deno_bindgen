@@ -16,7 +16,8 @@ name = "deno_bindgen"
 path = "./main.rs"
 
 [dependencies]
-structopt = "0.3.26"
 deno_bindgen_ir = { path = "../deno_bindgen_ir", version = "0.1.0" }
+
+structopt = "0.3.26"
 dlopen2 = "0.6.1"
 cargo_metadata = "0.18.1"
