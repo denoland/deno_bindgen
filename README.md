@@ -28,7 +28,7 @@ fn add(a: u32, b: u32) -> u32 {
 Use the exported functions directly in ESM with TypeScript typings
 
 ```typescript
-import { add } from "@ffi/example";
+import { add } from "./bindings/mod.ts";
 
 add(1, 2);
 ```

@@ -45,3 +45,35 @@ pub fn deno_bindgen(args: TokenStream, input: TokenStream) -> TokenStream {
     _ => panic!("only functions are supported"),
   }
 }
+
+#[cfg(test)]
+mod tests {
+  use std::path::PathBuf;
+
+  #[testing_macros::fixture("tests/fn/*.test.rs")]
+  fn test_codegen_fn(input: PathBuf) {
+    let update_expected = std::env::var("UPDATE_EXPECTED").is_ok();
+
+    let source =
+      std::fs::read_to_string(&input).expect("failed to read test case");
+    let item_fn = syn::parse_str::<syn::ItemFn>(&source)
+      .expect("failed to parse test case");
+
+    let tokens = crate::fn_::handle(item_fn, Default::default()).unwrap();
+    let tree = syn::parse2(tokens).unwrap();
+    let actual = prettyplease::unparse(&tree);
+
+    let expected_out = input.with_extension("out.rs");
+    if update_expected {
+      std::fs::write(expected_out, actual)
+        .expect("Failed to write expectation file");
+    } else {
+      let expected = std::fs::read_to_string(expected_out)
+        .expect("Failed to read expectation file");
+      assert_eq!(
+        expected, actual,
+        "Failed to match expectation. Use UPDATE_EXPECTED=1."
+      );
+    }
+  }
+}

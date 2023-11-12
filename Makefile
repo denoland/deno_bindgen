@@ -6,6 +6,7 @@ build:
 	cargo build
 
 test: build
+	cargo test
 	cd example && ../target/debug/deno_bindgen -o bindings/mod.ts && deno test -A --unstable
 
 bench: build

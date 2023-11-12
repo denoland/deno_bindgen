@@ -1,0 +1,12 @@
+error[E0277]: the trait bound `Foo: BindgenType` is not satisfied
+ --> tests/compile_fail/impl_registration.rs:8:6
+  |
+8 | impl Foo {
+  |      ^^^ the trait `BindgenType` is not implemented for `Foo`
+  |
+note: required by a bound in `_assert_impl`
+ --> tests/compile_fail/impl_registration.rs:7:1
+  |
+7 | #[deno_bindgen]
+  | ^^^^^^^^^^^^^^^ required by this bound in `_assert_impl`
+  = note: this error originates in the attribute macro `deno_bindgen` (in Nightly builds, run with -Z macro-backtrace for more info)
