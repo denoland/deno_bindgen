@@ -1,8 +1,8 @@
 [package]
-name = "deno_bindgen_macro"
-version = "0.8.1"
+name = "deno_bindgen_ir"
+version = "0.1.0"
 description = "This tool aims to simplify glue code generation for Deno FFI libraries written in Rust."
-documentation = "https://docs.rs/deno_bindgen_macro"
+documentation = "https://docs.rs/deno_bindgen"
 homepage = "https://github.com/denoland/deno_bindgen"
 repository = "https://github.com/denoland/deno_bindgen"
 keywords = ["deno", "ffi", "bindgen", "bindings", "macro"]
@@ -12,17 +12,9 @@ license = "MIT"
 edition = "2021"
 
 [lib]
-proc-macro = true
+path = "./lib.rs"
 
 [dependencies]
-proc-macro2 = "1.0"
 quote = "1.0"
+proc-macro2 = "1.0"
 syn = { version = "2.0", features = ["full", "extra-traits"] }
-serde = { version = "1.0.59", features = ["derive"] }
-serde_json = "1.0.59"
-Inflector = "0.11.4"
-deno_bindgen_ir = { path = "../deno_bindgen_ir", version = "0.1.0" }
-
-[dev-dependencies]
-prettyplease = "0.2.15"
-testing_macros = "0.2.11"

@@ -1,15 +1,13 @@
 [package]
-name = "usb_example"
+name = "deno_bindgen_e2e"
 version = "0.1.0"
 edition = "2018"
 
 [dependencies]
 deno_bindgen = { path = "../deno_bindgen/" }
-webusb = "0.5.0"
 serde = { version = "1", features = ["derive"] }
 linkme = "0.3"
 
 [lib]
-name = "deno_usb"
-path = "./lib.rs"
+name = "deno_bindgen_e2e"
 crate-type = ["cdylib"]

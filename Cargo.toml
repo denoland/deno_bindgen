@@ -1,6 +1,9 @@
 [workspace]
+resolver = "2"
 members = [
   "deno_bindgen_macro",
   "deno_bindgen",
+  "deno_bindgen_ir",
+  "deno_bindgen_cli"
 ]
-exclude = ["example/"]
+exclude = ["e2e_test/", "example/"]

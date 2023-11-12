@@ -1,199 +1,110 @@
-## `deno_bindgen`
+# `deno_bindgen`
 
-<img src="./assets/illustration.png" width=200>
+<img align="right" src="./assets/illustration.png" width=200>
 
 This tool aims to simplify glue code generation for Deno FFI libraries written
 in Rust.
 
-### QuickStart
+## Install
 
-Annotate on top of Rust `fn`, `struct` and `enum` to make them available to Deno.
+Install the command-line via `cargo`:
+
+```bash
+cargo install deno_bindgen_cli
+```
+
+## Usage
 
 ```rust
-// add.rs
 use deno_bindgen::deno_bindgen;
 
+// Export `add` function to JavaScript.
 #[deno_bindgen]
-pub struct Input {
-  a: i32,
-  b: i32,
-}
-
-#[deno_bindgen]
-fn add(input: Input) -> i32 {
-  input.a + input.b
+fn add(a: u32, b: u32) -> u32 {
+    a + b
 }
 ```
 
-Invoke the CLI to compile and generate bindings:
-
-```shell
-$ deno_bindgen
-```
-
-And finally import the generated bindings in your JS
+Use the exported functions directly in ESM with TypeScript typings
 
 ```typescript
-// add.ts
-import { add } from "./bindings/bindings.ts";
+import { add } from "./bindings/mod.ts";
 
-add({ a: 1, b: 2 }); // 3
+add(1, 2);
 ```
 
-### Installation
+## Design
 
-- Install the `deno_bindgen` CLI with Deno.
+The tool is designed to make it very easy to write high performance FFI
+bindings. A lot of the things have been redesigned in `0.10` to prevent perf
+footguns.
 
-```shell
-deno install -Afrq -n deno_bindgen https://deno.land/x/deno_bindgen/cli.ts
-```
+TypeScript types are generated and supported OOTB.
 
-Add the following dependencies to your crate.
-
-```toml
-# Cargo.toml
-[dependencies]
-deno_bindgen = "0.8.1"
-serde = { version = "1", features = ["derive"] }
-```
-
-Change your `crate-type` to `cdylib` and set your package name as well.
-
-```toml
-[lib]
-name = "___"
-crate-type = ["cdylib"]
-```
-
-### Bindings
-
-Put `#[deno_bindgen]` on top of a "serde-deriavable" struct, enum or fn.
-
-#### `struct` (named fields)
-
-These transform into Typescript `type`s.
-
-```rust
-// lib.rs
-#[deno_bindgen]
-pub struct A {
-  b: Vec<Vec<String>>,
-}
-```
-
-becomes:
-
-```typescript
-// bindings/bindings.ts
-export type A = {
-  b: Array<Array<string>>;
-};
-```
-
-#### `enum`
-
-Enums become `type` unions in Typescript.
+All class handles support disposing memory via the Explicit Resource Management
+API (`using`).
 
 ```rust
 #[deno_bindgen]
-pub enum Event {
-  Quit,
-  MouseMove {
-    x: i32,
-    y: i32,
+pub struct Foo;
+
+#[deno_bindgen]
+impl Foo {
+  #[constructor]
+  pub fn new() -> Self {
+    Self
+  }
+
+  pub fn bar(&self) {
+    // ...
   }
 }
 ```
 
-becomes:
+```js
+import { Foo } from "@ffi/example";
 
-```typescript
-export type Enum =
-  | "quit"
-  | {
-    mouse_move: {
-      x: number;
-      y: number;
-    };
-  };
-```
-
-### `fn`
-
-Functions are exposed through the FFI boundaries.
-
-```rust
-#[deno_bindgen]
-fn greet(name: &str) {
-  println!("Hello, {}!", name);
+{
+  using foo = new Foo();
+  foo.bar();
+  // foo is disposed here...
 }
 ```
 
-becomes:
+High performance. Codegen tries its best to take the fastest possible path for
+all bindings as-if they were written by hand to properly leverage the power of
+the Deno FFI JIT calls.
 
-```typescript
-export function greet(name: string) {
-  // ... glue code for calling the
-  // symbol.
-}
+```
+> make bench
+cpu: Apple M1
+runtime: deno 1.38.0 (aarch64-apple-darwin)
+
+file:///Users/divy/gh/deno_bindgen/example/bench.js
+benchmark      time (avg)        iter/s             (min … max)       p75       p99      p995
+--------------------------------------------------------------- -----------------------------
+add             6.88 ns/iter 145,297,626.6    (6.78 ns … 13.33 ns)   6.81 ns   8.22 ns    9.4 ns
+bytelen         8.05 ns/iter 124,278,976.3     (7.81 ns … 18.1 ns)   8.09 ns  10.39 ns  11.64 ns
 ```
 
-Notes
+## Publishing
 
-- Use `#[deno_bindgen(non_blocking)]` attribute to call symbol without blocking
-  JS event loop. Exposed as an async funtion from bindings.
+By default, deno_bindgen generates bindings for local development. To publish a
+cross-platform binding, you can use the `--lazy-init` flag, this gives you full
+control on how you want to host pre-built shared libraries and pull them in at
+runtime.
 
-- Rust doc comments transform to JS docs.
-  ```rust
-  #[deno_bindgen]
-  pub struct Me {
-    /// My name...
-    /// ...it is
-    name: String,
-  }
-  ```
-  becomes:
-  ```typescript
-  export type Me = {
-    /**
-     * My name...
-     * ...it is
-     */
-    name: string;
-  };
-  ```
+```bash
+deno_bindgen --release --lazy-init
+```
 
-- If the argument type of Rust is f32, the calculation result may be different.\
-  Number in Java Script is float64, when data is passed to Rust, it becomes
-  float32, so the number may change.\
-  e.g: `1.3 + 1.5` will be `2.799999952316284`
+```typescript
+import { add, load } from "./example/mod.ts";
+import { cache } from "https://deno.land/x/cache/mod.ts";
 
-### CLI
+// Download the shared library from a CDN
+const file = await cache("https://example.com/example.so");
+load(file.path);
 
-The `deno_bindgen` CLI tool provides the following flags:
-
-- Pass `--release` to create a release build.
-
-- `--release=URL` will load library artifacts from a remote location. This is
-  useful for updating bindings for end users after a release:
-
-  ```shell
-  deno_bindgen --release=https://github.com/littledivy/deno_sdl2/releases/download/0.2-alpha.1
-  ```
-
-  Under the hood this uses [`x/plug`](https://deno.land/x/plug) to fetch and
-  cache the artifact.
-
-  Artifacts must be following the remote asset naming scheme, as follows:
-
-  | OS      | Arch   | Naming              |
-  | ------- | ------ | ------------------- |
-  | Windows | x86_64 | name.dll            |
-  | Linux   | x86_64 | libname.so          |
-  | MacOS   | x86_64 | libname.dylib       |
-  | MacOS   | arm64  | libname_arm64.dylib |
-
-- Flags after `--` will be passed to `cargo build`. Example:
-  ```shell
-  deno_bindgen -- --features "cool_stuff"
-  ```
+add(1, 2);
+```
