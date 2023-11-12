@@ -35,15 +35,19 @@ jobs:
             components: rustfmt, clippy
       - name: Build
         run: cargo build --locked --release
-      - name: Build Example (debug)
-        working-directory: ./example
+      - name: Test (debug)
+        working-directory: ./e2e
         run: |
-          deno run -A ../cli.ts
+          ../target/release/deno_bindgen -o bindings/mod.ts
           deno test -A --unstable
-      - name: Build Example (release)
-        working-directory: ./example
+      - name: Test (release)
+        working-directory: ./e2e
         shell: bash
         run: |
           rm -rf target
-          deno run -A ../cli.ts --release=../target/release
+          ../target/release/deno_bindgen -o bindings/mod.ts --release
           deno test -A --unstable
+      - name: Bench
+        working-directory: ./e2e
+        shell: bash
+        run: deno bench -A --unstable
