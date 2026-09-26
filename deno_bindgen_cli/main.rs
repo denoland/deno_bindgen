@@ -1,27 +1,27 @@
 use std::path::PathBuf;
 
 use cargo::Artifact;
-use structopt::StructOpt;
+use clap::Parser;
 
 mod cargo;
 mod dlfcn;
 
-#[derive(Debug, StructOpt)]
-#[structopt(name = "deno_bindgen_cli", about = "A CLI for deno_bindgen")]
+#[derive(Debug, Parser)]
+#[command(name = "deno_bindgen_cli", about = "A CLI for deno_bindgen", version)]
 struct Opt {
-  #[structopt(short, long)]
+  #[arg(short, long)]
   /// Build in release mode
   release: bool,
 
-  #[structopt(short, long)]
+  #[arg(short, long)]
   out: Option<PathBuf>,
 
-  #[structopt(short, long)]
+  #[arg(short, long)]
   lazy_init: bool,
 }
 
 fn main() -> std::io::Result<()> {
-  let opt = Opt::from_args();
+  let opt = Opt::parse();
 
   let cwd = std::env::current_dir().unwrap();
   let Artifact { path, .. } =
